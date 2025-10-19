@@ -137,9 +137,9 @@ class BaseRepository(Generic[T]):
         Raises:
             TypeError: 当session或model参数类型不正确时
         """
-        # 参数验证
-        if not isinstance(session, Session):
-            raise TypeError(f"session参数必须是Session类型，实际类型: {type(session).__name__}")
+        # 参数验证 - 检查session是否有基本的会话方法
+        if not hasattr(session, 'execute') or not hasattr(session, 'commit') or not hasattr(session, 'close'):
+            raise TypeError(f"session参数必须是有效的数据库会话对象，实际类型: {type(session).__name__}")
 
         if not (isinstance(model, type) and issubclass(model, BaseSQLModel)):
             raise TypeError(f"model参数必须是BaseSQLModel的子类，实际类型: {type(model).__name__}")
