@@ -5,11 +5,18 @@ description = "TaKeKe API 后端数据层实现"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "bcrypt>=5.0.0",
     "fastapi>=0.115.0",
     "langchain-anthropic>=1.0.0",
     "langchain-core>=1.0.0",
     "langgraph>=1.0.0",
+    "passlib>=1.7.4",
+    "psutil>=7.1.1",
+    "pydantic-settings>=2.11.0",
+    "pyjwt>=2.10.1",
     "python-dotenv>=1.1.1",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart",
     "sqlmodel>=0.0.27",
     "uvicorn[standard]>=0.30.0",
 ]

@@ -52,15 +52,26 @@ class AuthService(BaseService):
         _refresh_token_expiry: 刷新令牌过期时间（默认7天）
     """
 
-    def __init__(self, user_repo, **kwargs):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
         初始化认证服务
 
         Args:
             user_repo: 用户数据访问对象
+            task_repo: 任务数据访问对象
+            focus_repo: 专注数据访问对象
+            reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
             **kwargs: 其他参数传递给父类
         """
-        super().__init__(user_repo=user_repo, **kwargs)
+        super().__init__(
+            user_repo=user_repo,
+            task_repo=task_repo,
+            focus_repo=focus_repo,
+            reward_repo=reward_repo,
+            chat_repo=chat_repo,
+            **kwargs
+        )
 
         # 令牌配置
         self._token_expiry = timedelta(hours=24)  # 访问令牌24小时过期

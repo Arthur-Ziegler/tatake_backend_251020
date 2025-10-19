@@ -50,7 +50,7 @@ class TaskService(BaseService):
         _reward_repo: 奖励数据访问对象
     """
 
-    def __init__(self, user_repo, task_repo, focus_repo=None, reward_repo=None, **kwargs):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
         初始化任务服务
 
@@ -59,6 +59,7 @@ class TaskService(BaseService):
             task_repo: 任务数据访问对象
             focus_repo: 专注数据访问对象
             reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
             **kwargs: 其他参数传递给父类
         """
         super().__init__(
@@ -66,6 +67,7 @@ class TaskService(BaseService):
             task_repo=task_repo,
             focus_repo=focus_repo,
             reward_repo=reward_repo,
+            chat_repo=chat_repo,
             **kwargs
         )
 

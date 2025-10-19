@@ -50,15 +50,16 @@ class RewardService(BaseService):
         _reward_repo: 奖励数据访问对象
     """
 
-    def __init__(self, user_repo, task_repo=None, focus_repo=None, reward_repo=None, **kwargs):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
-        初始化奖励服务
+        初始化RewardService
 
         Args:
             user_repo: 用户数据访问对象
             task_repo: 任务数据访问对象
             focus_repo: 专注数据访问对象
             reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
             **kwargs: 其他参数传递给父类
         """
         super().__init__(
@@ -66,19 +67,9 @@ class RewardService(BaseService):
             task_repo=task_repo,
             focus_repo=focus_repo,
             reward_repo=reward_repo,
+            chat_repo=chat_repo,
             **kwargs
         )
-
-        # 抽奖配置
-        self.lottery_config = {
-            "fragment_cost": 5,      # 抽奖消耗碎片数
-            "common_probability": 0.7,  # 普通奖品概率
-            "rare_probability": 0.25,  # 稀有奖品概率
-            "epic_probability": 0.04,  # 史诗奖品概率
-            "legendary_probability": 0.01  # 传说奖品概率
-        }
-
-    # ==================== 奖励目录管理 ====================
 
     def get_rewards_catalog(
         self,

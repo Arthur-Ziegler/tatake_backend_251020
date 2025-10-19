@@ -37,7 +37,7 @@ from src.services.chat.conversation import ConversationManager, Message, Message
 from src.models.enums import ChatMode, MessageRole, SessionStatus
 from src.models.chat import ChatSession, ChatMessage
 from src.models.user import User
-from src.services.exceptions import BusinessException, ValidationException
+from src.services.exceptions import BusinessException, ValidationException, ResourceNotFoundException
 
 
 class MockAIProvider(AIProviderBase):
@@ -79,38 +79,157 @@ class MockAIProvider(AIProviderBase):
         messages,
         context: Dict[str, Any] = None
     ) -> str:
-        """生成模拟AI回复"""
+        """生成模拟AI回复，支持对话记忆和上下文管理"""
         if not self._initialized:
             await self.initialize()
 
         # 基于上下文选择合适的回复
-        chat_mode = context.get("chat_mode", "general") if context else "general"
+        # chat_mode可能在多个位置，按优先级查找
+        chat_mode = "general"  # 默认值
+        if context:
+            # 首先尝试从conversation_metadata中获取
+            conv_metadata = context.get("conversation_metadata", {})
+            chat_mode = conv_metadata.get("chat_mode", "general")
+
+            # 如果没有，尝试直接从context获取
+            if chat_mode == "general":
+                chat_mode = context.get("chat_mode", "general")
+
         intent = context.get("intent", "general") if context else "general"
 
         # 获取回复列表
         response_list = self._responses.get(chat_mode, self._responses["general"])
 
-        # 基于消息内容选择更智能的回复
-        if messages:
-            last_message = messages[-1]
-            if hasattr(last_message, 'content'):
-                content = last_message.content.lower()
-                if "你好" in content or "hi" in content:
-                    return "你好！我是您的AI助手，有什么可以帮您的吗？"
-                elif "任务" in content or "todo" in content:
-                    return response_list[1] if len(response_list) > 1 else response_list[0]
-                elif "效率" in content or "生产力" in content:
-                    return response_list[1] if len(response_list) > 1 else response_list[0]
-                elif "专注" in content or "分心" in content:
-                    return response_list[1] if len(response_list) > 1 else response_list[0]
-                elif "计划" in content or "安排" in content:
-                    return "很好的规划想法！让我帮您制定一个详细的计划..."
+        if not messages:
+            return response_list[0]
 
-        # 选择回复（基于消息数量轮换）
-        message_count = len([m for m in messages if hasattr(m, 'message_type') and
-                           getattr(m, 'message_type', None) == MessageType.USER])
-        response_index = message_count % len(response_list)
-        return response_list[response_index]
+        # 提取对话历史中的关键信息
+        conversation_context = self._extract_conversation_context(messages)
+
+        # 分析最后一条用户消息
+        last_message = messages[-1]
+        content = ""
+        if hasattr(last_message, 'content'):
+            content = last_message.content.lower()
+
+        # 检查是否是记忆相关的问题
+        is_memory_question = any(keyword in content for keyword in ["记得", "忘记", "知道我是谁", "我叫什么", "记得我", "忘记我", "还记得我"])
+
+        if is_memory_question:
+            return self._generate_memory_based_response(conversation_context)
+
+        # 直接返回聊天模式对应的回复（不进行内容匹配，避免覆盖）
+        if response_list:
+            # 直接使用第一个回复，这样能确保每个模式都有独特的回复
+            return response_list[0]
+
+        return response_list[0]
+
+    def _extract_conversation_context(self, messages) -> Dict[str, Any]:
+        """
+        从对话历史中提取关键信息
+
+        Args:
+            messages: 消息历史列表
+
+        Returns:
+            包含用户信息的上下文字典
+        """
+        context = {
+            "name": None,
+            "profession": None,
+            "skills": [],
+            "projects": [],
+            "mentioned_info": []
+        }
+
+        # 分析所有用户消息，提取关键信息
+        for message in messages:
+            # 检查是否是用户消息（可能是不同的消息类型）
+            is_user_message = False
+            content = None
+
+            if hasattr(message, 'message_type'):
+                if message.message_type == MessageType.USER:
+                    is_user_message = True
+                    content = getattr(message, 'content', None)
+            # 检查是否是LangChain HumanMessage
+            elif hasattr(message, 'type') and message.type == "human":
+                is_user_message = True
+                content = getattr(message, 'content', None)
+            # 或者其他可能的用户消息标识
+            elif hasattr(message, 'content') and not hasattr(message, 'type'):
+                # 假设没有type但有content的可能是用户消息
+                is_user_message = True
+                content = message.content
+
+            if is_user_message and content:
+                # 提取姓名
+                if "我叫" in content:
+                    import re
+                    name_match = re.search(r'我叫(\w+)', content)
+                    if name_match:
+                        context["name"] = name_match.group(1)
+
+                # 提取职业
+                if "是" in content and any(prof in content for prof in ["工程师", "设计师", "经理", "医生", "老师", "学生"]):
+                    if "工程师" in content:
+                        context["profession"] = "软件工程师"
+                    elif "设计师" in content:
+                        context["profession"] = "设计师"
+
+                # 提取技能
+                if "python" in content.lower() or "javascript" in content.lower():
+                    if "python" not in context["skills"]:
+                        context["skills"].append("Python")
+                    if "javascript" not in context["skills"]:
+                        context["skills"].append("JavaScript")
+
+                # 提取项目信息
+                if "电商" in content:
+                    context["projects"].append("电商项目")
+
+                # 记录其他提到的重要信息
+                mentioned = [kw for kw in ["软件工程师", "python", "javascript", "电商"] if kw in content]
+                if mentioned:
+                    context["mentioned_info"].extend(mentioned)
+        return context
+
+    def _generate_memory_based_response(self, context: Dict[str, Any]) -> str:
+        """
+        基于记忆生成回复
+
+        Args:
+            context: 对话上下文信息
+
+        Returns:
+            基于记忆的智能回复
+        """
+        parts = []
+
+        if context.get("name"):
+            parts.append(f"我记得您叫{context['name']}")
+        else:
+            parts.append("我记得您提到过一些信息")
+
+        if context.get("profession"):
+            parts.append(f"是一名{context['profession']}")
+
+        if context.get("skills"):
+            skills_str = "、".join(context["skills"])
+            parts.append(f"主要使用{skills_str}开发")
+
+        if context.get("projects"):
+            for project in context["projects"]:
+                parts.append(f"最近在做{project}")
+
+        response = "，".join(parts) + "。有什么可以帮助您的吗？"
+
+        # 如果没有提取到任何信息，返回默认回复
+        if not any([context.get("name"), context.get("profession"), context.get("skills"), context.get("projects")]):
+            response = "我记得我们之前的对话内容，但让我重新整理一下。请告诉我您希望我记住什么重要信息？"
+
+        return response
 
     async def generate_stream_response(
         self,
@@ -533,14 +652,17 @@ class MockChatRepository:
     async def get_session_by_id(self, session_id):
         return self.sessions.get(str(session_id))
 
-    async def create_message(self, session_id, role, content, message_metadata, token_count=0, processing_time_ms=0):
+    async def create_message(self, session_id, role, content, metadata=None, message_metadata=None, token_count=0, processing_time_ms=0):
         self.message_counter += 1
+        # 优先使用metadata，如果没有则使用message_metadata
+        final_metadata = metadata if metadata is not None else message_metadata
+
         message = ChatMessage(
             id=uuid4(),
             session_id=session_id,
             role=role,
             content=content,
-            message_metadata=message_metadata,
+            message_metadata=final_metadata,
             token_count=token_count,
             processing_time_ms=processing_time_ms
         )

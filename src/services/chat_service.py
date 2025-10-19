@@ -115,31 +115,26 @@ class ChatService(BaseService):
         ai_config: AI配置
     """
 
-    def __init__(
-        self,
-        chat_repository: ChatRepository,
-        conversation_manager: Optional[ConversationManager] = None,
-        ai_orchestrator: Optional[LangGraphOrchestrator] = None,
-        ai_config: Optional[AIConfig] = None
-    ):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
-        初始化聊天服务
+        初始化ChatService
 
         Args:
-            chat_repository: 聊天数据仓储
-            conversation_manager: 对话管理器（可选，用于测试）
-            ai_orchestrator: AI编排器（可选，用于测试）
-            ai_config: AI配置（可选，用于测试）
+            user_repo: 用户数据访问对象
+            task_repo: 任务数据访问对象
+            focus_repo: 专注数据访问对象
+            reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
+            **kwargs: 其他参数传递给父类
         """
-        super().__init__()
-        self._chat_repository = chat_repository
-
-        # 初始化对话管理器
-        self._conversation_manager = conversation_manager or ConversationManager()
-
-        # 初始化AI配置和编排器
-        self._ai_config = ai_config or AIConfig()
-        self._ai_orchestrator = ai_orchestrator or self._create_ai_orchestrator()
+        super().__init__(
+            user_repo=user_repo,
+            task_repo=task_repo,
+            focus_repo=focus_repo,
+            reward_repo=reward_repo,
+            chat_repo=chat_repo,
+            **kwargs
+        )
 
     def _create_ai_orchestrator(self) -> LangGraphOrchestrator:
         """
@@ -388,6 +383,7 @@ class ChatService(BaseService):
             # 使用LangGraph编排器处理对话
             processed_state = await self._ai_orchestrator.process_conversation(chat_state)
 
+            
             # 提取AI回复
             ai_response_content = self._extract_ai_response(processed_state)
 
@@ -410,8 +406,8 @@ class ChatService(BaseService):
                     "conversation_id": conversation.id,
                     "message_type": MessageType.ASSISTANT.value,
                     "processing_time_ms": ai_message.processing_time_ms,
-                    "langgraph_state": processed_state.get("processing_state", "unknown"),
-                    "required_actions": processed_state.get("required_actions", [])
+                    "langgraph_state": getattr(processed_state, "processing_state", "unknown"),
+                    "required_actions": getattr(processed_state, "required_actions", [])
                 }
             )
 

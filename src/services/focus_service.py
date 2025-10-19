@@ -49,15 +49,16 @@ class FocusService(BaseService):
         _reward_repo: 奖励数据访问对象
     """
 
-    def __init__(self, user_repo, task_repo, focus_repo, reward_repo=None, **kwargs):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
-        初始化专注服务
+        初始化FocusService
 
         Args:
             user_repo: 用户数据访问对象
             task_repo: 任务数据访问对象
             focus_repo: 专注数据访问对象
             reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
             **kwargs: 其他参数传递给父类
         """
         super().__init__(
@@ -65,14 +66,9 @@ class FocusService(BaseService):
             task_repo=task_repo,
             focus_repo=focus_repo,
             reward_repo=reward_repo,
+            chat_repo=chat_repo,
             **kwargs
         )
-
-        # 番茄钟配置（默认25分钟专注+5分钟休息）
-        self.default_focus_duration = 25  # 分钟
-        self.default_break_duration = 5   # 分钟
-
-    # ==================== 专注会话管理 ====================
 
     def start_focus_session(
         self,

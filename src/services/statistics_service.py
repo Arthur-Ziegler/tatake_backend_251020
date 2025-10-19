@@ -61,29 +61,26 @@ class StatisticsService(BaseService):
         reward_repo: 奖励数据访问对象
     """
 
-    def __init__(
-        self,
-        user_repo: UserRepository,
-        task_repo: TaskRepository,
-        focus_repo: FocusRepository,
-        reward_repo: RewardRepository
-    ):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
         """
-        初始化统计服务
+        初始化StatisticsService
 
         Args:
             user_repo: 用户数据访问对象
             task_repo: 任务数据访问对象
             focus_repo: 专注数据访问对象
             reward_repo: 奖励数据访问对象
+            chat_repo: 聊天数据访问对象
+            **kwargs: 其他参数传递给父类
         """
-        super().__init__("StatisticsService")
-        self.user_repo = user_repo
-        self.task_repo = task_repo
-        self.focus_repo = focus_repo
-        self.reward_repo = reward_repo
-
-    # ==================== 用户综合统计 ====================
+        super().__init__(
+            user_repo=user_repo,
+            task_repo=task_repo,
+            focus_repo=focus_repo,
+            reward_repo=reward_repo,
+            chat_repo=chat_repo,
+            **kwargs
+        )
 
     def get_user_overview_statistics(self, user_id: str, days: int = 30) -> Dict[str, Any]:
         """
