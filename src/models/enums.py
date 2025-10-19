@@ -382,6 +382,102 @@ class TransactionType(str, Enum):
     PENALTY = "penalty"
 
 
+class ChatMode(str, Enum):
+    """
+    聊天模式枚举
+
+    定义不同的AI聊天助手模式，每种模式都有特定的行为和回应风格。
+
+    Attributes:
+        GENERAL (str): 通用对话模式，提供一般性帮助和对话
+        TASK_ASSISTANT (str): 任务助手模式，专注于任务管理和执行建议
+        PRODUCTIVITY_COACH (str): 生产力教练模式，提供效率提升指导
+        FOCUS_GUIDE (str): 专注指导模式，帮助用户保持专注和避免分心
+    """
+
+    GENERAL = "general"
+    TASK_ASSISTANT = "task_assistant"
+    PRODUCTIVITY_COACH = "productivity_coach"
+    FOCUS_GUIDE = "focus_guide"
+
+    def __str__(self) -> str:
+        """返回枚举的字符串值"""
+        return self.value
+
+    @classmethod
+    def get_description(cls, mode: "ChatMode") -> str:
+        """
+        获取聊天模式的描述
+
+        Args:
+            mode: 聊天模式
+
+        Returns:
+            str: 模式描述
+        """
+        descriptions = {
+            cls.GENERAL: "通用AI助手，可以帮助处理各种问题和任务",
+            cls.TASK_ASSISTANT: "任务管理助手，专注于任务创建、管理和完成建议",
+            cls.PRODUCTIVITY_COACH: "生产力教练，提供工作效率提升和习惯养成建议",
+            cls.FOCUS_GUIDE: "专注指导师，帮助提高专注力和管理干扰因素"
+        }
+        return descriptions.get(mode, "未知模式")
+
+
+class MessageRole(str, Enum):
+    """
+    消息角色枚举
+
+    定义聊天消息中的不同角色类型。
+
+    Attributes:
+        USER (str): 用户消息
+        ASSISTANT (str): AI助手消息
+        SYSTEM (str): 系统消息
+        TOOL (str): 工具调用消息
+    """
+
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+    TOOL = "tool"
+
+    def __str__(self) -> str:
+        """返回枚举的字符串值"""
+        return self.value
+
+
+class SessionStatus(str, Enum):
+    """
+    会话状态枚举
+
+    定义聊天会话的生命周期状态。
+
+    Attributes:
+        ACTIVE (str): 活跃状态，会话正在进行中
+        PAUSED (str): 暂停状态，会话暂时停止
+        COMPLETED (str): 已完成状态，会话正常结束
+        ARCHIVED (str): 已归档状态，会话被归档保存
+    """
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+    def __str__(self) -> str:
+        """返回枚举的字符串值"""
+        return self.value
+
+    def is_active(self) -> bool:
+        """判断会话是否为活跃状态"""
+        return self == self.ACTIVE
+
+    def is_ended(self) -> bool:
+        """判断会话是否已结束"""
+        return self in {self.COMPLETED, self.ARCHIVED}
+
+
 # 导出所有枚举类型，便于外部导入
 __all__ = [
     "TaskStatus",
@@ -389,5 +485,8 @@ __all__ = [
     "SessionType",
     "RewardType",
     "RewardStatus",
-    "TransactionType"
+    "TransactionType",
+    "ChatMode",
+    "MessageRole",
+    "SessionStatus"
 ]

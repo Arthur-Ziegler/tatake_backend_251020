@@ -64,15 +64,15 @@ class TestBaseRepositoryCore:
     def test_base_repository_initialization_invalid_session(self):
         """测试无效session参数的初始化"""
         # 测试None session
-        with pytest.raises(TypeError, match="session参数必须是Session类型"):
+        with pytest.raises(TypeError, match="session参数必须是有效的数据库会话对象"):
             BaseRepository(None, User)  # type: ignore
 
         # 测试字符串session
-        with pytest.raises(TypeError, match="session参数必须是Session类型"):
+        with pytest.raises(TypeError, match="session参数必须是有效的数据库会话对象"):
             BaseRepository("invalid_session", User)  # type: ignore
 
         # 测试整数session
-        with pytest.raises(TypeError, match="session参数必须是Session类型"):
+        with pytest.raises(TypeError, match="session参数必须是有效的数据库会话对象"):
             BaseRepository(123, User)  # type: ignore
 
     def test_base_repository_initialization_invalid_model(self):

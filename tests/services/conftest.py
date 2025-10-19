@@ -249,10 +249,12 @@ def sample_reward_data():
 @pytest.fixture
 def mock_user(sample_user_data):
     """创建模拟User对象"""
-    user = Mock(spec=User)
+    user = Mock()
+    # 设置基本属性
     for key, value in sample_user_data.items():
         setattr(user, key, value)
-    user.to_dict.return_value = sample_user_data
+    # 设置to_dict方法
+    user.to_dict = Mock(return_value=sample_user_data)
     return user
 
 

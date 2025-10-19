@@ -31,10 +31,13 @@ class TestDatabaseConnection:
     def test_database_connection_custom_configuration(self):
         """测试数据库连接自定义配置"""
         custom_url = "sqlite:///./test_custom.db"
-        db = DatabaseConnection(database_url=custom_url, echo=True)
 
-        assert db.database_url == custom_url
-        assert db.echo is True
+        # Mock环境变量以确保测试隔离
+        with patch.dict(os.environ, {}, clear=True):
+            db = DatabaseConnection(database_url=custom_url, echo=True)
+
+            assert db.database_url == custom_url
+            assert db.echo is True
 
     def test_get_engine_creates_engine(self):
         """测试get_engine方法创建SQLAlchemy引擎"""

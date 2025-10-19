@@ -73,7 +73,7 @@ class TestBaseServiceLogging:
 
     def test_log_info(self, base_service):
         """测试信息日志记录"""
-        with patch('src.services.base.logger') as mock_logger:
+        with patch.object(base_service, '_logger') as mock_logger:
             message = "Test info message"
             context = {"user_id": "123", "action": "test"}
 
@@ -89,7 +89,7 @@ class TestBaseServiceLogging:
 
     def test_log_warning(self, base_service):
         """测试警告日志记录"""
-        with patch('src.services.base.logger') as mock_logger:
+        with patch.object(base_service, '_logger') as mock_logger:
             message = "Test warning message"
             context = {"warning_type": "test"}
 
@@ -102,7 +102,7 @@ class TestBaseServiceLogging:
 
     def test_log_error_without_exception(self, base_service):
         """测试无异常的错误日志记录"""
-        with patch('src.services.base.logger') as mock_logger:
+        with patch.object(base_service, '_logger') as mock_logger:
             message = "Test error message"
             context = {"error_code": "TEST_ERROR"}
 
@@ -117,7 +117,7 @@ class TestBaseServiceLogging:
 
     def test_log_error_with_exception(self, base_service):
         """测试带异常的错误日志记录"""
-        with patch('src.services.base.logger') as mock_logger:
+        with patch.object(base_service, '_logger') as mock_logger:
             message = "Test error message"
             error = ValueError("Test exception")
             context = {"error_code": "TEST_ERROR"}
@@ -316,6 +316,7 @@ class TestBaseServiceUtilityMethods:
     def test_execute_in_transaction_success(self, base_service):
         """测试事务执行 - 成功"""
         operation_func = Mock(return_value="success")
+        operation_func.__name__ = "test_operation"
 
         with patch.object(base_service, '_log_info') as mock_log_info:
             result = base_service._execute_in_transaction(operation_func, arg1="value1")
@@ -328,19 +329,21 @@ class TestBaseServiceUtilityMethods:
         """测试事务执行 - 失败"""
         error = ValueError("Operation failed")
         operation_func = Mock(side_effect=error)
+        operation_func.__name__ = "test_operation"
 
         with patch.object(base_service, '_log_info') as mock_log_info:
             with patch.object(base_service, '_log_error') as mock_log_error:
-                with pytest.raises(ValueError):
+                with pytest.raises(BusinessException):
                     base_service._execute_in_transaction(operation_func)
 
         mock_log_info.assert_called_once()  # 只有开始日志
-        mock_log_error.assert_called_once()
+        assert mock_log_error.call_count == 2  # Transaction failed 和 Repository error
 
     def test_execute_in_transaction_business_exception(self, base_service):
         """测试事务执行 - 业务异常"""
         business_error = BusinessException("SERVICE_TEST_ERROR", "Test error")
         operation_func = Mock(side_effect=business_error)
+        operation_func.__name__ = "test_operation"
 
         with pytest.raises(BusinessException) as exc_info:
             base_service._execute_in_transaction(operation_func)
@@ -424,10 +427,13 @@ class TestBaseServiceDependencyManagement:
 
         assert result is mock_user_repo
 
-    def test_ensure_repository_missing(self, base_service):
+    def test_ensure_repository_missing(self):
         """测试确保Repository存在 - 缺失"""
+        # 创建一个没有user_repo的服务实例
+        service = BaseService()  # 没有注入任何repository
+
         with pytest.raises(BusinessException) as exc_info:
-            base_service._ensure_repository("user_repo")
+            service._ensure_repository("user_repo")
 
         exception = exc_info.value
         assert exception.error_code == "SERVICE_DEPENDENCY_MISSING"
@@ -441,10 +447,13 @@ class TestBaseServiceDependencyManagement:
 
         assert result is mock_user_repo
 
-    def test_get_task_repository_missing(self, base_service):
+    def test_get_task_repository_missing(self):
         """测试获取任务Repository - 缺失"""
+        # 创建一个没有task_repo的服务实例
+        service = BaseService()  # 没有注入任何repository
+
         with pytest.raises(BusinessException) as exc_info:
-            base_service.get_task_repository()
+            service.get_task_repository()
 
         exception = exc_info.value
         assert exception.error_code == "SERVICE_DEPENDENCY_MISSING"

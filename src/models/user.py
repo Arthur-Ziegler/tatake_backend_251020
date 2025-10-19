@@ -126,12 +126,12 @@ class User(BaseSQLModel, table=True):
     #     }
     # )
 
-    # chat_sessions: list["ChatSession"] = Relationship(
-    #     back_populates="user",
-    #     sa_relationship_kwargs={
-    #         "cascade": "all, delete-orphan"
-    #     }
-    # )
+    chat_sessions: list["ChatSession"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan"
+        }
+    )
 
     def __repr__(self) -> str:
         """
