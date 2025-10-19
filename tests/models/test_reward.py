@@ -3,6 +3,7 @@
 验证奖励相关模型的字段定义、数据验证、关系处理和业务逻辑功能
 """
 import pytest
+import uuid
 from datetime import datetime, timezone, timedelta
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
@@ -140,7 +141,7 @@ class TestRewardModel:
 
     def test_reward_database_creation(self, session: Session):
         """测试奖励数据库创建"""
-        user = User(nickname="奖励测试用户", email="reward_test@example.com")
+        user = User(nickname="奖励测试用户", email=f"reward_test_{uuid.uuid4().hex[:8]}@example.com")
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -169,7 +170,7 @@ class TestRewardModel:
 
     def test_reward_database_query(self, session: Session):
         """测试奖励数据库查询"""
-        user = User(nickname="查询测试用户", email="reward_query@example.com")
+        user = User(nickname="查询测试用户", email=f"reward_query_{uuid.uuid4().hex[:8]}@example.com")
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -194,7 +195,7 @@ class TestRewardModel:
 
     def test_reward_user_foreign_key(self, session: Session):
         """测试奖励用户外键关系"""
-        user = User(nickname="外键测试用户", email="fk_test@example.com")
+        user = User(nickname="外键测试用户", email=f"fk_test_{uuid.uuid4().hex[:8]}@example.com")
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -214,7 +215,7 @@ class TestRewardModel:
 
     def test_reward_is_active_default(self, session: Session):
         """测试奖励激活状态默认值"""
-        user = User(nickname="默认状态用户", email="default@example.com")
+        user = User(nickname="默认状态用户", email=f"default_{uuid.uuid4().hex[:8]}@example.com")
         session.add(user)
         session.commit()
         session.refresh(user)
@@ -234,7 +235,7 @@ class TestRewardModel:
 
     def test_reward_model_repr(self, session: Session):
         """测试奖励模型字符串表示"""
-        user = User(nickname="字符串测试用户", email="repr_test@example.com")
+        user = User(nickname="字符串测试用户", email=f"repr_test_{uuid.uuid4().hex[:8]}@example.com")
         session.add(user)
         session.commit()
         session.refresh(user)

@@ -267,17 +267,18 @@ class TestUserModel:
 
     def test_user_email_format(self, session: Session):
         """测试邮箱格式"""
+        import uuid
         # 测试有效的邮箱格式
         valid_emails = [
-            "test@example.com",
-            "user.name@domain.co.uk",
-            "user+tag@example.org",
+            f"test_{uuid.uuid4().hex[:8]}@example.com",
+            f"user.name_{uuid.uuid4().hex[:8]}@domain.co.uk",
+            f"user+tag_{uuid.uuid4().hex[:8]}@example.org",
             None  # 空值也是有效的
         ]
 
         for email in valid_emails:
             user = User(
-                nickname=f"用户_{email}",
+                nickname=f"用户_{email}" if email else f"用户_{uuid.uuid4().hex[:8]}",
                 email=email
             )
             session.add(user)
