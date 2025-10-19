@@ -34,6 +34,10 @@ from .exceptions import (
 from .auth_service import AuthService
 from .user_service import UserService
 from .task_service import TaskService
+from .focus_service import FocusService
+from .reward_service import RewardService
+from .statistics_service import StatisticsService
+from .chat_service import ChatService
 
 __all__ = [
     # 基础组件
@@ -57,6 +61,10 @@ __all__ = [
     "AuthService",
     "UserService",
     "TaskService",
+    "FocusService",
+    "RewardService",
+    "StatisticsService",
+    "ChatService",
 ]
 
 # 版本信息
