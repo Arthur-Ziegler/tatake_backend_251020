@@ -29,7 +29,11 @@ from src.repositories import (
     TaskRepository,
     FocusRepository,
     RewardRepository,
-    ChatRepository
+    ChatRepository,
+    TokenBlacklistRepository,
+    SmsVerificationRepository,
+    UserSessionRepository,
+    AuthLogRepository
 )
 from .middleware.auth import verify_token
 from .config import config
@@ -145,6 +149,35 @@ class ServiceFactory:
             self._repositories[cache_key] = ChatRepository(session)
         return self._repositories[cache_key]
 
+    # 认证相关Repository
+    def get_token_blacklist_repository(self, session: AsyncSession) -> TokenBlacklistRepository:
+        """获取JWT令牌黑名单Repository实例"""
+        cache_key = f"token_blacklist_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = TokenBlacklistRepository(session)
+        return self._repositories[cache_key]
+
+    def get_sms_verification_repository(self, session: AsyncSession) -> SmsVerificationRepository:
+        """获取短信验证码Repository实例"""
+        cache_key = f"sms_verification_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = SmsVerificationRepository(session)
+        return self._repositories[cache_key]
+
+    def get_user_session_repository(self, session: AsyncSession) -> UserSessionRepository:
+        """获取用户会话Repository实例"""
+        cache_key = f"user_session_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = UserSessionRepository(session)
+        return self._repositories[cache_key]
+
+    def get_auth_log_repository(self, session: AsyncSession) -> AuthLogRepository:
+        """获取认证日志Repository实例"""
+        cache_key = f"auth_log_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = AuthLogRepository(session)
+        return self._repositories[cache_key]
+
     # Service创建
     async def get_auth_service(self, session: AsyncSession) -> AuthService:
         """
@@ -155,7 +188,18 @@ class ServiceFactory:
         cache_key = f"auth_service_{id(session)}"
         if cache_key not in self._services:
             user_repo = self.get_user_repository(session)
-            self._services[cache_key] = AuthService(user_repo)
+            token_blacklist_repo = self.get_token_blacklist_repository(session)
+            sms_verification_repo = self.get_sms_verification_repository(session)
+            user_session_repo = self.get_user_session_repository(session)
+            auth_log_repo = self.get_auth_log_repository(session)
+
+            self._services[cache_key] = AuthService(
+                user_repo=user_repo,
+                token_blacklist_repo=token_blacklist_repo,
+                sms_verification_repo=sms_verification_repo,
+                user_session_repo=user_session_repo,
+                auth_log_repo=auth_log_repo
+            )
         return self._services[cache_key]
 
     async def get_user_service(self, session: AsyncSession) -> UserService:

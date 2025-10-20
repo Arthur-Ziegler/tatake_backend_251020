@@ -52,7 +52,9 @@ class AuthService(BaseService):
         _refresh_token_expiry: 刷新令牌过期时间（默认7天）
     """
 
-    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None, **kwargs):
+    def __init__(self, user_repo=None, task_repo=None, focus_repo=None, reward_repo=None, chat_repo=None,
+                 token_blacklist_repo=None, sms_verification_repo=None, user_session_repo=None,
+                 auth_log_repo=None, **kwargs):
         """
         初始化认证服务
 
@@ -62,6 +64,10 @@ class AuthService(BaseService):
             focus_repo: 专注数据访问对象
             reward_repo: 奖励数据访问对象
             chat_repo: 聊天数据访问对象
+            token_blacklist_repo: JWT令牌黑名单数据访问对象
+            sms_verification_repo: 短信验证码数据访问对象
+            user_session_repo: 用户会话数据访问对象
+            auth_log_repo: 认证日志数据访问对象
             **kwargs: 其他参数传递给父类
         """
         super().__init__(
@@ -72,6 +78,12 @@ class AuthService(BaseService):
             chat_repo=chat_repo,
             **kwargs
         )
+
+        # 认证相关的Repository（用于替代Redis功能）
+        self._token_blacklist_repo = token_blacklist_repo
+        self._sms_verification_repo = sms_verification_repo
+        self._user_session_repo = user_session_repo
+        self._auth_log_repo = auth_log_repo
 
         # 令牌配置
         self._token_expiry = timedelta(hours=24)  # 访问令牌24小时过期

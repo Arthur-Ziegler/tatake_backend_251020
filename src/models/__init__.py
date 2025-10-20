@@ -24,6 +24,14 @@ from src.models.reward import (
     LotteryRecord, PointsTransaction
 )
 
+# 导入认证系统模型
+from src.models.auth import (
+    TokenBlacklist, TokenBlacklistCreate, TokenBlacklistRead,
+    SmsVerification, SmsVerificationCreate, SmsVerificationRead,
+    UserSession, UserSessionCreate, UserSessionRead,
+    AuthLog, AuthLogCreate, AuthLogRead
+)
+
 # 导出所有模型
 __all__ = [
     # 基础模型
@@ -57,4 +65,18 @@ __all__ = [
     "UserFragment",
     "LotteryRecord",
     "PointsTransaction",
+
+    # 认证系统模型
+    "TokenBlacklist",
+    "TokenBlacklistCreate",
+    "TokenBlacklistRead",
+    "SmsVerification",
+    "SmsVerificationCreate",
+    "SmsVerificationRead",
+    "UserSession",
+    "UserSessionCreate",
+    "UserSessionRead",
+    "AuthLog",
+    "AuthLogCreate",
+    "AuthLogRead",
 ]

@@ -27,6 +27,12 @@ from src.repositories.task import TaskRepository
 from src.repositories.focus import FocusRepository
 from src.repositories.reward import RewardRepository
 from src.repositories.chat import ChatRepository
+from src.repositories.auth import (
+    TokenBlacklistRepository,
+    SmsVerificationRepository,
+    UserSessionRepository,
+    AuthLogRepository
+)
 
 # 导出所有Repository类
 __all__ = [
@@ -42,5 +48,9 @@ __all__ = [
     "TaskRepository",
     "FocusRepository",
     "RewardRepository",
-    "ChatRepository"
+    "ChatRepository",
+    "TokenBlacklistRepository",
+    "SmsVerificationRepository",
+    "UserSessionRepository",
+    "AuthLogRepository"
 ]
