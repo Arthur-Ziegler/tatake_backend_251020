@@ -536,6 +536,15 @@ class UserSettingsUpdateRequest(BaseModel):
     settings: Dict[str, Any] = Field(..., description="设置数据")
 
 
+class UserAvatarResponse(BaseModel):
+    """用户头像响应"""
+    avatar_url: str
+    filename: Optional[str] = None
+    size: Optional[int] = None
+    content_type: Optional[str] = None
+    uploaded_at: datetime
+
+
 class AvatarUploadResponse(BaseModel):
     """头像上传响应"""
     avatar_url: str

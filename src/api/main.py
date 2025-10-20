@@ -163,15 +163,18 @@ async def api_info():
     )
 
 
-# TODO: 添加API路由模块
-# from .routers import auth, tasks, chat, focus, rewards, statistics, user
-# app.include_router(auth.router, prefix=config.api_prefix, tags=["认证系统"])
+# 添加API路由模块
+from .routers import auth, user
+app.include_router(auth.router, prefix=config.api_prefix, tags=["认证系统"])
+app.include_router(user.router, prefix=config.api_prefix, tags=["用户管理"])
+
+# TODO: 添加更多路由模块
+# from .routers import tasks, chat, focus, rewards, statistics
 # app.include_router(tasks.router, prefix=config.api_prefix, tags=["任务管理"])
 # app.include_router(chat.router, prefix=config.api_prefix, tags=["AI对话"])
 # app.include_router(focus.router, prefix=config.api_prefix, tags=["番茄钟"])
 # app.include_router(rewards.router, prefix=config.api_prefix, tags=["奖励系统"])
 # app.include_router(statistics.router, prefix=config.api_prefix, tags=["统计分析"])
-# app.include_router(user.router, prefix=config.api_prefix, tags=["用户管理"])
 
 
 if __name__ == "__main__":

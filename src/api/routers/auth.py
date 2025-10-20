@@ -470,31 +470,54 @@ async def refresh_token(
 @router.post("/logout", response_model=BaseResponse)
 async def logout(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    current_user: Optional[dict] = Depends(get_current_user)
+    current_user: Optional[dict] = Depends(get_current_user),
+    jwt_service: JWTService = Depends(get_jwt_service)
 ):
     """
     用户登出
 
     使访问令牌失效，清理用户会话数据。
+    支持令牌黑名单机制，确保登出后的令牌无法继续使用。
 
     Args:
         credentials: HTTP认证凭证（可选）
         current_user: 当前用户信息（可选）
+        jwt_service: JWT服务实例，用于令牌黑名单管理
 
     Returns:
         BaseResponse: 操作结果
+
+    Raises:
+        HTTPException: 当登出失败时
     """
     try:
-        # TODO: 集成AuthService处理登出
-        # auth_service = get_auth_service()
-        # if current_user:
-        #     auth_service.logout_user(current_user["user_id"])
+        # 如果没有用户信息，返回成功但不做任何操作
+        if not current_user:
+            return create_success_response(
+                message="已退出登录"
+            )
+
+        # 获取访问令牌JTI
+        access_token_jti = current_user.get("token_jti")
+        user_id = current_user.get("user_id")
+
+        if access_token_jti and user_id:
+            # 将访问令牌加入黑名单
+            await jwt_service.blacklist_token(
+                jti=access_token_jti,
+                user_id=user_id,
+                reason="用户主动登出",
+                ip_address=None,  # 可以从请求中获取
+                user_agent=None   # 可以从请求头中获取
+            )
 
         return create_success_response(
             message="登出成功"
         )
 
     except Exception as e:
+        # 记录详细错误信息
+        print(f"[Logout] 用户登出失败: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"登出失败: {str(e)}"
