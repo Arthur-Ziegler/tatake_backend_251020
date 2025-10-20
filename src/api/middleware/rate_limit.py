@@ -98,6 +98,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         else:
             counters = self.ip_counters
 
+        # 确保计数器存在
+        if limit_key not in counters:
+            counters[limit_key] = deque()
+
         requests = counters[limit_key]
         now = time.time()
 
@@ -106,9 +110,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             requests.popleft()
 
         # 添加头信息
-        response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, self.requests_per_minute - len(requests)))
-        response.headers["X-RateLimit-Reset"] = str(int(now + 60))
+        response.headers["x-rate-limit-limit"] = str(self.requests_per_minute)
+        response.headers["x-rate-limit-remaining"] = str(max(0, self.requests_per_minute - len(requests)))
+        response.headers["x-rate-limit-reset"] = str(int(now + 60))
 
     def _cleanup_counters(self):
         """清理过期计数器"""

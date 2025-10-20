@@ -5,11 +5,13 @@ TaKeKe API 主应用
 """
 
 import time
+import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import config
 from .middleware import (
@@ -20,7 +22,7 @@ from .middleware import (
     SecurityMiddleware,
     AuthMiddleware
 )
-from .responses import create_success_response
+from .responses import create_success_response, create_error_response
 
 
 @asynccontextmanager
@@ -31,11 +33,10 @@ async def lifespan(app: FastAPI):
     print(f"📝 环境: {'开发' if config.debug else '生产'}")
     print(f"🌐 服务地址: http://{config.api_host}:{config.api_port}{config.api_prefix}")
 
-    # 初始化数据库连接
-    # TODO: 添加数据库初始化逻辑
-
-    # 初始化Redis连接
-    # TODO: 添加Redis初始化逻辑
+    # 初始化依赖注入系统
+    from .dependencies import initialize_dependencies
+    await initialize_dependencies()
+    print("✅ 依赖注入系统初始化完成")
 
     print("✅ 服务启动完成")
 
@@ -44,8 +45,10 @@ async def lifespan(app: FastAPI):
     # 关闭时执行
     print("🛑 服务正在关闭...")
 
-    # 清理资源
-    # TODO: 添加资源清理逻辑
+    # 清理依赖注入系统
+    from .dependencies import cleanup_dependencies
+    await cleanup_dependencies()
+    print("✅ 依赖注入系统已清理")
 
     print("✅ 服务已关闭")
 
@@ -61,6 +64,31 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# 设置OpenAPI文档配置
+from .openapi import setup_openapi
+setup_openapi(app)
+
+# 添加全局异常处理器
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """处理HTTP异常（404、405等）"""
+    error_messages = {
+        404: "请求的资源未找到",
+        405: "请求方法不被允许",
+        401: "未授权访问",
+        403: "禁止访问",
+        422: "请求参数验证失败"
+    }
+
+    message = error_messages.get(exc.status_code, exc.detail)
+
+    return create_error_response(
+        message=message,
+        status_code=exc.status_code,
+        error_code=f"HTTP_{exc.status_code}"
+    )
+
+
 # 添加中间件
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # 启用响应压缩
 app.add_middleware(SecurityMiddleware)  # 安全中间件
@@ -73,8 +101,11 @@ app.add_middleware(AuthMiddleware)  # 认证中间件
 
 # 根路径
 @app.get("/", tags=["系统"])
-async def root():
+async def root(request: Request):
     """根路径，返回API信息"""
+    # 获取请求ID
+    trace_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+
     return create_success_response(
         data={
             "name": config.app_name,
@@ -84,7 +115,8 @@ async def root():
             "redoc_url": "/redoc",
             "api_prefix": config.api_prefix
         },
-        message="API服务正常运行"
+        message="API服务正常运行",
+        trace_id=trace_id
     )
 
 

@@ -154,10 +154,15 @@ class RateLimitErrorResponse(ErrorResponse):
 def create_success_response(
     data: Any = None,
     message: str = "操作成功",
-    status_code: int = status.HTTP_200_OK
+    status_code: int = status.HTTP_200_OK,
+    trace_id: Optional[str] = None
 ) -> JSONResponse:
     """创建成功响应"""
-    response_data = SuccessResponse.create(data=data, message=message, code=status_code)
+    if trace_id:
+        response_data = SuccessResponse.create(data=data, message=message, code=status_code)
+        response_data["traceId"] = trace_id
+    else:
+        response_data = SuccessResponse.create(data=data, message=message, code=status_code)
     return JSONResponse(
         content=response_data,
         status_code=status_code

@@ -9,6 +9,7 @@ from typing import List
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware as FastAPICORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response as StarletteResponse
 
 from ..config import config
 
@@ -26,18 +27,18 @@ class CORSMiddleware(BaseHTTPMiddleware):
         """处理CORS请求"""
         origin = request.headers.get("origin")
 
-        # 设置响应头
-        response = await call_next(request)
-
-        # 处理预检请求
+        # 处理预检请求 - 直接返回响应，不需要继续传递
         if request.method == "OPTIONS":
+            response = StarletteResponse()
             response.headers["Access-Control-Allow-Origin"] = self._get_allowed_origin(origin)
             response.headers["Access-Control-Allow-Methods"] = ", ".join(self.allowed_methods)
             response.headers["Access-Control-Allow-Headers"] = ", ".join(self.allowed_headers)
             response.headers["Access-Control-Max-Age"] = "86400"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
             return response
 
         # 处理普通请求
+        response = await call_next(request)
         response.headers["Access-Control-Allow-Origin"] = self._get_allowed_origin(origin)
         response.headers["Access-Control-Allow-Credentials"] = "true"
 

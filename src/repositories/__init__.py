@@ -26,6 +26,7 @@ from src.repositories.user import UserRepository
 from src.repositories.task import TaskRepository
 from src.repositories.focus import FocusRepository
 from src.repositories.reward import RewardRepository
+from src.repositories.chat import ChatRepository
 
 # 导出所有Repository类
 __all__ = [
@@ -40,5 +41,6 @@ __all__ = [
     "UserRepository",
     "TaskRepository",
     "FocusRepository",
-    "RewardRepository"
+    "RewardRepository",
+    "ChatRepository"
 ]

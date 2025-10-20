@@ -33,7 +33,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
             return self._handle_validation_error(e, request)
 
         except StarletteHTTPException as e:
-            # HTTP异常
+            # HTTP异常（包括404、405等）
             return self._handle_http_exception(e, request)
 
         except Exception as e:
@@ -55,8 +55,19 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
 
     def _handle_http_exception(self, e: StarletteHTTPException, request: Request) -> Response:
         """处理HTTP异常"""
+        # 确定错误消息
+        error_messages = {
+            404: "请求的资源未找到",
+            405: "请求方法不被允许",
+            401: "未授权访问",
+            403: "禁止访问",
+            422: "请求参数验证失败"
+        }
+
+        message = error_messages.get(e.status_code, e.detail)
+
         return create_error_response(
-            message=e.detail,
+            message=message,
             status_code=e.status_code,
             error_code=f"HTTP_{e.status_code}"
         )
