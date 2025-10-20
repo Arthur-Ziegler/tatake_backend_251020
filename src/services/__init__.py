@@ -32,6 +32,7 @@ from .exceptions import (
     wrap_repository_error,
 )
 from .auth_service import AuthService
+from .jwt_service import JWTService
 from .user_service import UserService
 from .task_service import TaskService
 from .focus_service import FocusService
@@ -59,6 +60,7 @@ __all__ = [
 
     # 服务类
     "AuthService",
+    "JWTService",
     "UserService",
     "TaskService",
     "FocusService",

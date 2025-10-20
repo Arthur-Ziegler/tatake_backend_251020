@@ -235,12 +235,22 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
 
 
 def verify_token(token: str) -> Dict[str, Any]:
-    """验证令牌"""
+    """
+    验证JWT令牌
+
+    注意：这个函数为了保持向后兼容性而保留。
+    新代码应该使用JWTService进行令牌验证。
+    """
     try:
         payload = jwt.decode(
             token,
             config.jwt_secret_key,
-            algorithms=[config.jwt_algorithm]
+            algorithms=[config.jwt_algorithm],
+            options={
+                'require': ['exp', 'iat', 'sub'],
+                'verify_aud': False,  # 为了兼容性暂时不验证aud
+                'verify_iss': False   # 为了兼容性暂时不验证iss
+            }
         )
         return payload
     except jwt.ExpiredSignatureError:

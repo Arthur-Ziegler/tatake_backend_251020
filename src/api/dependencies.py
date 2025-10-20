@@ -17,6 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.services import (
     AuthService,
+    JWTService,
     UserService,
     TaskService,
     FocusService,
@@ -261,6 +262,21 @@ class ServiceFactory:
             self._services[cache_key] = ChatService(user_repo, task_repo, chat_repo)
         return self._services[cache_key]
 
+    # JWT服务
+    async def get_jwt_service(self, session: AsyncSession) -> JWTService:
+        """获取JWT服务实例"""
+        cache_key = f"jwt_service_{id(session)}"
+        if cache_key not in self._services:
+            token_blacklist_repo = self.get_token_blacklist_repository(session)
+            self._services[cache_key] = JWTService(
+                token_blacklist_repo=token_blacklist_repo,
+                secret_key=config.jwt_secret_key,
+                algorithm=config.jwt_algorithm,
+                access_token_expiry=config.jwt_access_token_expire_minutes * 60,  # 转换为秒
+                refresh_token_expiry=config.jwt_refresh_token_expire_days * 24 * 60 * 60  # 转换为秒
+            )
+        return self._services[cache_key]
+
     def clear_cache(self):
         """清理缓存"""
         self._repositories.clear()
@@ -384,6 +400,13 @@ async def get_chat_service(
 ) -> ChatService:
     """获取对话Service的FastAPI依赖"""
     return await service_factory.get_chat_service(session)
+
+
+async def get_jwt_service(
+    session: AsyncSession = Depends(get_db_session)
+) -> JWTService:
+    """获取JWT服务的FastAPI依赖"""
+    return await service_factory.get_jwt_service(session)
 
 
 # 分页依赖
