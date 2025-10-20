@@ -566,6 +566,7 @@ handle_exception_automatically = 自动处理异常
 fast_validate_required_fields = 快速验证必填字段
 fast_validate_required = 快速验证必填字段
 conditional_log = 条件日志记录
+conditional_logging = 条件日志记录
 performance_monitor = 性能监控器
 
 # 装饰器别名

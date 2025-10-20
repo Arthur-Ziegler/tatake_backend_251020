@@ -188,7 +188,7 @@ class PerformanceOptimizedBaseService:
 
     # ==================== 优化的异常处理方法 ====================
 
-    @自动处理异常("repository_error", rethrow=True)
+    @自动处理异常("repository_error", 重新抛出=True)
     def _handle_repository_error(self, error: Exception, operation: str = "unknown") -> None:
         """
         优化的Repository层异常处理
@@ -235,7 +235,7 @@ class PerformanceOptimizedBaseService:
 
     # ==================== 优化的验证方法 ====================
 
-    @性能监控器(threshold_ms=50.0)
+    @性能监控器(阈值毫秒=50.0)
     def fast_validate_required_fields(self, data: Dict[str, Any], required_fields: List[str]) -> None:
         """
         快速验证必填字段
@@ -341,7 +341,7 @@ class PerformanceOptimizedBaseService:
 
     # ==================== 优化的通用方法 ====================
 
-    @自动处理异常("health_check", rethrow=False)
+    @自动处理异常("health_check", 重新抛出=False)
     def health_check(self) -> Dict[str, Any]:
         """
         优化的健康检查
