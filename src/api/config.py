@@ -37,9 +37,7 @@ class APIConfig(BaseSettings):
         description="数据库连接URL"
     )
 
-    # Redis配置
-    redis_url: str = Field(default="redis://localhost:6379/0", description="Redis连接URL")
-
+    
     # JWT配置
     jwt_secret_key: str = Field(
         default="your-secret-key-here",

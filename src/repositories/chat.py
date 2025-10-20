@@ -55,7 +55,9 @@ class ChatRepository(BaseRepository):
         Args:
             session: 数据库会话
         """
-        super().__init__(session)
+        # ChatRepository可以管理多个模型，不指定单一模型
+        # 暂时使用ChatSession作为默认模型
+        super().__init__(session, ChatSession)
 
     # ==================== 会话管理 ====================
 

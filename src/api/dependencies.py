@@ -14,7 +14,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-import redis.asyncio as redis
 
 from src.services import (
     AuthService,
@@ -44,9 +43,13 @@ class ServiceFactory:
     """服务工厂类，统一管理所有服务的创建和依赖注入"""
 
     def __init__(self):
+        """
+        初始化服务工厂
+
+        移除Redis依赖，使用数据库存储替代Redis功能
+        """
         self._db_engine = None
         self._db_session_factory = None
-        self._redis_client = None
 
         # Repository缓存
         self._repositories: Dict[str, Any] = {}
@@ -55,7 +58,11 @@ class ServiceFactory:
         self._services: Dict[str, Any] = {}
 
     async def initialize(self):
-        """初始化工厂，建立数据库和Redis连接"""
+        """
+        初始化工厂，建立数据库连接
+
+        移除Redis依赖，仅初始化数据库连接
+        """
         # 确保使用异步数据库URL
         database_url = config.database_url
         if database_url.startswith("sqlite:///"):
@@ -75,20 +82,14 @@ class ServiceFactory:
             expire_on_commit=False
         )
 
-        # 初始化Redis连接
-        self._redis_client = redis.from_url(
-            config.redis_url,
-            encoding="utf-8",
-            decode_responses=True
-        )
-
     async def close(self):
-        """关闭所有连接"""
+        """
+        关闭所有连接
+
+        移除Redis依赖，仅关闭数据库连接
+        """
         if self._db_engine:
             await self._db_engine.dispose()
-
-        if self._redis_client:
-            await self._redis_client.close()
 
     # 数据库连接管理
     @asynccontextmanager
@@ -107,12 +108,7 @@ class ServiceFactory:
             finally:
                 await session.close()
 
-    def get_redis_client(self) -> redis.Redis:
-        """获取Redis客户端"""
-        if not self._redis_client:
-            raise RuntimeError("ServiceFactory未初始化")
-        return self._redis_client
-
+    
     # Repository创建
     def get_user_repository(self, session: AsyncSession) -> UserRepository:
         """获取用户Repository实例"""
@@ -151,12 +147,15 @@ class ServiceFactory:
 
     # Service创建
     async def get_auth_service(self, session: AsyncSession) -> AuthService:
-        """获取认证Service实例"""
+        """
+        获取认证Service实例
+
+        移除Redis依赖，使用数据库存储替代Redis功能
+        """
         cache_key = f"auth_service_{id(session)}"
         if cache_key not in self._services:
             user_repo = self.get_user_repository(session)
-            redis_client = self.get_redis_client()
-            self._services[cache_key] = AuthService(user_repo, redis_client)
+            self._services[cache_key] = AuthService(user_repo)
         return self._services[cache_key]
 
     async def get_user_service(self, session: AsyncSession) -> UserService:
@@ -235,9 +234,6 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_redis_client() -> redis.Redis:
-    """获取Redis客户端的FastAPI依赖"""
-    return service_factory.get_redis_client()
 
 
 # 用户认证依赖
