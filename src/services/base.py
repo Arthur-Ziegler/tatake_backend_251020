@@ -23,17 +23,20 @@
 """
 
 from abc import ABC
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 from datetime import datetime
 
 from src.repositories.base import BaseRepository
-from src.repositories.user import UserRepository
-from src.repositories.task import TaskRepository
-from src.repositories.focus import FocusRepository
-from src.repositories.reward import RewardRepository
-from src.repositories.chat import ChatRepository
 from .exceptions import BusinessException, wrap_repository_error
 from .logging_config import get_logger, operation_logger, performance_logger
+
+# 避免循环导入
+if TYPE_CHECKING:
+    from src.repositories.user import UserRepository
+    from src.repositories.task import TaskRepository
+    from src.repositories.focus import FocusRepository
+    from src.repositories.reward import RewardRepository
+    from src.repositories.chat import ChatRepository
 
 
 class BaseService(ABC):
@@ -52,11 +55,11 @@ class BaseService(ABC):
 
     def __init__(
         self,
-        user_repo: Optional[UserRepository] = None,
-        task_repo: Optional[TaskRepository] = None,
-        focus_repo: Optional[FocusRepository] = None,
-        reward_repo: Optional[RewardRepository] = None,
-        chat_repo: Optional[ChatRepository] = None
+        user_repo: Optional['UserRepository'] = None,
+        task_repo: Optional['TaskRepository'] = None,
+        focus_repo: Optional['FocusRepository'] = None,
+        reward_repo: Optional['RewardRepository'] = None,
+        chat_repo: Optional['ChatRepository'] = None
     ):
         """
         初始化服务基类
@@ -498,11 +501,11 @@ class ServiceFactory:
     @staticmethod
     def create_service(
         service_class: type,
-        user_repo: Optional[UserRepository] = None,
-        task_repo: Optional[TaskRepository] = None,
-        focus_repo: Optional[FocusRepository] = None,
-        reward_repo: Optional[RewardRepository] = None,
-        chat_repo: Optional[ChatRepository] = None
+        user_repo: Optional['UserRepository'] = None,
+        task_repo: Optional['TaskRepository'] = None,
+        focus_repo: Optional['FocusRepository'] = None,
+        reward_repo: Optional['RewardRepository'] = None,
+        chat_repo: Optional['ChatRepository'] = None
     ) -> BaseService:
         """
         创建服务实例

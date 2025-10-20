@@ -41,7 +41,7 @@ security = HTTPBearer()
 # 任务基础CRUD操作
 # ================================
 
-@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     request: TaskCreateRequest,
     current_user: dict = Depends(get_current_user),
@@ -756,4 +756,133 @@ async def get_task_statistics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取任务统计失败: {str(e)}"
+        )
+
+
+# ================================
+# 任务搜索和筛选API
+# ================================
+
+@router.get("/search", response_model=PaginatedResponse)
+async def search_tasks(
+    q: str = Query(..., min_length=1, description="搜索关键词"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    include_completed: bool = Query(True, description="是否包含已完成任务"),
+    current_user: dict = Depends(get_current_user),
+    task_service = Depends(get_task_service)
+):
+    """
+    搜索任务API
+
+    根据关键词搜索用户的任务，支持分页和筛选。
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现任务搜索逻辑
+        search_results = task_service.search_tasks(
+            user_id=user_id,
+            query=q,
+            page=page,
+            page_size=page_size,
+            include_completed=include_completed
+        )
+
+        return create_success_response(
+            data=search_results,
+            message="搜索任务成功"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Task] 搜索任务失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"搜索任务失败: {str(e)}"
+        )
+
+
+@router.get("/filter", response_model=PaginatedResponse)
+async def filter_tasks(
+    status: Optional[List[str]] = Query(None, description="任务状态筛选"),
+    priority: Optional[List[str]] = Query(None, description="优先级筛选"),
+    tags: Optional[List[str]] = Query(None, description="标签筛选"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: dict = Depends(get_current_user),
+    task_service = Depends(get_task_service)
+):
+    """
+    筛选任务API
+
+    根据多个条件筛选用户的任务，支持分页。
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现任务筛选逻辑
+        filter_results = task_service.filter_tasks(
+            user_id=user_id,
+            status=status,
+            priority=priority,
+            tags=tags,
+            page=page,
+            page_size=page_size
+        )
+
+        return create_success_response(
+            data=filter_results,
+            message="筛选任务成功"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Task] 筛选任务失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"筛选任务失败: {str(e)}"
+        )
+
+
+# ================================
+# Top3任务管理API
+# ================================
+
+@router.post("/top3", response_model=BaseResponse)
+async def set_top3_tasks(
+    date: str = Query(..., description="日期，格式：YYYY-MM-DD"),
+    task_ids: List[str] = Body(..., min_items=1, max_items=3, description="任务ID列表"),
+    current_user: dict = Depends(get_current_user),
+    task_service = Depends(get_task_service)
+):
+    """
+    设置每日Top3任务API
+
+    为指定日期设置最重要的3个任务。
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现Top3任务设置逻辑
+        result = task_service.set_top3_tasks(
+            user_id=user_id,
+            date=date,
+            task_ids=task_ids
+        )
+
+        return create_success_response(
+            data=result,
+            message="设置Top3任务成功"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Task] 设置Top3任务失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"设置Top3任务失败: {str(e)}"
         )

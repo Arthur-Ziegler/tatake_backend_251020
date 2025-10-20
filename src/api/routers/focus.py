@@ -14,20 +14,25 @@
 5. 性能优化：数据库查询优化和响应缓存
 
 API端点概览：
-- POST   /focus/sessions              - 创建专注会话
-- POST   /focus/sessions/{id}/start   - 开始专注会话
-- POST   /focus/sessions/{id}/pause   - 暂停专注会话
-- POST   /focus/sessions/{id}/resume  - 恢复专注会话
-- POST   /focus/sessions/{id}/complete - 完成专注会话
-- GET    /focus/sessions              - 获取专注会话列表
-- GET    /focus/sessions/{id}         - 获取专注会话详情
-- DELETE /focus/sessions/{id}         - 删除专注会话
-- GET    /focus/statistics            - 获取专注统计数据
-- POST   /focus/templates             - 创建专注模板
-- GET    /focus/templates             - 获取专注模板列表
-- GET    /focus/templates/{id}        - 获取专注模板详情
-- PUT    /focus/templates/{id}        - 更新专注模板
-- DELETE /focus/templates/{id}        - 删除专注模板
+- POST   /sessions              - 创建专注会话
+- POST   /sessions/{id}/start   - 开始专注会话
+- POST   /sessions/{id}/pause   - 暂停专注会话
+- POST   /sessions/{id}/resume  - 恢复专注会话
+- POST   /sessions/{id}/complete - 完成专注会话
+- GET    /sessions              - 获取专注会话列表
+- GET    /sessions/{id}         - 获取专注会话详情
+- DELETE /sessions/{id}         - 删除专注会话
+- GET    /statistics            - 获取专注统计数据
+- POST   /templates             - 创建专注模板
+- GET    /templates             - 获取专注模板列表
+- GET    /templates/{id}        - 获取专注模板详情
+- PUT    /templates/{id}        - 更新专注模板
+- DELETE /templates/{id}        - 删除专注模板
+
+注意：由于路由器注册时使用了 /focus 前缀，所以实际API路径为：
+- POST /api/v1/focus/sessions
+- GET /api/v1/focus/statistics
+- 等等...
 
 使用示例：
     # 创建专注会话
@@ -62,12 +67,12 @@ from ..schemas import (
     FocusTemplateResponse
 )
 from ..dependencies import get_current_user, get_db_session
-from ...services.exceptions import (
+from src.services.exceptions import (
     BusinessException, ValidationException,
     ResourceNotFoundException
 )
-from ...repositories.focus import FocusRepository
-from ...repositories.async_base import AsyncBaseRepository
+from src.repositories.focus import FocusRepository
+from src.repositories.async_base import AsyncBaseRepository
 
 
 # 创建路由器实例
@@ -857,6 +862,91 @@ async def delete_focus_template(
             detail="专注模板删除功能正在开发中"
         )
 
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "INTERNAL_ERROR",
+                "message": "服务器内部错误",
+                "details": {"original_error": str(e)}
+            }
+        )
+
+
+@router.get(
+    "/tasks/{task_id}/sessions",
+    response_model=PaginatedResponse,
+    summary="获取任务的专注会话记录",
+    description="获取指定任务的所有专注会话记录，按时间倒序排列"
+)
+async def get_task_focus_sessions(
+    task_id: str,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: dict = Depends(get_current_user),
+    focus_repo: FocusRepository = Depends(get_focus_repository)
+):
+    """
+    获取任务的专注会话记录API端点
+
+    获取指定任务的所有专注会话记录，支持分页查询。
+
+    Args:
+        task_id: 任务ID
+        page: 页码，从1开始
+        page_size: 每页记录数
+        current_user: 当前认证用户信息
+        focus_repo: 专注系统Repository实例
+
+    Returns:
+        PaginatedResponse: 分页的专注会话记录列表
+
+    Raises:
+        ResourceNotFoundException: 任务不存在
+        BusinessException: 查询失败
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现任务专注会话查询逻辑
+        # 1. 验证任务存在且属于当前用户
+        # 2. 查询任务的所有专注会话记录
+        # 3. 按时间倒序排列并分页
+        # 4. 返回分页结果
+
+        # 临时返回空结果
+        return PaginatedResponse(
+            success=True,
+            message="获取任务专注会话记录成功",
+            data={
+                "items": [],
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total": 0,
+                    "total_pages": 0
+                }
+            }
+        )
+
+    except ResourceNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error_code": "TASK_NOT_FOUND",
+                "message": e.user_message or "任务不存在",
+                "details": e.details
+            }
+        )
+    except BusinessException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "BUSINESS_ERROR",
+                "message": e.user_message or "业务逻辑错误",
+                "details": e.details
+            }
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
