@@ -25,6 +25,7 @@ from src.services import (
     StatisticsService,
     ChatService
 )
+from src.services.async_auth_service import AsyncAuthService
 from src.repositories import (
     UserRepository,
     TaskRepository,
@@ -36,6 +37,8 @@ from src.repositories import (
     UserSessionRepository,
     AuthLogRepository
 )
+from src.repositories.async_user import AsyncUserRepository
+from src.repositories.async_auth import AsyncAuthRepository
 from .middleware.auth import verify_token
 from .config import config
 
@@ -203,6 +206,41 @@ class ServiceFactory:
             )
         return self._services[cache_key]
 
+    # ============= 异步Repository创建 =============
+
+    def get_async_user_repository(self, session: AsyncSession) -> AsyncUserRepository:
+        """获取异步用户Repository实例"""
+        cache_key = f"async_user_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = AsyncUserRepository(session)
+        return self._repositories[cache_key]
+
+    def get_async_auth_repository(self, session: AsyncSession) -> AsyncAuthRepository:
+        """获取异步认证Repository实例"""
+        cache_key = f"async_auth_repo_{id(session)}"
+        if cache_key not in self._repositories:
+            self._repositories[cache_key] = AsyncAuthRepository(session)
+        return self._repositories[cache_key]
+
+    # ============= 异步Service创建 =============
+
+    async def get_async_auth_service(self, session: AsyncSession) -> AsyncAuthService:
+        """
+        获取异步认证Service实例
+
+        使用异步Repository，提供高性能的认证服务
+        """
+        cache_key = f"async_auth_service_{id(session)}"
+        if cache_key not in self._services:
+            user_repo = self.get_async_user_repository(session)
+            auth_repo = self.get_async_auth_repository(session)
+
+            self._services[cache_key] = AsyncAuthService(
+                user_repo=user_repo,
+                auth_repo=auth_repo
+            )
+        return self._services[cache_key]
+
     async def get_user_service(self, session: AsyncSession) -> UserService:
         """获取用户Service实例"""
         cache_key = f"user_service_{id(session)}"
@@ -357,6 +395,13 @@ async def get_auth_service(
 ) -> AuthService:
     """获取认证Service的FastAPI依赖"""
     return await service_factory.get_auth_service(session)
+
+
+async def get_async_auth_service(
+    session: AsyncSession = Depends(get_db_session)
+) -> AsyncAuthService:
+    """获取异步认证Service的FastAPI依赖"""
+    return await service_factory.get_async_auth_service(session)
 
 
 async def get_user_service(

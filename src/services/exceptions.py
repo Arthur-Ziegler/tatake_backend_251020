@@ -383,6 +383,62 @@ class AuthenticationException(BusinessException):
         )
 
 
+class RateLimitException(BusinessException):
+    """
+    频率限制异常类
+
+    当请求频率超出限制时抛出此异常。
+    主要用于短信发送、API调用等场景的频率控制。
+    """
+
+    def __init__(
+        self,
+        message: str,
+        cooldown_seconds: int = 0,
+        limit_type: str = "unknown",
+        **kwargs
+    ):
+        """
+        初始化频率限制异常
+
+        Args:
+            message: 错误消息
+            cooldown_seconds: 冷却时间（秒）
+            limit_type: 限制类型（hourly、daily、cooldown等）
+            **kwargs: 传递给父类的其他参数
+        """
+        details = {
+            "limit_type": limit_type,
+            "cooldown_seconds": cooldown_seconds
+        }
+
+        suggestions = [
+            "请稍后再试",
+            "检查操作频率是否过高"
+        ]
+
+        if cooldown_seconds > 0:
+            minutes = cooldown_seconds // 60
+            seconds = cooldown_seconds % 60
+            if minutes > 0:
+                user_message = f"请求过于频繁，请{minutes}分钟{seconds}秒后再试"
+            else:
+                user_message = f"请求过于频繁，请{seconds}秒后再试"
+            suggestions.append(f"等待{cooldown_seconds}秒后重新尝试")
+        else:
+            user_message = "请求过于频繁，请稍后再试"
+
+        kwargs.setdefault("details", {}).update(details)
+        kwargs.setdefault("user_message", user_message)
+        kwargs.setdefault("suggestions", []).extend(suggestions)
+
+        super().__init__(
+            error_code="RATE_LIMIT_EXCEEDED",
+            message=message,
+            **kwargs
+        )
+
+
 class AuthorizationException(BusinessException):
     """
     授权异常类

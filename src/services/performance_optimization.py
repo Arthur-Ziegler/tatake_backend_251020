@@ -550,3 +550,23 @@ def 快速验证必填字段(数据: Dict[str, Any], 必填字段: list) -> None
             value=缺失字段,
             user_message=f"缺少必填字段: {', '.join(缺失字段)}"
         )
+
+
+# ==================== 英文别名（向后兼容） ====================
+
+# 类名别名
+SmartExceptionHandler = 智能异常处理器
+FastExceptionHandler = 快速异常处理器
+PerformanceMonitor = 性能监控器
+ConditionalLogging = 条件日志记录
+
+# 函数别名
+get_optimized_exception_handler = 获取优化异常处理器
+handle_exception_automatically = 自动处理异常
+fast_validate_required_fields = 快速验证必填字段
+fast_validate_required = 快速验证必填字段
+conditional_log = 条件日志记录
+performance_monitor = 性能监控器
+
+# 装饰器别名
+auto_handle_exception = 自动处理异常

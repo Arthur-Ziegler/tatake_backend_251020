@@ -10,8 +10,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from ..dependencies import get_current_user, get_optional_current_user, get_auth_service, get_jwt_service
+from ..dependencies import get_current_user, get_optional_current_user, get_auth_service, get_async_auth_service, get_jwt_service
 from src.services import AuthService, JWTService
+from src.services.async_auth_service import AsyncAuthService
 from ..schemas import (
     # 请求模型
     GuestInitRequest,
@@ -212,7 +213,9 @@ async def guest_upgrade(
 
 @router.post("/sms/send", response_model=BaseResponse)
 async def send_sms_code(
-    request: SMSCodeRequest
+    request: SMSCodeRequest,
+    auth_service: AsyncAuthService = Depends(get_async_auth_service),
+    client_ip: str = Depends(lambda: None)  # 获取客户端IP
 ):
     """
     发送短信验证码
@@ -221,6 +224,8 @@ async def send_sms_code(
 
     Args:
         request: 短信验证码请求，包含手机号和验证码类型
+        auth_service: 异步认证服务实例
+        client_ip: 客户端IP地址
 
     Returns:
         BaseResponse: 操作结果
@@ -229,27 +234,77 @@ async def send_sms_code(
         HTTPException: 当手机号格式错误、发送频率限制或发送失败时
     """
     try:
-        # TODO: 集成AuthService发送验证码
-        # auth_service = get_auth_service()
-        # auth_service.send_sms_code(request.phone, request.type)
+        # 验证请求参数
+        if not request.phone:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="手机号不能为空"
+            )
 
-        # 临时模拟发送成功
+        if not request.type:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="验证码类型不能为空"
+            )
+
+        # 验证验证码类型
+        valid_types = ["login", "register", "reset_password"]
+        if request.type not in valid_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"无效的验证码类型，支持的类型: {', '.join(valid_types)}"
+            )
+
+        # 使用异步AuthService发送验证码
+        result = await auth_service.send_sms_verification(
+            phone=request.phone,
+            verification_type=request.type,
+            ip_address=client_ip
+        )
+
         return create_success_response(
-            message="验证码发送成功，请注意查收"
+            message=result.get("message", "验证码发送成功"),
+            data={
+                "cooldown_seconds": result.get("cooldown_seconds", 60),
+                "type": request.type,
+                "success": result.get("success", True)
+            }
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"验证码发送失败: {str(e)}"
-        )
+        # 记录详细错误信息
+        print(f"[SMS] 短信发送异常: {str(e)}")
+
+        # 根据异常类型返回不同的HTTP状态码
+        error_message = str(e).lower()
+        if "手机号格式" in error_message or "phone" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="手机号格式不正确"
+            )
+        elif "频率" in error_message or "rate" in error_message or "限制" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="发送过于频繁，请稍后再试"
+            )
+        elif "验证码" in error_message or "verification" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="验证码发送失败，请检查手机号"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="短信发送失败，请稍后重试"
+            )
 
 
 @router.post("/login", response_model=AuthResponse)
 async def login(
-    request: LoginRequest
+    request: LoginRequest,
+    auth_service: AsyncAuthService = Depends(get_async_auth_service)
 ):
     """
     用户登录
@@ -258,6 +313,7 @@ async def login(
 
     Args:
         request: 登录请求，包含登录类型、凭证和验证码
+        auth_service: 异步认证服务实例
 
     Returns:
         AuthResponse: 包含用户信息和认证令牌
@@ -266,56 +322,90 @@ async def login(
         HTTPException: 当登录凭证错误、验证码失效或登录失败时
     """
     try:
-        # TODO: 集成AuthService进行登录验证
-        # auth_service = get_auth_service()
-        # user_info = auth_service.authenticate_user(request.dict())
+        # 根据登录类型选择不同的登录方式
+        if request.login_type == "phone":
+            if not request.phone:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="手机号不能为空"
+                )
 
-        # 临时模拟登录成功
-        user_id = f"user_{datetime.utcnow().timestamp()}"
-        user_type = "registered" if request.login_type != "guest" else "guest"
+            # 手机号验证码登录
+            login_result = await auth_service.login_with_phone(
+                phone=request.phone,
+                code=request.verification_code,
+                device_id=request.device_id
+            )
 
-        # 创建访问令牌
-        access_token_expires = timedelta(minutes=config.jwt_access_token_expire_minutes)
-        access_token = create_access_token(
-            data={
-                "user_id": user_id,
-                "user_type": user_type,
-                "is_guest": False,
-                "device_id": request.device_id
-            },
-            expires_delta=access_token_expires
-        )
+        elif request.login_type == "email":
+            if not request.email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="邮箱不能为空"
+                )
 
-        # 创建刷新令牌
-        refresh_token = create_refresh_token(
-            data={
-                "user_id": user_id,
-                "user_type": user_type,
-                "is_guest": False,
-                "device_id": request.device_id
-            }
+            # 邮箱验证码登录（暂时使用验证码，后续可能改为密码）
+            login_result = await auth_service.login_with_phone(
+                phone=request.email,  # 临时使用phone字段存储邮箱
+                code=request.verification_code,
+                device_id=request.device_id
+            )
+
+        elif request.login_type == "wechat":
+            # 微信登录（暂时不支持，返回错误）
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail="微信登录暂未实现"
+            )
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"不支持的登录类型: {request.login_type}"
+            )
+
+        # 转换为AuthResponse格式
+        auth_response = AuthResponse(
+            user_id=login_result["user"]["id"],
+            user_type=login_result["user"].get("user_type", "registered"),
+            is_guest=login_result["user"].get("is_guest", False),
+            access_token=login_result["access_token"],
+            refresh_token=login_result["refresh_token"],
+            expires_in=login_result["expires_in"],
+            token_type="bearer"
         )
 
         return create_success_response(
-            data=AuthResponse(
-                user_id=user_id,
-                user_type=user_type,
-                is_guest=False,
-                access_token=access_token,
-                refresh_token=refresh_token,
-                expires_in=config.jwt_access_token_expire_minutes * 60,
-                token_type="bearer"
-            ),
+            data=auth_response,
             message="登录成功"
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"登录失败: {str(e)}"
-        )
+        # 根据异常类型返回不同的HTTP状态码和错误信息
+        error_message = str(e).lower()
+
+        if "验证码" in error_message or "verification" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="验证码错误或已过期"
+            )
+        elif "用户不存在" in error_message or "not found" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="用户不存在"
+            )
+        elif "频率" in error_message or "rate" in error_message:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="登录过于频繁，请稍后再试"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"登录失败: {str(e)}"
+            )
 
 
 @router.post("/refresh", response_model=dict)

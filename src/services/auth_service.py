@@ -24,7 +24,7 @@ import uuid
 import hashlib
 import secrets
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Tuple
 
 from .base import BaseService
@@ -113,10 +113,10 @@ class AuthService(BaseService):
             BusinessException: 当账号创建失败时
         """
         try:
-            self._log_info("开始初始化游客账号", {
-                "device_id": device_id,
-                "platform": platform
-            })
+            self._log_info("开始初始化游客账号",
+                device_id=device_id,
+                platform=platform
+            )
 
             # 生成唯一的游客用户ID
             guest_user_id = f"guest_{uuid.uuid4().hex[:16]}"
@@ -136,7 +136,7 @@ class AuthService(BaseService):
             }
 
             # 创建用户
-            guest_user = self.get_user_repository().create(user_data)
+            guest_user = self._user_repo.create(user_data)
 
             # 生成令牌
             access_token, refresh_token = self._generate_tokens(guest_user)
@@ -155,20 +155,17 @@ class AuthService(BaseService):
                 }
             }
 
-            self._log_info("游客账号初始化成功", {
-                "user_id": guest_user.id,
-                "device_id": device_id
-            })
+            self._log_info("游客账号初始化成功",
+                user_id=guest_user.id,
+                device_id=device_id
+            )
 
             return response
 
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "init_guest_account", {
-                "device_id": device_id,
-                "platform": platform
-            })
+            self._handle_repository_error(e, "init_guest_account")
 
     def upgrade_guest_account(
         self,
@@ -197,10 +194,10 @@ class AuthService(BaseService):
             AuthenticationException: 当验证失败时
         """
         try:
-            self._log_info("开始游客账号升级", {
-                "guest_user_id": guest_user_id,
-                "upgrade_type": upgrade_type
-            })
+            self._log_info("开始游客账号升级",
+                guest_user_id=guest_user_id,
+                upgrade_type=upgrade_type
+            )
 
             # 验证升级类型
             if upgrade_type not in ["phone", "email", "wechat"]:
@@ -211,7 +208,7 @@ class AuthService(BaseService):
 
             # 检查游客账号是否存在
             guest_user = self._check_resource_exists(
-                self.get_user_repository(),
+                self._user_repo,
                 guest_user_id,
                 "游客账号"
             )
@@ -249,7 +246,7 @@ class AuthService(BaseService):
                 update_data["nickname"] = upgrade_data["nickname"]
 
             # 升级游客账号
-            updated_user = self.get_user_repository().upgrade_guest_to_registered(
+            updated_user = self._user_repo.upgrade_guest_to_registered(
                 guest_user_id,
                 **update_data
             )
@@ -275,20 +272,17 @@ class AuthService(BaseService):
                 }
             }
 
-            self._log_info("游客账号升级成功", {
-                "user_id": updated_user.id,
-                "upgrade_type": upgrade_type
-            })
+            self._log_info("游客账号升级成功",
+                user_id=updated_user.id,
+                upgrade_type=upgrade_type
+            )
 
             return response
 
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "upgrade_guest_account", {
-                "guest_user_id": guest_user_id,
-                "upgrade_type": upgrade_type
-            })
+            self._handle_repository_error(e, "upgrade_guest_account")
 
     # ==================== 用户登录 ====================
 
@@ -316,9 +310,9 @@ class AuthService(BaseService):
             ResourceNotFoundException: 当用户不存在时
         """
         try:
-            self._log_info("开始用户登录", {
-                "login_type": login_type
-            })
+            self._log_info("开始用户登录",
+                login_type=login_type
+            )
 
             # 验证登录类型
             if login_type not in ["phone_password", "phone_sms", "email_password", "email_code", "wechat"]:
@@ -374,19 +368,17 @@ class AuthService(BaseService):
                 }
             }
 
-            self._log_info("用户登录成功", {
-                "user_id": user.id,
-                "login_type": login_type
-            })
+            self._log_info("用户登录成功",
+                user_id=user.id,
+                login_type=login_type
+            )
 
             return response
 
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "login", {
-                "login_type": login_type
-            })
+            self._handle_repository_error(e, "login")
 
     # ==================== 令牌管理 ====================
 
@@ -415,7 +407,7 @@ class AuthService(BaseService):
 
             # 获取用户信息
             user = self._check_resource_exists(
-                self.get_user_repository(),
+                self._user_repo,
                 user_id,
                 "用户"
             )
@@ -436,9 +428,9 @@ class AuthService(BaseService):
                 "expires_in": int(self._token_expiry.total_seconds())
             }
 
-            self._log_info("令牌刷新成功", {
-                "user_id": user_id
-            })
+            self._log_info("令牌刷新成功",
+                user_id=user_id
+            )
 
             return response
 
@@ -464,13 +456,13 @@ class AuthService(BaseService):
             ResourceNotFoundException: 当用户不存在时
         """
         try:
-            self._log_info("开始用户登出", {
-                "user_id": user_id
-            })
+            self._log_info("开始用户登出",
+                user_id=user_id
+            )
 
             # 验证用户存在
             user = self._check_resource_exists(
-                self.get_user_repository(),
+                self._user_repo,
                 user_id,
                 "用户"
             )
@@ -484,18 +476,16 @@ class AuthService(BaseService):
                 "message": "登出成功"
             }
 
-            self._log_info("用户登出成功", {
-                "user_id": user_id
-            })
+            self._log_info("用户登出成功",
+                user_id=user_id
+            )
 
             return response
 
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "logout", {
-                "user_id": user_id
-            })
+            self._handle_repository_error(e, "logout")
 
     # ==================== 短信验证码 ====================
 
@@ -518,10 +508,10 @@ class AuthService(BaseService):
             BusinessException: 当发送频率过高时
         """
         try:
-            self._log_info("开始发送短信验证码", {
-                "phone": phone,
-                "sms_type": sms_type
-            })
+            self._log_info("开始发送短信验证码",
+                phone=phone,
+                sms_type=sms_type
+            )
 
             # 验证手机号格式
             if not self._validate_phone_format(phone):
@@ -548,7 +538,7 @@ class AuthService(BaseService):
                 )
 
             # 检查手机号是否已存在（注册时需要检查）
-            if sms_type == "register" and self.get_user_repository().phone_exists(phone):
+            if sms_type == "register" and self._user_repo.phone_exists(phone):
                 raise DuplicateResourceException(
                     resource_type="User",
                     conflict_field="phone",
@@ -557,7 +547,7 @@ class AuthService(BaseService):
                 )
 
             # 检查手机号是否存在（登录时需要检查）
-            if sms_type == "login" and not self.get_user_repository().phone_exists(phone):
+            if sms_type == "login" and not self._user_repo.phone_exists(phone):
                 raise ResourceNotFoundException(
                     resource_type="User",
                     user_message="该手机号未注册，请先注册"
@@ -583,10 +573,10 @@ class AuthService(BaseService):
                     "next_send_time": (datetime.now() + self._sms_cooldown).isoformat()
                 }
 
-                self._log_info("短信验证码发送成功", {
-                    "phone": phone,
-                    "sms_type": sms_type
-                })
+                self._log_info("短信验证码发送成功",
+                phone=phone,
+                sms_type=sms_type
+            )
 
                 return response
             else:
@@ -599,10 +589,7 @@ class AuthService(BaseService):
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "send_sms_code", {
-                "phone": phone,
-                "sms_type": sms_type
-            })
+            self._handle_repository_error(e, "send_sms_code")
 
     # ==================== 用户信息获取 ====================
 
@@ -622,13 +609,13 @@ class AuthService(BaseService):
             ResourceNotFoundException: 当用户不存在时
         """
         try:
-            self._log_info("获取用户信息", {
-                "user_id": user_id
-            })
+            self._log_info("获取用户信息",
+                user_id=user_id
+            )
 
             # 获取用户信息
             user = self._check_resource_exists(
-                self.get_user_repository(),
+                self._user_repo,
                 user_id,
                 "用户"
             )
@@ -649,18 +636,16 @@ class AuthService(BaseService):
                 "updated_at": user.updated_at.isoformat() if user.updated_at else None
             })
 
-            self._log_info("用户信息获取成功", {
-                "user_id": user_id
-            })
+            self._log_info("用户信息获取成功",
+                user_id=user_id
+            )
 
             return {"user_info": user_info}
 
         except Exception as e:
             if isinstance(e, BusinessException):
                 raise
-            self._handle_repository_error(e, "get_user_info", {
-                "user_id": user_id
-            })
+            self._handle_repository_error(e, "get_user_info")
 
     # ==================== 私有方法 ====================
 
@@ -747,7 +732,7 @@ class AuthService(BaseService):
             )
 
         # 检查手机号是否已存在
-        if self.get_user_repository().phone_exists(phone):
+        if self._user_repo.phone_exists(phone):
             raise DuplicateResourceException(
                 resource_type="User",
                 conflict_field="phone",
@@ -766,7 +751,7 @@ class AuthService(BaseService):
             "phone": phone,
             "password_hash": password_hash
         }
-        self.get_user_repository().update(guest_user.id, update_data)
+        self._user_repo.update(guest_user.id, update_data)
 
     def _upgrade_by_email(self, guest_user: User, email: str, email_code: str, **kwargs) -> None:
         """
@@ -786,7 +771,7 @@ class AuthService(BaseService):
             )
 
         # 检查邮箱是否已存在
-        if self.get_user_repository().email_exists(email):
+        if self._user_repo.email_exists(email):
             raise DuplicateResourceException(
                 resource_type="User",
                 conflict_field="email",
@@ -801,7 +786,7 @@ class AuthService(BaseService):
         update_data = {
             "email": email
         }
-        self.get_user_repository().update(guest_user.id, update_data)
+        self._user_repo.update(guest_user.id, update_data)
 
     def _upgrade_by_wechat(self, guest_user: User, wechat_openid: str, **kwargs) -> None:
         """
@@ -813,7 +798,7 @@ class AuthService(BaseService):
             **kwargs: 其他参数
         """
         # 检查微信OpenID是否已存在
-        existing_user = self.get_user_repository().find_by_wechat_openid(wechat_openid)
+        existing_user = self._user_repo.find_by_wechat_openid(wechat_openid)
         if existing_user:
             raise DuplicateResourceException(
                 resource_type="User",
@@ -826,11 +811,11 @@ class AuthService(BaseService):
         update_data = {
             "wechat_openid": wechat_openid
         }
-        self.get_user_repository().update(guest_user.id, update_data)
+        self._user_repo.update(guest_user.id, update_data)
 
     def _login_by_phone_password(self, phone: str, password: str, **kwargs) -> Optional[User]:
         """手机号密码登录"""
-        user = self.get_user_repository().find_by_phone(phone)
+        user = self._user_repo.find_by_phone(phone)
         if not user:
             raise AuthenticationException(
                 reason="用户不存在",
@@ -848,7 +833,7 @@ class AuthService(BaseService):
 
     def _login_by_phone_sms(self, phone: str, sms_code: str, **kwargs) -> Optional[User]:
         """手机号验证码登录"""
-        user = self.get_user_repository().find_by_phone(phone)
+        user = self._user_repo.find_by_phone(phone)
         if not user:
             raise AuthenticationException(
                 reason="用户不存在",
@@ -862,7 +847,7 @@ class AuthService(BaseService):
 
     def _login_by_email_password(self, email: str, password: str, **kwargs) -> Optional[User]:
         """邮箱密码登录"""
-        user = self.get_user_repository().find_by_email(email)
+        user = self._user_repo.find_by_email(email)
         if not user:
             raise AuthenticationException(
                 reason="用户不存在",
@@ -880,7 +865,7 @@ class AuthService(BaseService):
 
     def _login_by_email_code(self, email: str, email_code: str, **kwargs) -> Optional[User]:
         """邮箱验证码登录"""
-        user = self.get_user_repository().find_by_email(email)
+        user = self._user_repo.find_by_email(email)
         if not user:
             raise AuthenticationException(
                 reason="用户不存在",
@@ -894,7 +879,7 @@ class AuthService(BaseService):
 
     def _login_by_wechat(self, wechat_openid: str, **kwargs) -> Optional[User]:
         """微信登录"""
-        user = self.get_user_repository().find_by_wechat_openid(wechat_openid)
+        user = self._user_repo.find_by_wechat_openid(wechat_openid)
         if not user:
             # 微信自动注册逻辑
             return self._auto_register_wechat_user(wechat_openid, **kwargs)
@@ -925,7 +910,7 @@ class AuthService(BaseService):
             "updated_at": datetime.now()
         }
 
-        return self.get_user_repository().create(user_data)
+        return self._user_repo.create(user_data)
 
     # ==================== 工具方法 ====================
 
@@ -1032,10 +1017,9 @@ class AuthService(BaseService):
 
         except Exception as e:
             # 数据库查询失败时，为了安全起见，假设在冷却期内
-            self._log_error("检查短信冷却时间失败", {
-                "phone": phone,
-                "error": str(e)
-            })
+            self._log_error("检查短信冷却时间失败", error=e,
+                    phone=phone
+                )
             return {
                 "in_cooldown": True,
                 "cooldown_seconds": int(self._sms_cooldown.total_seconds()),
@@ -1067,17 +1051,16 @@ class AuthService(BaseService):
 
             await self._sms_verification_repo.create_verification_record(verification_data)
 
-            self._log_info("短信验证码记录创建成功", {
-                "phone": phone,
-                "sms_type": sms_type,
-                "expires_at": verification_data['expires_at'].isoformat()
-            })
+            self._log_info("短信验证码记录创建成功",
+                phone=phone,
+                sms_type=sms_type,
+                expires_at=verification_data['expires_at'].isoformat()
+            )
 
         except Exception as e:
             # 记录失败不应该影响发送成功，但需要记录错误
-            self._log_error("短信验证码记录创建失败", {
-                "phone": phone,
-                "sms_type": sms_type,
-                "error": str(e)
-            })
+            self._log_error("短信验证码记录创建失败", error=e,
+                    phone=phone,
+                    sms_type=sms_type
+                )
             # 不抛出异常，因为短信已经发送成功

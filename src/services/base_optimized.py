@@ -37,7 +37,7 @@ from .performance_optimization import (
 )
 
 
-class 优化服务基类:
+class OptimizedBaseService:
     """
     优化版服务基类
 

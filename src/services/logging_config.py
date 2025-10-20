@@ -207,7 +207,6 @@ class ServiceLogger:
             f"操作失败: {operation} - {str(error)}",
             operation=operation,
             extra_data={"error_type": type(error).__name__, "error_message": str(error)},
-            exc_info=True,
             **kwargs
         )
 

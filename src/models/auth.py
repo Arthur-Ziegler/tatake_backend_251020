@@ -27,6 +27,29 @@ from sqlalchemy.sql import expression
 from src.models.base_model import BaseSQLModel
 
 
+class SMSRecord(BaseSQLModel, table=True):
+    """简化的短信记录表，用于异步认证Repository"""
+
+    __tablename__ = "sms_record"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    phone: str = Field(max_length=20, description="手机号码")
+    verification_type: str = Field(max_length=20, description="验证类型")
+    code: str = Field(max_length=10, description="验证码")
+    ip_address: Optional[str] = Field(max_length=45, description="请求IP地址")
+    user_id: Optional[UUID] = Field(foreign_key="users.id", description="用户ID")
+    status: str = Field(max_length=20, default="sent", description="状态")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    verified_at: Optional[datetime] = Field(description="验证时间")
+
+    # 索引定义
+    __table_args__ = (
+        Index("idx_sms_record_phone_type", "phone", "verification_type", "created_at"),
+        Index("idx_sms_record_created_at", "created_at"),
+        Index("idx_sms_record_status", "status"),
+    )
+
+
 class TokenBlacklistBase(BaseSQLModel):
     """JWT令牌黑名单基础模型"""
 

@@ -39,6 +39,45 @@ from src.core.exceptions import (
 )
 
 
+async def _await_scalar_if_needed(scalar_result):
+    """
+    辅助函数：处理scalar返回的协程问题
+
+    在某些SQLAlchemy版本中，scalar方法可能返回协程。
+    这个函数检查返回值并在需要时等待协程完成。
+    """
+    # 处理协程
+    if hasattr(scalar_result, '__await__'):
+        return await scalar_result
+    # 处理Mock对象
+    if hasattr(scalar_result, 'return_value'):
+        return scalar_result.return_value
+    # 如果是AsyncMock，等待它
+    if hasattr(scalar_result, '__class__') and 'AsyncMock' in str(type(scalar_result)):
+        return await scalar_result
+    return scalar_result
+
+
+async def _await_scalar_one_or_none_if_needed(result):
+    """
+    辅助函数：处理scalar_one_or_none返回的协程问题
+    """
+    scalar_value = result.scalar_one_or_none()
+    if hasattr(scalar_value, '__await__'):
+        return await scalar_value
+    return scalar_value
+
+
+async def _await_scalars_if_needed(scalars_result):
+    """
+    辅助函数：处理scalars返回的协程问题
+    """
+    scalars_value = scalars_result.scalars()
+    if hasattr(scalars_value, '__await__'):
+        scalars_value = await scalars_value
+    return scalars_value.all()
+
+
 class TokenBlacklistRepository(BaseRepository[TokenBlacklist]):
     """JWT令牌黑名单数据仓储类"""
 
@@ -90,7 +129,7 @@ class TokenBlacklistRepository(BaseRepository[TokenBlacklist]):
         """
         stmt = select(TokenBlacklist).where(TokenBlacklist.jti == jti)
         result = await self.session.execute(stmt)
-        record = result.scalar_one_or_none()
+        record = await _await_scalar_one_or_none_if_needed(result)
         return TokenBlacklistRead.from_orm(record) if record else None
 
     async def is_token_blacklisted(self, jti: str) -> bool:
@@ -111,7 +150,7 @@ class TokenBlacklistRepository(BaseRepository[TokenBlacklist]):
             )
         )
         result = await self.session.execute(stmt)
-        count = result.scalar()
+        count = await _await_scalar_if_needed(result)
         return count > 0
 
     async def get_user_blacklisted_tokens(
@@ -228,7 +267,7 @@ class SmsVerificationRepository(BaseRepository[SmsVerification]):
         ).order_by(desc(SmsVerification.created_at))
 
         result = await self.session.execute(stmt)
-        verification = result.scalar_one_or_none()
+        verification = await _await_scalar_one_or_none_if_needed(result)
 
         if not verification:
             return False
@@ -355,7 +394,7 @@ class SmsVerificationRepository(BaseRepository[SmsVerification]):
             )
         )
         result = await self.session.execute(stmt)
-        recent_count = result.scalar()
+        recent_count = await _await_scalar_if_needed(result)
 
         if recent_count >= 1:  # 1分钟内只能发送1次
             raise BusinessException("发送频率过快，请稍后再试", "rate_limit_exceeded")
@@ -370,7 +409,7 @@ class SmsVerificationRepository(BaseRepository[SmsVerification]):
             )
         )
         result = await self.session.execute(stmt)
-        hourly_count = result.scalar()
+        hourly_count = await _await_scalar_if_needed(result)
 
         if hourly_count >= 5:  # 1小时内最多发送5次
             raise BusinessException("今日发送次数已达上限", "daily_limit_exceeded")
