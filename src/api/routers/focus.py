@@ -350,6 +350,150 @@ async def resume_focus_session(
         )
 
 
+@router.put(
+    "/sessions/{session_id}/pause",
+    response_model=FocusSessionResponse,
+    summary="暂停专注会话(PUT)",
+    description="使用PUT方法暂停当前进行中的专注会话，记录暂停时间"
+)
+async def pause_focus_session_put(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+    focus_repo: FocusRepository = Depends(get_focus_repository)
+):
+    """
+    暂停专注会话API端点 (PUT方法)
+
+    使用PUT方法暂停当前进行中的专注会话，记录暂停时间。
+    遵循RESTful设计原则，PUT用于更新资源状态。
+
+    Args:
+        session_id: 专注会话ID
+        current_user: 当前认证用户信息
+        focus_repo: 专注系统Repository实例
+
+    Returns:
+        FocusSessionResponse: 更新后的专注会话信息
+
+    Raises:
+        ResourceNotFoundException: 专注会话不存在
+        BusinessException: 会话状态不允许暂停
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现专注会话暂停逻辑 (PUT版本)
+        # 1. 验证会话存在且属于当前用户
+        # 2. 检查会话状态是否允许暂停
+        # 3. 更新会话状态为暂停，记录暂停时间
+        # 4. 返回更新后的会话信息
+
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="专注会话暂停功能正在开发中"
+        )
+
+    except ResourceNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error_code": "SESSION_NOT_FOUND",
+                "message": e.user_message or "专注会话不存在",
+                "details": e.details
+            }
+        )
+    except BusinessException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "BUSINESS_ERROR",
+                "message": e.user_message or "会话状态不允许暂停",
+                "details": e.details
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "INTERNAL_ERROR",
+                "message": "服务器内部错误",
+                "details": {"original_error": str(e)}
+            }
+        )
+
+
+@router.put(
+    "/sessions/{session_id}/resume",
+    response_model=FocusSessionResponse,
+    summary="恢复专注会话(PUT)",
+    description="使用PUT方法恢复已暂停的专注会话，记录恢复时间"
+)
+async def resume_focus_session_put(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+    focus_repo: FocusRepository = Depends(get_focus_repository)
+):
+    """
+    恢复专注会话API端点 (PUT方法)
+
+    使用PUT方法恢复已暂停的专注会话，记录恢复时间。
+    遵循RESTful设计原则，PUT用于更新资源状态。
+
+    Args:
+        session_id: 专注会话ID
+        current_user: 当前认证用户信息
+        focus_repo: 专注系统Repository实例
+
+    Returns:
+        FocusSessionResponse: 更新后的专注会话信息
+
+    Raises:
+        ResourceNotFoundException: 专注会话不存在
+        BusinessException: 会话状态不允许恢复
+    """
+    try:
+        user_id = current_user["user_id"]
+
+        # TODO: 实现专注会话恢复逻辑 (PUT版本)
+        # 1. 验证会话存在且属于当前用户
+        # 2. 检查会话状态是否允许恢复
+        # 3. 更新会话状态为进行中，记录恢复时间
+        # 4. 返回更新后的会话信息
+
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="专注会话恢复功能正在开发中"
+        )
+
+    except ResourceNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error_code": "SESSION_NOT_FOUND",
+                "message": e.user_message or "专注会话不存在",
+                "details": e.details
+            }
+        )
+    except BusinessException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "BUSINESS_ERROR",
+                "message": e.user_message or "会话状态不允许恢复",
+                "details": e.details
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "INTERNAL_ERROR",
+                "message": "服务器内部错误",
+                "details": {"original_error": str(e)}
+            }
+        )
+
+
 @router.post(
     "/sessions/{session_id}/complete",
     response_model=FocusSessionResponse,

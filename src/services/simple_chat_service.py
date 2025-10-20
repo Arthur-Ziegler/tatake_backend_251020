@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional, Union
 import asyncio
 import time
 
-from .base_performance_optimized import PerformanceOptimizedBaseService
+from .base import BaseService
 from .exceptions import (
     BusinessException,
     ValidationException,
@@ -26,7 +26,7 @@ from ..repositories.chat import ChatRepository
 from .logging_config import get_logger
 
 
-class SimpleChatService(PerformanceOptimizedBaseService):
+class SimpleChatService(BaseService):
     """
     简化的AI聊天服务
 
