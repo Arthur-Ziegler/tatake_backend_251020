@@ -136,7 +136,8 @@ class PerformanceOptimizedBaseService:
         """判断是否应该记录日志"""
         if not self._enable_detailed_logging and level.upper() in ['DEBUG', 'INFO']:
             return False
-        return self._logger.isEnabledFor(level.upper())
+        # 简化日志级别检查，避免调用不存在的isEnabledFor方法
+        return True
 
     def _log_info(self, message: str, **kwargs) -> None:
         """条件性INFO日志记录"""

@@ -120,7 +120,7 @@ class 智能异常处理器:
 
         # 缓存异常信息
         if self._缓存异常信息 and self._异常缓存 is not None:
-            self._缓存异常信息(异常, 异常信息)
+            self._执行缓存异常信息(异常, 异常信息)
 
         # 记录日志
         self._记录异常信息(操作, 异常信息, 上下文, 日志级别)
@@ -176,10 +176,13 @@ class 智能异常处理器:
             异常信息["missing_file"] = str(异常)
 
         # 快速日志记录（不包含完整异常对象）
+        # 移除可能冲突的message键，避免参数重复
+        log_data = {**异常信息, **(上下文 or {})}
+        log_data.pop('message', None)  # 移除message键避免冲突
+
         self.日志器.error(
             f"Common exception in {操作}: {异常信息['type']}: {异常信息['message']}",
-            **异常信息,
-            **(上下文 or {})
+            **log_data
         )
 
     def _获取缓存异常信息(self, 异常: Exception) -> Optional[Dict[str, Any]]:
@@ -190,7 +193,7 @@ class 智能异常处理器:
         缓存键 = self._生成异常缓存键(异常)
         return self._异常缓存.get(缓存键)
 
-    def _缓存异常信息(self, 异常: Exception, 信息: Dict[str, Any]) -> None:
+    def _执行缓存异常信息(self, 异常: Exception, 信息: Dict[str, Any]) -> None:
         """缓存异常信息"""
         if not self._异常缓存:
             return
@@ -292,12 +295,17 @@ class 智能异常处理器:
         # 根据日志级别选择记录方法
         日志消息 = f"Exception in {操作}: {异常信息['type']}: {异常信息['message']}"
 
+        # 移除可能冲突的message键，避免参数重复
+        log_data = {**异常信息, **(上下文 or {})}
+        log_data.pop('message', None)  # 移除message键避免冲突
+        log_data['operation'] = 操作
+
         if 日志级别.upper() == "CRITICAL":
-            self.日志器.critical(日志消息, operation=操作, **异常信息, **(上下文 or {}))
+            self.日志器.critical(日志消息, **log_data)
         elif 日志级别.upper() == "WARNING":
-            self.日志器.warning(日志消息, operation=操作, **异常信息, **(上下文 or {}))
+            self.日志器.warning(日志消息, **log_data)
         else:
-            self.日志器.error(日志消息, operation=操作, **异常信息, **(上下文 or {}))
+            self.日志器.error(日志消息, **log_data)
 
     def 获取性能统计(self) -> Dict[str, Any]:
         """获取性能统计信息"""

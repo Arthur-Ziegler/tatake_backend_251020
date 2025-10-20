@@ -25,6 +25,7 @@ from src.services import (
     StatisticsService,
     ChatService
 )
+from src.services.simple_chat_service import SimpleChatService
 from src.services.async_auth_service import AsyncAuthService
 from src.repositories import (
     UserRepository,
@@ -290,14 +291,12 @@ class ServiceFactory:
             )
         return self._services[cache_key]
 
-    async def get_chat_service(self, session: AsyncSession) -> ChatService:
+    async def get_chat_service(self, session: AsyncSession) -> SimpleChatService:
         """获取对话Service实例"""
         cache_key = f"chat_service_{id(session)}"
         if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            task_repo = self.get_task_repository(session)
             chat_repo = self.get_chat_repository(session)
-            self._services[cache_key] = ChatService(user_repo, task_repo, chat_repo)
+            self._services[cache_key] = SimpleChatService(chat_repo=chat_repo)
         return self._services[cache_key]
 
     # JWT服务
@@ -441,7 +440,7 @@ async def get_statistics_service(
 
 async def get_chat_service(
     session: AsyncSession = Depends(get_db_session)
-) -> ChatService:
+) -> SimpleChatService:
     """获取对话Service的FastAPI依赖"""
     return await service_factory.get_chat_service(session)
 

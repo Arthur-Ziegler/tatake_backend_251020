@@ -270,36 +270,54 @@ class Top3TaskResponse(BaseModel):
 # ================================
 
 class FocusSessionCreateRequest(BaseModel):
-    """专注会话创建请求"""
-    task_id: str = Field(..., description="关联任务ID")
+    """
+    专注会话创建请求
+
+    用于创建新的专注会话，支持番茄钟、休息和长休息等不同类型。
+    可以关联到特定任务，也可以进行独立的专注练习。
+    """
+    task_id: Optional[str] = Field(None, description="关联任务ID，可选")
+    title: Optional[str] = Field(None, max_length=200, description="会话标题，可选")
     planned_duration_minutes: int = Field(25, ge=5, le=180, description="计划时长（分钟）")
     session_type: FocusSessionType = Field(FocusSessionType.FOCUS, description="会话类型")
+    notes: Optional[str] = Field(None, max_length=500, description="会话备注")
 
 
 class FocusSessionUpdateRequest(BaseModel):
-    """专注会话更新请求"""
-    actual_duration_minutes: Optional[int] = Field(None, ge=0, le=300, description="实际时长（分钟）")
-    notes: Optional[str] = Field(None, max_length=1000, description="备注")
+    """
+    专注会话更新请求
+
+    用于更新专注会话的信息，包括标题、备注等。
+    注意：会话状态变更通过专门的API端点处理。
+    """
+    title: Optional[str] = Field(None, max_length=200, description="会话标题")
+    notes: Optional[str] = Field(None, max_length=1000, description="会话备注")
+    planned_duration_minutes: Optional[int] = Field(None, ge=5, le=180, description="计划时长（分钟）")
 
 
 class FocusSessionResponse(BaseModel):
-    """专注会话响应"""
+    """
+    专注会话响应模型
+
+    返回专注会话的完整信息，包括会话状态、时间信息、关联任务等。
+    """
     id: str
-    task_id: str
+    task_id: Optional[str] = None
+    title: Optional[str] = None
     session_type: FocusSessionType
-    planned_duration_minutes: int
-    actual_duration_minutes: Optional[int]
-    status: str
-    start_time: datetime
-    end_time: Optional[datetime]
-    pause_time: Optional[datetime]
-    resume_time: Optional[datetime]
-    interruptions_count: int
-    mood_feedback: Optional[str]
-    notes: Optional[str]
+    planned_duration_minutes: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    is_completed: bool = False
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    mood_feedback: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     user_id: str
+    task: Optional[Dict[str, Any]] = None  # 关联任务信息
+    efficiency_score: Optional[float] = None  # 效率评分
+    is_active: bool = False  # 是否为活跃会话
 
     class Config:
         json_encoders = {
@@ -322,15 +340,80 @@ class FocusStatisticsParams(BaseModel):
 
 
 class FocusStatisticsResponse(BaseModel):
-    """专注统计响应"""
-    total_sessions: int
-    total_minutes: int
-    average_session_minutes: float
-    completion_rate: float
-    daily_average_minutes: float
-    mood_distribution: Dict[str, int]
-    session_type_distribution: Dict[str, int]
-    trend_data: List[Dict[str, Any]]
+    """
+    专注统计响应模型
+
+    返回专注时间的详细统计信息，包括会话数量、时长、完成率等。
+    """
+    total_sessions: int = Field(..., description="总会话数")
+    total_minutes: int = Field(..., description="总专注时长（分钟）")
+    average_session_minutes: float = Field(..., description="平均会话时长（分钟）")
+    completion_rate: float = Field(..., description="完成率")
+    daily_average_minutes: float = Field(..., description="日均专注时长（分钟）")
+    mood_distribution: Dict[str, int] = Field(..., description="心情分布统计")
+    session_type_distribution: Dict[str, int] = Field(..., description="会话类型分布")
+    trend_data: List[Dict[str, Any]] = Field(..., description="趋势数据")
+    best_day: Optional[Dict[str, Any]] = Field(None, description="最佳专注日期信息")
+    current_streak: int = Field(0, description="当前连续专注天数")
+
+
+# 专注系统模板相关模型
+
+class FocusTemplateCreateRequest(BaseModel):
+    """
+    专注会话模板创建请求
+
+    用于创建自定义的专注会话模板，支持番茄钟和其他专注方法。
+    """
+    name: str = Field(..., min_length=1, max_length=100, description="模板名称")
+    description: Optional[str] = Field(None, max_length=500, description="模板描述")
+    focus_duration: int = Field(25, ge=1, le=180, description="专注时长（分钟）")
+    break_duration: int = Field(5, ge=1, le=30, description="休息时长（分钟）")
+    long_break_duration: int = Field(15, ge=1, le=60, description="长休息时长（分钟）")
+    sessions_until_long_break: int = Field(4, ge=2, le=10, description="长休息前的专注次数")
+    is_default: bool = Field(False, description="是否设为默认模板")
+
+
+class FocusTemplateUpdateRequest(BaseModel):
+    """
+    专注会话模板更新请求
+
+    用于更新已有的专注会话模板配置。
+    """
+    name: Optional[str] = Field(None, min_length=1, max_length=100, description="模板名称")
+    description: Optional[str] = Field(None, max_length=500, description="模板描述")
+    focus_duration: Optional[int] = Field(None, ge=1, le=180, description="专注时长（分钟）")
+    break_duration: Optional[int] = Field(None, ge=1, le=30, description="休息时长（分钟）")
+    long_break_duration: Optional[int] = Field(None, ge=1, le=60, description="长休息时长（分钟）")
+    sessions_until_long_break: Optional[int] = Field(None, ge=2, le=10, description="长休息前的专注次数")
+    is_default: Optional[bool] = Field(None, description="是否设为默认模板")
+
+
+class FocusTemplateResponse(BaseModel):
+    """
+    专注会话模板响应模型
+
+    返回专注会话模板的详细信息。
+    """
+    id: str
+    name: str
+    description: Optional[str] = None
+    focus_duration: int
+    break_duration: int
+    long_break_duration: int
+    sessions_until_long_break: int
+    is_default: bool
+    is_pomodoro_template: bool = Field(False, description="是否为标准番茄钟模板")
+    total_cycle_time: int = Field(..., description="完整周期时间（分钟）")
+    daily_focus_time: int = Field(..., description="建议日专注时间（分钟）")
+    created_at: datetime
+    updated_at: datetime
+    user_id: str
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 
 # ================================
@@ -582,7 +665,9 @@ class UserFeedbackResponse(BaseModel):
 class ChatSessionCreateRequest(BaseModel):
     """对话会话创建请求"""
     title: Optional[str] = Field(None, max_length=100, description="会话标题")
+    chat_mode: Optional[str] = Field("general", pattern=r'^(general|task_assistant|learning|creative)$', description="聊天模式")
     initial_message: Optional[str] = Field(None, max_length=2000, description="初始消息")
+    tags: Optional[List[str]] = Field(None, description="会话标签")
 
 
 class ChatSessionResponse(BaseModel):
@@ -590,11 +675,21 @@ class ChatSessionResponse(BaseModel):
     id: str
     user_id: str
     title: str
+    chat_mode: str
     status: str
     message_count: int
-    last_message_at: Optional[datetime]
+    last_activity_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    metadata: Optional[Dict[str, Any]] = Field(None, description="元数据")
+
+
+class ChatSessionUpdateRequest(BaseModel):
+    """对话会话更新请求"""
+    title: Optional[str] = Field(None, max_length=100, description="会话标题")
+    chat_mode: Optional[str] = Field(None, pattern=r'^(general|task_assistant|learning|creative)$', description="聊天模式")
+    status: Optional[str] = Field(None, pattern=r'^(active|paused|completed|archived)$', description="会话状态")
+    tags: Optional[List[str]] = Field(None, description="会话标签")
 
 
 class MessageSendRequest(BaseModel):
@@ -608,20 +703,21 @@ class MessageResponse(BaseModel):
     """消息响应"""
     id: str
     session_id: str
+    user_id: str
     role: str  # user, assistant, system
     content: str
     message_type: str
-    attachments: Optional[List[Dict[str, Any]]]
+    model: Optional[str] = Field(None, description="AI模型名称")
+    attachments: Optional[List[Dict[str, Any]]] = Field(None, description="附件列表")
     created_at: datetime
-    metadata: Optional[Dict[str, Any]]
+    metadata: Optional[Dict[str, Any]] = Field(None, description="元数据")
 
 
 class ChatHistoryResponse(BaseModel):
     """对话历史响应"""
-    session_id: str
     messages: List[MessageResponse]
-    total_count: int
     has_more: bool
+    total: int
 
 
 class ChatSessionListResponse(BaseModel):

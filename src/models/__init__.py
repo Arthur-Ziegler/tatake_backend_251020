@@ -32,6 +32,9 @@ from src.models.auth import (
     AuthLog, AuthLogCreate, AuthLogRead
 )
 
+# 导入聊天系统模型
+from src.models.chat import ChatSession, ChatMessage
+
 # 导出所有模型
 __all__ = [
     # 基础模型
@@ -79,4 +82,8 @@ __all__ = [
     "AuthLog",
     "AuthLogCreate",
     "AuthLogRead",
+
+    # 聊天系统模型
+    "ChatSession",
+    "ChatMessage",
 ]

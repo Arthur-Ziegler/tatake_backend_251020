@@ -145,14 +145,14 @@ async def api_info():
             "api_prefix": config.api_prefix,
             "endpoints": {
                 "认证系统": 7,
-                "AI对话系统": 4,
+                "AI对话系统": 10,
                 "任务管理": 12,
-                "番茄钟系统": 8,
-                "奖励系统": 8,
-                "统计系统": 3,
-                "用户管理": 4
+                "专注系统": 15,
+                "奖励系统": 12,
+                "统计分析": 10,
+                "用户管理": 6
             },
-            "total_endpoints": 46,
+            "total_endpoints": 72,
             "documentation": {
                 "swagger": "/docs",
                 "redoc": "/redoc",
@@ -164,17 +164,14 @@ async def api_info():
 
 
 # 添加API路由模块
-from .routers import auth, user, tasks
+from .routers import auth, user, tasks, chat, focus, rewards, statistics
 app.include_router(auth.router, prefix=config.api_prefix, tags=["认证系统"])
 app.include_router(user.router, prefix=config.api_prefix, tags=["用户管理"])
 app.include_router(tasks.router, prefix=config.api_prefix, tags=["任务管理"])
-
-# TODO: 添加更多路由模块
-# from .routers import chat, focus, rewards, statistics
-# app.include_router(chat.router, prefix=config.api_prefix, tags=["AI对话"])
-# app.include_router(focus.router, prefix=config.api_prefix, tags=["番茄钟"])
-# app.include_router(rewards.router, prefix=config.api_prefix, tags=["奖励系统"])
-# app.include_router(statistics.router, prefix=config.api_prefix, tags=["统计分析"])
+app.include_router(chat.router, prefix=config.api_prefix, tags=["AI对话"])
+app.include_router(focus.router, prefix=config.api_prefix, tags=["专注系统"])
+app.include_router(rewards.router, prefix=config.api_prefix, tags=["奖励系统"])
+app.include_router(statistics.router, prefix=config.api_prefix, tags=["统计分析"])
 
 
 if __name__ == "__main__":
