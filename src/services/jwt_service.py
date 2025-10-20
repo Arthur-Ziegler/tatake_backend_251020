@@ -220,7 +220,7 @@ class JWTService(BaseService):
         # 生成令牌
         token = jwt.encode(payload, self._secret_key, algorithm=self._algorithm)
 
-        self.logger.info(f"生成刷新令牌成功", extra={
+        self._log_info(f"生成刷新令牌成功", {
             'user_id': str(user_id),
             'jti': jti,
             'access_jti': access_token_jti,
@@ -315,7 +315,7 @@ class JWTService(BaseService):
         except jwt.InvalidTokenError as e:
             raise AuthenticationException(f"无效令牌: {str(e)}")
         except Exception as e:
-            self.logger.error(f"令牌验证异常", extra={'error': str(e)})
+            self._log_error(f"令牌验证异常", {'error': str(e)})
             raise AuthenticationException("令牌验证失败")
 
     async def verify_access_token_async(self, token: str) -> Dict[str, Any]:
@@ -462,7 +462,7 @@ class JWTService(BaseService):
 
             await self._token_blacklist_repo.create_blacklist_record(blacklist_data)
 
-            self.logger.info(f"令牌加入黑名单成功", extra={
+            self._log_info(f"令牌加入黑名单成功", {
                 'jti': jti,
                 'user_id': str(user_id),
                 'reason': reason,
@@ -472,7 +472,7 @@ class JWTService(BaseService):
             return True
 
         except Exception as e:
-            self.logger.error(f"令牌加入黑名单失败", extra={
+            self._log_error(f"令牌加入黑名单失败", {
                 'jti': jti,
                 'user_id': str(user_id),
                 'error': str(e)
@@ -530,7 +530,7 @@ class JWTService(BaseService):
                 user_agent=user_agent
             )
 
-            self.logger.info(f"令牌对加入黑名单成功", extra={
+            self._log_info(f"令牌对加入黑名单成功", {
                 'user_id': str(user_id),
                 'access_jti': access_jti,
                 'refresh_jti': refresh_jti,
@@ -540,7 +540,7 @@ class JWTService(BaseService):
             return True
 
         except Exception as e:
-            self.logger.error(f"令牌对加入黑名单失败", extra={'error': str(e)})
+            self._log_error(f"令牌对加入黑名单失败", {'error': str(e)})
             raise BusinessException(f"令牌对加入黑名单失败: {str(e)}")
 
     def refresh_access_token(self, refresh_token: str) -> str:
@@ -569,7 +569,7 @@ class JWTService(BaseService):
             user_type=user_type
         )
 
-        self.logger.info(f"访问令牌刷新成功", extra={
+        self._log_info(f"访问令牌刷新成功", {
             'user_id': str(user_id),
             'old_refresh_jti': refresh_payload['jti']
         })

@@ -268,12 +268,11 @@ class ServiceFactory:
         cache_key = f"jwt_service_{id(session)}"
         if cache_key not in self._services:
             token_blacklist_repo = self.get_token_blacklist_repository(session)
+            # 使用安全的JWT配置
+            jwt_config = config.get_secure_jwt_config()
             self._services[cache_key] = JWTService(
                 token_blacklist_repo=token_blacklist_repo,
-                secret_key=config.jwt_secret_key,
-                algorithm=config.jwt_algorithm,
-                access_token_expiry=config.jwt_access_token_expire_minutes * 60,  # 转换为秒
-                refresh_token_expiry=config.jwt_refresh_token_expire_days * 24 * 60 * 60  # 转换为秒
+                **jwt_config
             )
         return self._services[cache_key]
 

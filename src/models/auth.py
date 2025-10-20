@@ -24,9 +24,10 @@ from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field, Column, DateTime, String, Text, Integer, Boolean, Index
 from sqlalchemy import func
 from sqlalchemy.sql import expression
+from src.models.base_model import BaseSQLModel
 
 
-class TokenBlacklistBase(SQLModel):
+class TokenBlacklistBase(BaseSQLModel):
     """JWT令牌黑名单基础模型"""
 
     jti: str = Field(default=None, max_length=255, description="JWT令牌的唯一标识符")
@@ -56,7 +57,7 @@ class TokenBlacklist(TokenBlacklistBase, table=True):
     )
 
 
-class SmsVerificationBase(SQLModel):
+class SmsVerificationBase(BaseSQLModel):
     """短信验证码基础模型"""
 
     phone_number: str = Field(max_length=20, description="手机号码")
@@ -90,7 +91,7 @@ class SmsVerification(SmsVerificationBase, table=True):
     )
 
 
-class UserSessionBase(SQLModel):
+class UserSessionBase(BaseSQLModel):
     """用户会话基础模型"""
 
     user_id: UUID = Field(foreign_key="users.id", description="用户ID")
@@ -122,7 +123,7 @@ class UserSession(UserSessionBase, table=True):
     )
 
 
-class AuthLogBase(SQLModel):
+class AuthLogBase(BaseSQLModel):
     """认证日志基础模型"""
 
     user_id: Optional[UUID] = Field(foreign_key="users.id", description="用户ID（可选）")

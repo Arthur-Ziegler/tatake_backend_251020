@@ -10,7 +10,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from ..dependencies import get_current_user, get_optional_current_user
+from ..dependencies import get_current_user, get_optional_current_user, get_auth_service, get_jwt_service
+from src.services import AuthService, JWTService
 from ..schemas import (
     # 请求模型
     GuestInitRequest,
@@ -39,7 +40,8 @@ security = HTTPBearer(auto_error=False)
 @router.post("/guest/init", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def guest_init(
     request: GuestInitRequest,
-    current_user: Optional[dict] = Depends(get_optional_current_user)
+    auth_service: AuthService = Depends(get_auth_service),
+    jwt_service: JWTService = Depends(get_jwt_service)
 ):
     """
     游客账号初始化
@@ -48,7 +50,8 @@ async def guest_init(
 
     Args:
         request: 游客初始化请求，包含设备ID和设备信息
-        current_user: 当前用户信息（可选）
+        auth_service: 认证服务实例
+        jwt_service: JWT服务实例
 
     Returns:
         AuthResponse: 包含用户信息和认证令牌
@@ -57,37 +60,26 @@ async def guest_init(
         HTTPException: 当设备已存在活跃游客账号时
     """
     try:
-        # TODO: 集成AuthService
-        # auth_service = get_auth_service()
-
-        # 临时模拟数据
-        user_id = f"guest_{datetime.utcnow().timestamp()}"
-
-        # 创建访问令牌
-        access_token_expires = timedelta(minutes=config.jwt_access_token_expire_minutes)
-        access_token = create_access_token(
-            data={
-                "user_id": user_id,
-                "user_type": "guest",
-                "is_guest": True,
-                "device_id": request.device_id
-            },
-            expires_delta=access_token_expires
+        # 使用AuthService创建游客账号
+        guest_data = auth_service.init_guest_account(
+            device_id=request.device_id,
+            platform=request.platform
         )
 
-        # 创建刷新令牌
-        refresh_token = create_refresh_token(
-            data={
-                "user_id": user_id,
-                "user_type": "guest",
+        # 使用JWT服务生成令牌
+        access_token, refresh_token = jwt_service.generate_token_pair(
+            user_id=guest_data["user_id"],
+            user_type="guest",
+            additional_claims={
                 "is_guest": True,
-                "device_id": request.device_id
+                "device_id": request.device_id,
+                "platform": request.platform
             }
         )
 
         return create_success_response(
             data=AuthResponse(
-                user_id=user_id,
+                user_id=guest_data["user_id"],
                 user_type="guest",
                 is_guest=True,
                 access_token=access_token,
@@ -98,19 +90,34 @@ async def guest_init(
             message="游客账号创建成功"
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"游客账号创建失败: {str(e)}"
-        )
+        # 记录详细错误信息
+        print(f"[GuestInit] 游客账号初始化失败: {str(e)}")
+
+        # 根据异常类型返回不同的HTTP状态码
+        if "已存在" in str(e) or "exists" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该设备已存在活跃游客账号"
+            )
+        elif "限制" in str(e) or "limit" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="请求过于频繁，请稍后再试"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"游客账号创建失败: {str(e)}"
+            )
 
 
 @router.post("/guest/upgrade", response_model=AuthResponse)
 async def guest_upgrade(
     request: GuestUpgradeRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+    jwt_service: JWTService = Depends(get_jwt_service)
 ):
     """
     游客账号升级
@@ -120,6 +127,8 @@ async def guest_upgrade(
     Args:
         request: 游客升级请求，包含升级信息和验证码
         current_user: 当前用户信息（必须是游客）
+        auth_service: 认证服务实例
+        jwt_service: JWT服务实例
 
     Returns:
         AuthResponse: 包含更新后的用户信息和新的认证令牌
@@ -135,41 +144,33 @@ async def guest_upgrade(
                 detail="只有游客账号可以升级"
             )
 
-        # TODO: 集成AuthService进行升级
-        # auth_service = get_auth_service()
-        # upgraded_user = auth_service.upgrade_guest_account(
-        #     current_user["user_id"],
-        #     request.dict()
-        # )
+        # 使用AuthService进行账号升级
+        upgrade_data = {
+            "user_id": current_user["user_id"],
+            "upgrade_type": request.upgrade_type.value,
+            "phone": request.phone,
+            "email": request.email,
+            "wechat_code": request.wechat_code,
+            "verification_code": request.verification_code,
+            "device_id": request.device_id
+        }
 
-        # 临时模拟数据
-        user_id = current_user["user_id"]
+        upgraded_user = auth_service.upgrade_guest_account(**upgrade_data)
 
-        # 创建新的访问令牌
-        access_token_expires = timedelta(minutes=config.jwt_access_token_expire_minutes)
-        access_token = create_access_token(
-            data={
-                "user_id": user_id,
-                "user_type": "registered",
+        # 使用JWT服务生成新的令牌对
+        access_token, refresh_token = jwt_service.generate_token_pair(
+            user_id=upgraded_user["user_id"],
+            user_type="registered",
+            additional_claims={
                 "is_guest": False,
-                "device_id": request.device_id
-            },
-            expires_delta=access_token_expires
-        )
-
-        # 创建新的刷新令牌
-        refresh_token = create_refresh_token(
-            data={
-                "user_id": user_id,
-                "user_type": "registered",
-                "is_guest": False,
-                "device_id": request.device_id
+                "device_id": request.device_id,
+                "upgrade_type": request.upgrade_type.value
             }
         )
 
         return create_success_response(
             data=AuthResponse(
-                user_id=user_id,
+                user_id=upgraded_user["user_id"],
                 user_type="registered",
                 is_guest=False,
                 access_token=access_token,
@@ -183,10 +184,30 @@ async def guest_upgrade(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"账号升级失败: {str(e)}"
-        )
+        # 记录详细错误信息
+        print(f"[GuestUpgrade] 游客账号升级失败: {str(e)}")
+
+        # 根据异常类型返回不同的HTTP状态码
+        if "验证码" in str(e) or "verification" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="验证码错误或已过期"
+            )
+        elif "已存在" in str(e) or "exists" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="该账号已被注册"
+            )
+        elif "不是游客" in str(e) or "not guest" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="只有游客账号可以升级"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"账号升级失败: {str(e)}"
+            )
 
 
 @router.post("/sms/send", response_model=BaseResponse)

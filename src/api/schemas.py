@@ -127,8 +127,8 @@ class GuestUpgradeRequest(BaseModel):
 
 class SMSCodeRequest(BaseModel):
     """短信验证码请求"""
-    phone: str = Field(..., description="手机号", regex=r'^1[3-9]\d{9}$')
-    type: str = Field(..., description="验证码类型", regex=r'^(login|register|reset_password)$')
+    phone: str = Field(..., description="手机号", pattern=r'^1[3-9]\d{9}$')
+    type: str = Field(..., description="验证码类型", pattern=r'^(login|register|reset_password)$')
 
 
 class LoginRequest(BaseModel):
@@ -248,7 +248,7 @@ class TaskSearchParams(BaseModel):
     due_date_start: Optional[datetime] = Field(None, description="截止日期开始")
     due_date_end: Optional[datetime] = Field(None, description="截止日期结束")
     sort_by: str = Field("created_at", description="排序字段")
-    sort_order: str = Field("desc", regex=r'^(asc|desc)$', description="排序顺序")
+    sort_order: str = Field("desc", pattern=r'^(asc|desc)$', description="排序顺序")
 
 
 class Top3TaskRequest(BaseModel):
@@ -469,7 +469,7 @@ class TaskStatisticsParams(BaseModel):
     """任务统计参数"""
     start_date: Optional[datetime] = Field(None, description="开始日期")
     end_date: Optional[datetime] = Field(None, description="结束日期")
-    group_by: str = Field("day", regex=r'^(day|week|month)$', description="分组方式")
+    group_by: str = Field("day", pattern=r'^(day|week|month)$', description="分组方式")
 
 
 class TaskStatisticsResponse(BaseModel):
@@ -591,7 +591,7 @@ class ChatSessionResponse(BaseModel):
 class MessageSendRequest(BaseModel):
     """消息发送请求"""
     content: str = Field(..., min_length=1, max_length=4000, description="消息内容")
-    message_type: str = Field("text", regex=r'^(text|image|file)$', description="消息类型")
+    message_type: str = Field("text", pattern=r'^(text|image|file)$', description="消息类型")
     attachments: Optional[List[Dict[str, Any]]] = Field(None, description="附件列表")
 
 

@@ -32,7 +32,7 @@ from src.models.auth import (
     UserSession, UserSessionCreate, UserSessionRead,
     AuthLog, AuthLogCreate, AuthLogRead
 )
-from src.services.exceptions import (
+from src.core.exceptions import (
     ResourceNotFoundException,
     BusinessException,
     ValidationException
@@ -277,6 +277,60 @@ class SmsVerificationRepository(BaseRepository[SmsVerification]):
         result = await self.session.execute(stmt)
         verification = result.scalar_one_or_none()
         return SmsVerificationRead.from_orm(verification) if verification else None
+
+    async def get_latest_by_phone(
+        self,
+        phone_number: str,
+        within_minutes: int = 5
+    ) -> Optional[SmsVerification]:
+        """
+        根据手机号获取最近的验证码记录
+
+        用于检查发送频率限制，不限制验证类型。
+
+        Args:
+            phone_number: 手机号码
+            within_minutes: 查询时间范围（分钟）
+
+        Returns:
+            验证码记录或None
+        """
+        time_threshold = datetime.now(timezone.utc) - timedelta(minutes=within_minutes)
+
+        stmt = (
+            select(SmsVerification)
+            .where(
+                and_(
+                    SmsVerification.phone_number == phone_number,
+                    SmsVerification.created_at > time_threshold
+                )
+            )
+            .order_by(desc(SmsVerification.created_at))
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create_verification_record(self, verification_data: Dict[str, Any]) -> SmsVerificationRead:
+        """
+        创建验证码记录（简化版本，不包含频率限制检查）
+
+        这个方法假设调用者已经进行了频率限制检查。
+
+        Args:
+            verification_data: 验证码数据
+
+        Returns:
+            创建的验证码记录
+        """
+        # 设置默认值
+        verification_data.setdefault('country_code', '+86')
+        verification_data.setdefault('attempt_count', 0)
+        verification_data.setdefault('max_attempts', 5)
+        verification_data.setdefault('is_used', False)
+        verification_data.setdefault('send_count', 1)
+
+        return await self.create(verification_data)
 
     async def _check_send_rate_limit(self, phone_number: str, verification_type: str) -> None:
         """

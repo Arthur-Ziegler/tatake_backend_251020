@@ -499,7 +499,7 @@ class AuthService(BaseService):
 
     # ==================== 短信验证码 ====================
 
-    def send_sms_code(self, phone: str, sms_type: str) -> Dict[str, Any]:
+    async def send_sms_code(self, phone: str, sms_type: str) -> Dict[str, Any]:
         """
         发送短信验证码
 
@@ -538,7 +538,7 @@ class AuthService(BaseService):
                 )
 
             # 检查发送频率限制
-            cooldown_info = self._check_sms_cooldown(phone)
+            cooldown_info = await self._check_sms_cooldown(phone)
             if cooldown_info["in_cooldown"]:
                 raise BusinessException(
                     error_code="SERVICE_SMS_COOLDOWN",
@@ -574,7 +574,7 @@ class AuthService(BaseService):
 
             if send_success:
                 # 记录发送信息（用于验证和频率控制）
-                self._record_sms_sent(phone, sms_code, sms_type)
+                await self._record_sms_sent(phone, sms_code, sms_type)
 
                 response = {
                     "success": True,
@@ -989,18 +989,95 @@ class AuthService(BaseService):
                 reason="邮箱验证码格式错误"
             )
 
-    def _check_sms_cooldown(self, phone: str) -> Dict[str, Any]:
-        """检查短信发送冷却时间"""
-        # TODO: 实现基于Redis或数据库的冷却时间检查
-        # 目前返回无冷却状态
-        return {
-            "in_cooldown": False,
-            "cooldown_seconds": 0,
-            "next_send_time": None
-        }
+    async def _check_sms_cooldown(self, phone: str) -> Dict[str, Any]:
+        """
+        检查短信发送冷却时间
 
-    def _record_sms_sent(self, phone: str, sms_code: str, sms_type: str) -> None:
-        """记录短信发送信息"""
-        # TODO: 实现短信发送记录存储
-        # 用于验证码验证和发送频率控制
-        pass
+        使用数据库查询最近的短信发送记录，实现发送频率限制。
+
+        Args:
+            phone: 手机号
+
+        Returns:
+            冷却时间信息字典
+        """
+        try:
+            # 检查最近发送的验证码记录
+            recent_record = await self._sms_verification_repo.get_latest_by_phone(
+                phone_number=phone,
+                within_minutes=int(self._sms_cooldown.total_seconds() / 60)
+            )
+
+            if recent_record:
+                # 计算距离上次发送的时间
+                now = datetime.now(timezone.utc)
+                time_since_last_send = now - recent_record.created_at
+                remaining_cooldown = self._sms_cooldown - time_since_last_send
+
+                if remaining_cooldown.total_seconds() > 0:
+                    # 仍在冷却期内
+                    return {
+                        "in_cooldown": True,
+                        "cooldown_seconds": int(remaining_cooldown.total_seconds()),
+                        "next_send_time": (datetime.now() + remaining_cooldown).isoformat(),
+                        "last_send_time": recent_record.created_at.isoformat()
+                    }
+
+            # 不在冷却期内
+            return {
+                "in_cooldown": False,
+                "cooldown_seconds": 0,
+                "next_send_time": None
+            }
+
+        except Exception as e:
+            # 数据库查询失败时，为了安全起见，假设在冷却期内
+            self._log_error("检查短信冷却时间失败", {
+                "phone": phone,
+                "error": str(e)
+            })
+            return {
+                "in_cooldown": True,
+                "cooldown_seconds": int(self._sms_cooldown.total_seconds()),
+                "next_send_time": (datetime.now(timezone.utc) + self._sms_cooldown).isoformat(),
+                "error": "查询失败，请稍后重试"
+            }
+
+    async def _record_sms_sent(self, phone: str, sms_code: str, sms_type: str) -> None:
+        """
+        记录短信发送信息
+
+        将验证码信息存储到数据库中，用于后续验证和发送频率控制。
+
+        Args:
+            phone: 手机号
+            sms_code: 验证码
+            sms_type: 短信类型
+        """
+        try:
+            # 创建验证码记录
+            verification_data = {
+                'phone_number': phone,
+                'code': sms_code,
+                'verification_type': sms_type,
+                'expires_at': datetime.now(timezone.utc) + self._sms_code_expiry,
+                'ip_address': None,  # TODO: 从请求上下文获取IP地址
+                'user_agent': None   # TODO: 从请求上下文获取User Agent
+            }
+
+            await self._sms_verification_repo.create_verification_record(verification_data)
+
+            self._log_info("短信验证码记录创建成功", {
+                "phone": phone,
+                "sms_type": sms_type,
+                "expires_at": verification_data['expires_at'].isoformat()
+            })
+
+        except Exception as e:
+            # 记录失败不应该影响发送成功，但需要记录错误
+            self._log_error("短信验证码记录创建失败", {
+                "phone": phone,
+                "sms_type": sms_type,
+                "error": str(e)
+            })
+            # 不抛出异常，因为短信已经发送成功

@@ -27,7 +27,7 @@ from .base import BaseRepository
 from src.models.chat import ChatSession, ChatMessage
 from src.models.user import User
 from src.models.enums import ChatMode, MessageRole, SessionStatus
-from src.services.exceptions import (
+from src.core.exceptions import (
     ResourceNotFoundException,
     BusinessException,
     ValidationException

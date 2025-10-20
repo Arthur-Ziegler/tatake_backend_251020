@@ -6,6 +6,7 @@ API层配置文件
 """
 
 import os
+import secrets
 from typing import Optional
 
 from pydantic_settings import BaseSettings
@@ -40,12 +41,40 @@ class APIConfig(BaseSettings):
     
     # JWT配置
     jwt_secret_key: str = Field(
-        default="your-secret-key-here",
+        default_factory=lambda: secrets.token_urlsafe(64),
         description="JWT密钥"
     )
     jwt_algorithm: str = Field(default="HS256", description="JWT算法")
     jwt_access_token_expire_minutes: int = Field(default=30, description="访问令牌过期时间(分钟)")
     jwt_refresh_token_expire_days: int = Field(default=7, description="刷新令牌过期时间(天)")
+
+    def get_secure_jwt_config(self) -> dict:
+        """
+        获取安全的JWT配置
+
+        Returns:
+            安全的JWT配置字典
+        """
+        # 确保密钥长度足够
+        secret_key = self.jwt_secret_key
+        if len(secret_key) < 32:
+            secret_key = secrets.token_urlsafe(64)
+            print("警告：JWT密钥长度不足，已生成新的安全密钥")
+
+        # 确保使用强算法
+        algorithm = self.jwt_algorithm
+        if algorithm not in ['HS256', 'HS384', 'HS512']:
+            algorithm = 'HS256'
+            print("警告：JWT算法不安全，已切换到HS256")
+
+        return {
+            'secret_key': secret_key,
+            'algorithm': algorithm,
+            'access_token_expiry': self.jwt_access_token_expire_minutes * 60,  # 转换为秒
+            'refresh_token_expiry': self.jwt_refresh_token_expire_days * 24 * 60 * 60,  # 转换为秒
+            'issuer': 'tatake-api',
+            'audience': 'tatake-client'
+        }
 
     # CORS配置
     allowed_origins: list = Field(
