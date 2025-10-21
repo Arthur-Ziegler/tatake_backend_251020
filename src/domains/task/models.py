@@ -221,7 +221,16 @@ class Task(BaseModel, table=True, extend_existing=True):
         """检查任务是否过期"""
         if not self.due_date:
             return False
-        return datetime.now(timezone.utc) > self.due_date
+
+        # 确保时区一致性：如果due_date没有时区信息，假设它是UTC
+        now_utc = datetime.now(timezone.utc)
+        if self.due_date.tzinfo is None:
+            # 数据库中的时间是naive datetime，假设为UTC
+            due_date_utc = self.due_date.replace(tzinfo=timezone.utc)
+        else:
+            due_date_utc = self.due_date
+
+        return now_utc > due_date_utc
 
     @property
     def duration_minutes(self) -> Optional[int]:

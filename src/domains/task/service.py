@@ -404,15 +404,9 @@ class TaskService:
         try:
             logger.debug(f"获取任务列表: user_id={user_id}, page={query.page}")
 
-            # 构建筛选条件
+            # 构建简化的筛选条件
             filters = {
-                'status': query.status,
-                'priority': query.priority,
-                'parent_id': query.parent_id,
-                'include_deleted': query.include_deleted,
-                'due_before': query.due_before,
-                'due_after': query.due_after,
-                'search': query.search
+                'include_deleted': query.include_deleted
             }
 
             # 构建分页参数

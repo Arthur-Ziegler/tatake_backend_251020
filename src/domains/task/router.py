@@ -34,7 +34,7 @@ API端点设计：
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -315,31 +315,19 @@ async def delete_task(
 async def get_task_list(
     page: int = Query(1, ge=1, description="页码，从1开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页大小，1-100"),
-    status: List[str] = Query(None, description="按状态筛选，支持多选"),
-    priority: List[str] = Query(None, description="按优先级筛选，支持多选"),
-    parent_id: UUID = Query(None, description="按父任务ID筛选"),
     include_deleted: bool = Query(False, description="是否包含已删除的任务"),
-    search: str = Query(None, min_length=1, max_length=100, description="搜索关键词"),
-    sort_by: str = Query("created_at", description="排序字段"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="排序方向"),
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_task_session)
 ) -> TaskListResponseWrapper:
     """
-    获取任务列表
+    获取任务列表 - 简化版本，只支持基本分页
 
-    获取当前用户的任务列表，支持分页、筛选、搜索和排序功能。
+    获取当前用户的任务列表，按创建时间倒序排列，支持分页和是否包含已删除任务。
 
     Args:
         page (int): 页码，从1开始
         page_size (int): 每页大小，1-100
-        status (List[str]): 按状态筛选，支持多选
-        priority (List[str]): 按优先级筛选，支持多选
-        parent_id (UUID): 按父任务ID筛选
         include_deleted (bool): 是否包含已删除的任务
-        search (str): 搜索关键词
-        sort_by (str): 排序字段
-        sort_order (str): 排序方向
         user_id (UUID): 当前用户ID（从JWT token中获取）
         session (Session): 数据库会话
 
@@ -352,17 +340,13 @@ async def get_task_list(
     try:
         logger.debug(f"获取任务列表API调用: user_id={user_id}, page={page}")
 
-        # 构建查询对象
+        # 构建简化的查询对象
         query = TaskListQuery(
             page=page,
             page_size=page_size,
-            status=status,
-            priority=priority,
-            parent_id=parent_id,
             include_deleted=include_deleted,
-            search=search,
-            sort_by=sort_by,
-            sort_order=sort_order
+            sort_by="created_at",
+            sort_order="desc"
         )
 
         # 创建任务服务

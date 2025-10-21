@@ -26,7 +26,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session, create_engine, SQLModel
-from sqlalchemy import StaticPool
+from sqlalchemy import StaticPool, text
 
 from src.api.main import app
 from src.database.connection import get_session
@@ -378,9 +378,10 @@ def test_client(test_db_session: Session) -> Generator[TestClient, None, None]:
 
     # 重写用户ID依赖（模拟认证）
     def override_get_current_user_id():
-        return test_db_session.exec(
-            "SELECT id FROM auth LIMIT 1"
-        ).first() or uuid4()
+        result = test_db_session.execute(
+            text("SELECT id FROM auth LIMIT 1")
+        ).first()
+        return result[0] if result else uuid4()
 
     # 应用依赖重写
     app.dependency_overrides[get_session] = override_get_session

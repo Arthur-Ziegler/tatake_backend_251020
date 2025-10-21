@@ -80,7 +80,6 @@ class CreateTaskRequest(BaseModel):
                 "description": "编写项目的详细技术文档和用户手册",
                 "status": "pending",
                 "priority": "high",
-                "parent_id": "550e8400-e29b-41d4-a716-446655440000",
                 "tags": ["文档", "项目"],
                 "due_date": "2024-12-31T23:59:59Z",
                 "planned_start_time": "2024-12-20T09:00:00Z",
@@ -272,22 +271,16 @@ class UpdateTaskRequest(BaseModel):
 
 class TaskListQuery(BaseModel):
     """
-    任务列表查询Schema
+    任务列表查询Schema - 简化版本
 
-    用于获取任务列表的API查询参数。支持分页、筛选和排序。
+    用于获取任务列表的API查询参数。只支持基本分页和是否包含已删除任务。
 
     查询参数：
     - page: 页码（从1开始）
     - page_size: 每页大小
-    - status: 按状态筛选（支持多选）
-    - priority: 按优先级筛选（支持多选）
-    - parent_id: 按父任务ID筛选
     - include_deleted: 是否包含已删除的任务
-    - due_before: 截止日期筛选（早于指定日期）
-    - due_after: 截止日期筛选（晚于指定日期）
-    - search: 搜索关键词（搜索标题和描述）
-    - sort_by: 排序字段
-    - sort_order: 排序方向
+    - sort_by: 排序字段（固定为created_at）
+    - sort_order: 排序方向（固定为desc）
     """
     model_config = ConfigDict(
         from_attributes=True,
@@ -308,58 +301,20 @@ class TaskListQuery(BaseModel):
     )
 
     # 筛选参数
-    status: Optional[List[TaskStatus]] = Field(
-        default=None,
-        description="按状态筛选，支持多选"
-    )
-    priority: Optional[List[TaskPriority]] = Field(
-        default=None,
-        description="按优先级筛选，支持多选"
-    )
-    parent_id: Optional[UUID] = Field(
-        default=None,
-        description="按父任务ID筛选"
-    )
     include_deleted: bool = Field(
         default=False,
         description="是否包含已删除的任务"
     )
-    due_before: Optional[datetime] = Field(
-        default=None,
-        description="截止日期筛选，早于指定日期"
-    )
-    due_after: Optional[datetime] = Field(
-        default=None,
-        description="截止日期筛选，晚于指定日期"
-    )
-    search: Optional[str] = Field(
-        default=None,
-        min_length=1,
-        max_length=100,
-        description="搜索关键词，搜索标题和描述"
-    )
 
-    # 排序参数
+    # 排序参数（固定值，简化API）
     sort_by: str = Field(
         default="created_at",
-        description="排序字段：created_at/updated_at/due_date/priority/title"
+        description="排序字段：固定为created_at"
     )
     sort_order: str = Field(
         default="desc",
-        pattern="^(asc|desc)$",
-        description="排序方向：asc/desc"
+        description="排序方向：固定为desc（最新在前）"
     )
-
-    @validator('sort_by')
-    def validate_sort_by(cls, v):
-        """验证排序字段"""
-        allowed_fields = {
-            'created_at', 'updated_at', 'due_date',
-            'priority', 'title', 'status'
-        }
-        if v not in allowed_fields:
-            raise ValueError(f"排序字段必须是以下之一：{', '.join(allowed_fields)}")
-        return v
 
 
 # ===== 响应Schema =====

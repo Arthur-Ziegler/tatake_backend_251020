@@ -25,6 +25,7 @@ Task领域数据库配置
 
 import logging
 from typing import Dict, Any, Optional
+from datetime import datetime, timezone
 from sqlalchemy import text, inspect
 from sqlmodel import SQLModel
 
@@ -381,7 +382,7 @@ def get_task_statistics(user_id: Optional[str] = None) -> Dict[str, Any]:
                 "basic_statistics": stats,
                 "recent_activity": recent_stats,
                 "user_id": user_id,
-                "generated_at": datetime.now().isoformat()
+                "generated_at": datetime.now(timezone.utc).isoformat()
             }
 
     except Exception as e:
@@ -389,7 +390,7 @@ def get_task_statistics(user_id: Optional[str] = None) -> Dict[str, Any]:
         return {
             "error": str(e),
             "user_id": user_id,
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat()
         }
 
 

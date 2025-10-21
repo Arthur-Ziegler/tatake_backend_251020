@@ -474,47 +474,9 @@ class TaskRepository:
             # 构建查询条件
             conditions = [Task.user_id == user_id]
 
-            # 处理筛选条件
+            # 处理筛选条件 - 简化版本
             if not filters.get('include_deleted', False):
                 conditions.append(Task.is_deleted == False)
-
-            # 状态筛选
-            if filters.get('status'):
-                if isinstance(filters['status'], list):
-                    conditions.append(Task.status.in_(filters['status']))
-                else:
-                    conditions.append(Task.status == filters['status'])
-
-            # 优先级筛选
-            if filters.get('priority'):
-                if isinstance(filters['priority'], list):
-                    conditions.append(Task.priority.in_(filters['priority']))
-                else:
-                    conditions.append(Task.priority == filters['priority'])
-
-            # 父任务筛选
-            if filters.get('parent_id') is not None:
-                if filters['parent_id']:
-                    conditions.append(Task.parent_id == filters['parent_id'])
-                else:
-                    conditions.append(Task.parent_id.is_(None))
-
-            # 截止日期筛选
-            if filters.get('due_before'):
-                conditions.append(Task.due_date <= filters['due_before'])
-
-            if filters.get('due_after'):
-                conditions.append(Task.due_date >= filters['due_after'])
-
-            # 搜索关键词
-            if filters.get('search'):
-                search_term = f"%{filters['search']}%"
-                conditions.append(
-                    or_(
-                        Task.title.ilike(search_term),
-                        Task.description.ilike(search_term)
-                    )
-                )
 
             # 构建基础查询
             base_query = select(Task).where(and_(*conditions))
@@ -523,16 +485,8 @@ class TaskRepository:
             count_query = select(func.count(Task.id)).where(and_(*conditions))
             total_count = self.session.execute(count_query).scalar()
 
-            # 处理排序
-            sort_by = pagination.get('sort_by', 'created_at')
-            sort_order = pagination.get('sort_order', 'desc')
-
-            if hasattr(Task, sort_by):
-                sort_column = getattr(Task, sort_by)
-                if sort_order == 'desc':
-                    base_query = base_query.order_by(desc(sort_column))
-                else:
-                    base_query = base_query.order_by(asc(sort_column))
+            # 固定排序：按创建时间倒序（最新在前）
+            base_query = base_query.order_by(desc(Task.created_at))
 
             # 处理分页
             page = pagination.get('page', 1)
