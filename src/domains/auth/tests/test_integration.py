@@ -16,11 +16,13 @@ from uuid import uuid4
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 
-from ...api.main import app
+from sqlmodel import select
+from src.api.main import app
 from src.domains.auth.schemas import GuestInitRequest, GuestUpgradeRequest, LoginRequest, SMSCodeRequest
-from ..service import create_auth_service
-from ..database import get_auth_db
-from ..models import User, SMSVerification
+from src.domains.auth.service import create_auth_service
+from src.domains.auth.database import get_auth_db
+from src.domains.auth.models import User as AuthUser, SMSVerification as AuthSMSVerification
+from src.domains.auth.exceptions import ValidationError, UserNotFoundException, TokenException
 
 
 @pytest.fixture
@@ -208,7 +210,7 @@ class TestDatabaseIntegration:
 
         # 3. 更新用户信息
         await user_repo.update_user_last_login(user.id)
-        updated_user = await user_repo.get_by_id(User, user.id)
+        updated_user = await user_repo.get_by_id(AuthUser, user.id)
         assert updated_user.login_count == 1
         assert updated_user.last_login_at is not None
 
@@ -561,7 +563,7 @@ class TestPerformanceIntegration:
 
         # 验证所有用户都可以被查询到
         for i, user_id in enumerate(user_ids):
-            user = await auth_service.auth_repository.get_by_id(User, user_id)
+            user = await auth_service.auth_repository.get_by_id(AuthUser, user_id)
             assert user is not None
             assert user.phone == f"1380013{8000 + i}"
 

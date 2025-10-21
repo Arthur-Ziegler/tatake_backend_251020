@@ -7,11 +7,26 @@
 import json
 import time
 import uuid
+from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+
+def _convert_datetime_to_string(obj: Any) -> Any:
+    """递归转换datetime对象为ISO字符串"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: _convert_datetime_to_string(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_datetime_to_string(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(_convert_datetime_to_string(item) for item in obj)
+    else:
+        return obj
 
 
 class ApiResponse(BaseModel):
@@ -176,6 +191,10 @@ def create_error_response(
     error_code: Optional[str] = None
 ) -> JSONResponse:
     """创建错误响应"""
+    # 转换details中的datetime对象为字符串
+    if details:
+        details = _convert_datetime_to_string(details)
+
     response_data = ErrorResponse.create(
         message=message,
         code=status_code,

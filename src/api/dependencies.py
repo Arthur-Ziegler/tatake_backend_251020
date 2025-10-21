@@ -1,302 +1,30 @@
 """
-统一的依赖注入系统
+认证API依赖注入系统
 
-实现ServiceFactory模式的依赖注入系统，提供数据库连接、
-服务实例等依赖项的统一管理。
+使用proper的JWT token验证机制，确保所有API都有正确的用户认证。
 """
 
-import asyncio
-from contextlib import asynccontextmanager
-from typing import Optional, Generator, AsyncGenerator, Dict, Any
-from functools import lru_cache
+import os
+from typing import AsyncGenerator
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
-from src.services import (
-    JWTService,
-    UserService,
-    TaskService,
-    FocusService,
-    RewardService,
-    StatisticsService,
-    ChatService
-)
-from src.services.simple_chat_service import SimpleChatService
-from src.repositories import (
-    UserRepository,
-    TaskRepository,
-    FocusRepository,
-    RewardRepository,
-    ChatRepository,
-    TokenBlacklistRepository,
-    SmsVerificationRepository,
-    UserSessionRepository,
-    AuthLogRepository
-)
-from src.repositories.async_user import AsyncUserRepository
-from src.repositories.async_task import AsyncTaskRepository
-from src.repositories.async_focus import AsyncFocusRepository
-from src.repositories.async_reward import AsyncRewardRepository
-from src.repositories.async_chat import AsyncChatRepository
-from .middleware.auth import verify_token
-from .config import config
-
+from jose import JWTError, jwt
 
 # HTTP Bearer认证方案
 security = HTTPBearer(auto_error=False)
 
 
-class ServiceFactory:
-    """服务工厂类，统一管理所有服务的创建和依赖注入"""
+async def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> UUID:
+    """
+    从JWT令牌中获取当前用户ID
 
-    def __init__(self):
-        """
-        初始化服务工厂
-
-        移除Redis依赖，使用数据库存储替代Redis功能
-        """
-        self._db_engine = None
-        self._db_session_factory = None
-
-        # Repository缓存
-        self._repositories: Dict[str, Any] = {}
-
-        # Service缓存
-        self._services: Dict[str, Any] = {}
-
-    async def initialize(self):
-        """
-        初始化工厂，建立数据库连接
-
-        移除Redis依赖，仅初始化数据库连接
-        """
-        # 确保使用异步数据库URL
-        database_url = config.database_url
-        if database_url.startswith("sqlite:///"):
-            database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
-
-        # 初始化数据库连接
-        self._db_engine = create_async_engine(
-            database_url,
-            echo=config.debug,
-            pool_pre_ping=True,
-            pool_recycle=3600
-        )
-
-        self._db_session_factory = sessionmaker(
-            bind=self._db_engine,
-            class_=AsyncSession,
-            expire_on_commit=False
-        )
-
-    async def close(self):
-        """
-        关闭所有连接
-
-        移除Redis依赖，仅关闭数据库连接
-        """
-        if self._db_engine:
-            await self._db_engine.dispose()
-
-    # 数据库连接管理
-    @asynccontextmanager
-    async def get_database_session(self) -> AsyncGenerator[AsyncSession, None]:
-        """获取数据库会话的上下文管理器"""
-        if not self._db_session_factory:
-            raise RuntimeError("ServiceFactory未初始化")
-
-        async with self._db_session_factory() as session:
-            try:
-                yield session
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                raise
-            finally:
-                await session.close()
-
-    
-    # Repository创建
-    def get_user_repository(self, session: AsyncSession) -> AsyncUserRepository:
-        """获取用户Repository实例"""
-        cache_key = f"user_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = AsyncUserRepository(session)
-        return self._repositories[cache_key]
-
-    def get_task_repository(self, session: AsyncSession) -> AsyncTaskRepository:
-        """获取异步任务Repository实例"""
-        cache_key = f"task_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            from src.repositories.async_task import AsyncTaskRepository
-            self._repositories[cache_key] = AsyncTaskRepository(session)
-        return self._repositories[cache_key]
-
-    def get_focus_repository(self, session: AsyncSession) -> AsyncFocusRepository:
-        """获取异步专注Repository实例"""
-        cache_key = f"focus_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            from src.repositories.async_focus import AsyncFocusRepository
-            self._repositories[cache_key] = AsyncFocusRepository(session)
-        return self._repositories[cache_key]
-
-    def get_reward_repository(self, session: AsyncSession) -> AsyncRewardRepository:
-        """获取异步奖励Repository实例"""
-        cache_key = f"reward_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            from src.repositories.async_reward import AsyncRewardRepository
-            self._repositories[cache_key] = AsyncRewardRepository(session)
-        return self._repositories[cache_key]
-
-    def get_chat_repository(self, session: AsyncSession) -> AsyncChatRepository:
-        """获取异步对话Repository实例"""
-        cache_key = f"chat_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            from src.repositories.async_chat import AsyncChatRepository
-            self._repositories[cache_key] = AsyncChatRepository(session)
-        return self._repositories[cache_key]
-
-    # 认证相关Repository
-    def get_token_blacklist_repository(self, session: AsyncSession) -> TokenBlacklistRepository:
-        """获取JWT令牌黑名单Repository实例"""
-        cache_key = f"token_blacklist_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = TokenBlacklistRepository(session)
-        return self._repositories[cache_key]
-
-    def get_sms_verification_repository(self, session: AsyncSession) -> SmsVerificationRepository:
-        """获取短信验证码Repository实例"""
-        cache_key = f"sms_verification_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = SmsVerificationRepository(session)
-        return self._repositories[cache_key]
-
-    def get_user_session_repository(self, session: AsyncSession) -> UserSessionRepository:
-        """获取用户会话Repository实例"""
-        cache_key = f"user_session_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = UserSessionRepository(session)
-        return self._repositories[cache_key]
-
-    def get_auth_log_repository(self, session: AsyncSession) -> AuthLogRepository:
-        """获取认证日志Repository实例"""
-        cache_key = f"auth_log_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = AuthLogRepository(session)
-        return self._repositories[cache_key]
-
-    
-    # ============= 异步Repository创建 =============
-
-    def get_async_user_repository(self, session: AsyncSession) -> AsyncUserRepository:
-        """获取异步用户Repository实例"""
-        cache_key = f"async_user_repo_{id(session)}"
-        if cache_key not in self._repositories:
-            self._repositories[cache_key] = AsyncUserRepository(session)
-        return self._repositories[cache_key]
-
-    
-    # ============= 异步Service创建 =============
-
-  
-    async def get_user_service(self, session: AsyncSession) -> UserService:
-        """获取用户Service实例"""
-        cache_key = f"user_service_{id(session)}"
-        if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            self._services[cache_key] = UserService(user_repo)
-        return self._services[cache_key]
-
-    async def get_task_service(self, session: AsyncSession) -> TaskService:
-        """获取任务Service实例"""
-        cache_key = f"task_service_{id(session)}"
-        if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            task_repo = self.get_task_repository(session)
-            self._services[cache_key] = TaskService(user_repo, task_repo)
-        return self._services[cache_key]
-
-    async def get_focus_service(self, session: AsyncSession) -> FocusService:
-        """获取专注Service实例"""
-        cache_key = f"focus_service_{id(session)}"
-        if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            task_repo = self.get_task_repository(session)
-            focus_repo = self.get_focus_repository(session)
-            self._services[cache_key] = FocusService(user_repo, task_repo, focus_repo)
-        return self._services[cache_key]
-
-    async def get_reward_service(self, session: AsyncSession) -> RewardService:
-        """获取奖励Service实例"""
-        cache_key = f"reward_service_{id(session)}"
-        if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            reward_repo = self.get_reward_repository(session)
-            self._services[cache_key] = RewardService(user_repo, reward_repo)
-        return self._services[cache_key]
-
-    async def get_statistics_service(self, session: AsyncSession) -> StatisticsService:
-        """获取统计Service实例"""
-        cache_key = f"statistics_service_{id(session)}"
-        if cache_key not in self._services:
-            user_repo = self.get_user_repository(session)
-            task_repo = self.get_task_repository(session)
-            focus_repo = self.get_focus_repository(session)
-            reward_repo = self.get_reward_repository(session)
-            self._services[cache_key] = StatisticsService(
-                user_repo, task_repo, focus_repo, reward_repo
-            )
-        return self._services[cache_key]
-
-    async def get_chat_service(self, session: AsyncSession) -> SimpleChatService:
-        """获取对话Service实例"""
-        cache_key = f"chat_service_{id(session)}"
-        if cache_key not in self._services:
-            chat_repo = self.get_chat_repository(session)
-            self._services[cache_key] = SimpleChatService(chat_repo=chat_repo)
-        return self._services[cache_key]
-
-    # JWT服务
-    async def get_jwt_service(self, session: AsyncSession) -> JWTService:
-        """获取JWT服务实例"""
-        cache_key = f"jwt_service_{id(session)}"
-        if cache_key not in self._services:
-            token_blacklist_repo = self.get_token_blacklist_repository(session)
-            # 使用安全的JWT配置
-            jwt_config = config.get_secure_jwt_config()
-            self._services[cache_key] = JWTService(
-                token_blacklist_repo=token_blacklist_repo,
-                **jwt_config
-            )
-        return self._services[cache_key]
-
-    def clear_cache(self):
-        """清理缓存"""
-        self._repositories.clear()
-        self._services.clear()
-
-
-# 全局ServiceFactory实例
-service_factory = ServiceFactory()
-
-
-# FastAPI依赖函数
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """获取数据库会话的FastAPI依赖"""
-    async with service_factory.get_database_session() as session:
-        yield session
-
-
-
-
-# 用户认证依赖
-async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> dict:
-    """获取当前用户信息"""
+    用于需要认证的端点。
+    如果令牌无效，抛出HTTPException。
+    """
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -305,24 +33,40 @@ async def get_current_user(
         )
 
     try:
-        payload = verify_token(credentials.credentials)
-        user_id = payload.get("user_id")
-        user_type = payload.get("user_type", "user")
+        # 解码JWT令牌
+        secret_key = os.getenv("JWT_SECRET_KEY", "your-super-secret-jwt-key-here")
+        payload = jwt.decode(
+            credentials.credentials,
+            secret_key,
+            algorithms=["HS256"]
+        )
 
+        # 验证令牌类型
+        if payload.get("token_type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="令牌类型错误"
+            )
+
+        user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="无效的用户信息"
+                detail="令牌中缺少用户ID"
             )
 
-        return {
-            "user_id": user_id,
-            "user_type": user_type,
-            "token_exp": payload.get("exp")
-        }
+        return UUID(user_id)
 
-    except HTTPException:
-        raise
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="无效的认证令牌"
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="令牌格式错误"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -333,8 +77,8 @@ async def get_current_user(
 
 # 可选认证依赖
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[dict]:
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> dict | None:
     """获取当前用户信息（可选）"""
     if not credentials:
         return None
@@ -356,60 +100,6 @@ async def require_user_type(required_type: str):
             )
         return current_user
     return dependency
-
-
-# Service依赖函数
-
-
-
-
-async def get_user_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> UserService:
-    """获取用户Service的FastAPI依赖"""
-    return await service_factory.get_user_service(session)
-
-
-async def get_task_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> TaskService:
-    """获取任务Service的FastAPI依赖"""
-    return await service_factory.get_task_service(session)
-
-
-async def get_focus_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> FocusService:
-    """获取专注Service的FastAPI依赖"""
-    return await service_factory.get_focus_service(session)
-
-
-async def get_reward_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> RewardService:
-    """获取奖励Service的FastAPI依赖"""
-    return await service_factory.get_reward_service(session)
-
-
-async def get_statistics_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> StatisticsService:
-    """获取统计Service的FastAPI依赖"""
-    return await service_factory.get_statistics_service(session)
-
-
-async def get_chat_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> SimpleChatService:
-    """获取对话Service的FastAPI依赖"""
-    return await service_factory.get_chat_service(session)
-
-
-async def get_jwt_service(
-    session: AsyncSession = Depends(get_db_session)
-) -> JWTService:
-    """获取JWT服务的FastAPI依赖"""
-    return await service_factory.get_jwt_service(session)
 
 
 # 分页依赖
@@ -437,7 +127,7 @@ def get_pagination_params(
 
 # 搜索依赖
 def get_search_params(
-    q: Optional[str] = None,
+    q: str | None = None,
     sort: str = "created_at",
     order: str = "desc"
 ) -> dict:
@@ -452,22 +142,14 @@ def get_search_params(
     }
 
 
-# 文件上传依赖
-@lru_cache()
-def get_file_upload_config():
-    """获取文件上传配置的FastAPI依赖（缓存）"""
-    return {
-        "max_file_size": config.max_file_size,
-        "allowed_file_types": config.allowed_file_types
-    }
-
-
-# 初始化和清理函数
+# 初始化和清理函数（简化版本）
 async def initialize_dependencies():
-    """初始化依赖注入系统"""
-    await service_factory.initialize()
+    """初始化依赖注入系统（简化版本）"""
+    # 暂时不需要初始化任何东西
+    pass
 
 
 async def cleanup_dependencies():
-    """清理依赖注入系统"""
-    await service_factory.close()
+    """清理依赖注入系统（简化版本）"""
+    # 暂时不需要清理任何东西
+    pass

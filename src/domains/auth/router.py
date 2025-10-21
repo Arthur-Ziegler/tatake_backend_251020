@@ -1,70 +1,79 @@
 """
-认证领域API路由
+简化认证领域API路由
 
-提供完整的认证API端点，包含7个核心认证功能：
-1. 游客账号初始化
-2. 游客账号升级
-3. 短信验证码发送
-4. 用户登录
-5. 令牌刷新
-6. 用户登出
-7. 获取用户信息
+根据设计文档，API大幅简化：
+1. 统一响应格式：所有端点返回{code, data, message}
+2. 只保留5个核心端点，移除复杂功能
+3. 微信单一登录：只支持微信OpenID认证
+4. 极简化设计：删除SMS、用户信息等非核心端点
 
-API设计原则:
-- RESTful设计风格
-- 统一的请求/响应格式
-- 完整的错误处理
-- 安全的认证机制
-- 详细的参数验证
+API端点:
+1. POST /auth/guest/init - 游客账号初始化
+2. POST /auth/register - 微信注册
+3. POST /auth/login - 微信登录
+4. POST /auth/guest/upgrade - 游客账号升级
+5. POST /auth/refresh - 刷新访问令牌
 
-端点列表:
-POST /auth/guest/init          - 游客账号初始化
-POST /auth/guest/upgrade       - 游客账号升级
-POST /auth/sms/send           - 发送短信验证码
-POST /auth/login              - 用户登录
-POST /auth/refresh            - 刷新访问令牌
-POST /auth/logout             - 用户登出
-GET  /auth/user-info          - 获取用户信息
+移除的端点:
+- DELETE /auth/logout - 移除登出功能
+- GET /auth/user-info - 移除用户信息查询
+- POST /auth/sms/send - 移除短信验证码
+- 所有基于设备信息的操作
+
+设计原则:
+- RESTful设计
+- 统一错误处理
+- 详细参数验证
+- 完整文档说明
 """
 
+import os
 from datetime import datetime, timezone
 from typing import Dict, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, status, Request, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
 
-from .service import create_auth_service
+from jose import JWTError, jwt
+
+from .service import AuthService
 from .schemas import (
     # 请求模型
-    GuestInitRequest, GuestUpgradeRequest, LoginRequest,
-    SMSCodeRequest, TokenRefreshRequest,
+    GuestInitRequest,
+    WeChatRegisterRequest,
+    WeChatLoginRequest,
+    GuestUpgradeRequest,
+    TokenRefreshRequest,
 
-    # 响应模型（统一使用AuthTokenResponse）
-    AuthTokenResponse, UserInfoResponse, SMSCodeResponse,
-
-    # 通用模型
-    BaseResponse, ErrorResponse
+    # 响应模型
+    AuthTokenResponse,
+    UnifiedResponse
 )
 from .exceptions import (
     AuthenticationException,
     UserNotFoundException,
     TokenException,
-    SMSException,
     ValidationError
 )
 
 # 创建路由器
 router = APIRouter(prefix="/auth", tags=["认证系统"])
 
-# HTTP Bearer认证方案
+# HTTP Bearer认证方案（可选）
 security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> UUID:
-    """从JWT令牌中获取当前用户ID"""
+    """
+    从JWT令牌中获取当前用户ID
+
+    用于需要认证的端点。
+    如果令牌无效，抛出HTTPException。
+    """
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,511 +81,255 @@ async def get_current_user_id(
         )
 
     try:
-        # 这里应该验证JWT令牌并提取用户ID
-        # 为了简化，这里先跳过JWT验证
-        # 实际项目中应该调用JWTService.verify_token
+        # 解码JWT令牌
+        secret_key = os.getenv("JWT_SECRET_KEY", "your-super-secret-jwt-key-here")
+        payload = jwt.decode(
+            credentials.credentials,
+            secret_key,
+            algorithms=["HS256"]
+        )
 
-        # 临时解析令牌（实际应该用JWTService）
-        import jwt
-        try:
-            payload = jwt.decode(
-                credentials.credentials,
-                "your-super-secret-jwt-key-here",
-                algorithms=["HS256"]
-            )
-            user_id = UUID(payload.get("sub"))
-            return user_id
-        except jwt.JWTError:
+        # 验证令牌类型
+        if payload.get("token_type") != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="无效的认证令牌"
+                detail="令牌类型错误"
             )
 
-    except Exception as e:
+        user_id = UUID(payload.get("sub"))
+        return user_id
+
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"认证失败: {str(e)}"
+            detail="无效的认证令牌"
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="令牌格式错误"
         )
 
 
-def get_client_info(request: Request) -> Dict[str, str]:
-    """获取客户端信息"""
-    return {
-        "ip_address": request.client.host if request.client else None,
-        "user_agent": request.headers.get("User-Agent"),
-        "device_id": request.headers.get("X-Device-ID")
-    }
+def create_success_response(data: Dict[str, Any]) -> JSONResponse:
+    """创建统一成功响应"""
+    response = UnifiedResponse(
+        code=200,
+        data=data,
+        message="success"
+    )
+    return JSONResponse(content=response.model_dump(), status_code=200)
 
 
-def create_error_response(error: Exception) -> ErrorResponse:
-    """创建统一的错误响应"""
-    if isinstance(error, AuthenticationException):
-        return ErrorResponse(
-            success=False,
-            error_code="AUTH_ERROR",
-            message=str(error),
-            details=None
-        )
-    elif isinstance(error, UserNotFoundException):
-        return ErrorResponse(
-            success=False,
-            error_code="USER_NOT_FOUND",
-            message=str(error),
-            details=None
-        )
-    elif isinstance(error, TokenException):
-        return ErrorResponse(
-            success=False,
-            error_code="TOKEN_ERROR",
-            message=str(error),
-            details=None
-        )
-    elif isinstance(error, SMSException):
-        return ErrorResponse(
-            success=False,
-            error_code="SMS_ERROR",
-            message=str(error),
-            details=None
-        )
-    elif isinstance(error, ValidationError):
-        return ErrorResponse(
-            success=False,
-            error_code="VALIDATION_ERROR",
-            message=str(error),
-            details=None
-        )
-    else:
-        return ErrorResponse(
-            success=False,
-            error_code="INTERNAL_ERROR",
-            message="服务器内部错误",
-            details=str(error) if __debug__ else None
-        )
+def create_error_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """创建统一错误响应"""
+    response = UnifiedResponse(
+        code=status_code,
+        data=data,
+        message=message
+    )
+    return JSONResponse(content=response.model_dump(), status_code=status_code)
 
 
-@router.post("/guest/init", response_model=AuthTokenResponse)
-async def init_guest_account(
-    request: GuestInitRequest,
-    http_request: Request
-):
+# ===== API端点实现 =====
+
+@router.post(
+    "/guest/init",
+    response_model=UnifiedResponse,
+    summary="游客账号初始化",
+    description="创建一个新的游客账号，无需任何参数。每次请求都创建全新的随机游客身份。"
+)
+async def guest_init(
+    request: Request
+) -> JSONResponse:
     """
     游客账号初始化
 
-    为新设备创建临时游客账号，无需用户提供任何身份信息。
-    游客账号具有有限的功能，后续可以升级为正式账号。
-
-    Args:
-        request: 游客初始化请求
-        http_request: HTTP请求对象
-
-    Returns:
-        AuthInitResponse: 包含用户ID和认证令牌的响应
-
-    Raises:
-        HTTPException: 当初始化失败时
+    根据设计文档，这个端点不接受任何请求体参数，
+    直接创建新的游客账号并返回认证令牌。
     """
     try:
         # 获取客户端信息
-        client_info = get_client_info(http_request)
+        ip_address = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent", "unknown")
 
-        # 创建认证服务
-        auth_service = await create_auth_service()
+        # 初始化游客账号
+        auth_service = AuthService()
+        result = auth_service.init_guest_account(
+            request=GuestInitRequest(),
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
 
-        # 执行游客账号初始化
-        result = await auth_service.init_guest_account(
+        return create_success_response(result)
+
+    except AuthenticationException as e:
+        return create_error_response(401, str(e))
+
+
+@router.post(
+    "/register",
+    response_model=UnifiedResponse,
+    summary="微信注册",
+    description="通过微信OpenID注册新用户。内部实现为创建游客账号并立即升级为正式用户。"
+)
+async def wechat_register(
+    request: WeChatRegisterRequest,
+    http_request: Request
+) -> JSONResponse:
+    """
+    微信注册
+
+    根据设计文档，这是"创建游客 + 立即升级"的组合操作。
+    客户端只需要提供微信openid。
+    """
+    try:
+        # 获取客户端信息
+        ip_address = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
+
+        # 执行微信注册
+        auth_service = AuthService()
+        result = auth_service.wechat_register(
             request=request,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
+            ip_address=ip_address,
+            user_agent=user_agent
         )
 
-        # 构建响应
-        response = AuthTokenResponse(
-            success=True,
-            message="游客账号初始化成功",
-            data={
-                "user_id": result["user_id"],
-                "access_token": result["access_token"],
-                "refresh_token": result["refresh_token"],
-                "token_type": result["token_type"],
-                "expires_in": result["expires_in"],
-                "is_guest": True
-            }
+        return create_success_response(result)
+
+    except ValidationError as e:
+        return create_error_response(400, str(e))
+    except AuthenticationException as e:
+        return create_error_response(401, str(e))
+
+
+@router.post(
+    "/login",
+    response_model=UnifiedResponse,
+    summary="微信登录",
+    description="通过微信OpenID登录已有用户账号。"
+)
+async def wechat_login(
+    request: WeChatLoginRequest,
+    http_request: Request
+) -> JSONResponse:
+    """
+    微信登录
+
+    通过微信OpenID进行身份验证并返回认证令牌。
+    """
+    try:
+        # 获取客户端信息
+        ip_address = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
+
+        # 执行微信登录
+        auth_service = AuthService()
+        result = auth_service.wechat_login(
+            request=request,
+            ip_address=ip_address,
+            user_agent=user_agent
         )
 
-        return response
+        return create_success_response(result)
 
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[GuestInit] 游客账号初始化失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_response.dict()
-        )
+    except UserNotFoundException as e:
+        return create_error_response(404, str(e))
+    except ValidationError as e:
+        return create_error_response(400, str(e))
+    except AuthenticationException as e:
+        return create_error_response(401, str(e))
 
 
-@router.post("/guest/upgrade", response_model=AuthTokenResponse)
-async def upgrade_guest_account(
+@router.post(
+    "/guest/upgrade",
+    response_model=UnifiedResponse,
+    summary="游客账号升级",
+    description="将当前游客账号升级为正式用户，需要提供微信OpenID。",
+    dependencies=[Depends(get_current_user_id)]
+)
+async def upgrade_guest(
     request: GuestUpgradeRequest,
-    http_request: Request,
-    current_user_id: UUID = Depends(get_current_user_id)
-):
+    current_user_id: UUID = Depends(get_current_user_id),
+    http_request: Request = None
+) -> JSONResponse:
     """
     游客账号升级
 
-    将游客账号升级为正式账号，需要提供手机号和短信验证码。
-    升级后可以享受完整的功能。
-
-    Args:
-        request: 账号升级请求
-        current_user_id: 当前用户ID（从JWT令牌获取）
-        http_request: HTTP请求对象
-
-    Returns:
-        AuthTokenResponse: 包含新用户信息和令牌的响应
-
-    Raises:
-        HTTPException: 当升级失败时
+    需要有效的访问令牌，将当前游客账号与微信OpenID绑定。
     """
     try:
         # 获取客户端信息
-        client_info = get_client_info(http_request)
+        ip_address = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
 
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 执行账号升级
-        result = await auth_service.upgrade_guest_account(
+        # 执行游客升级
+        auth_service = AuthService()
+        result = auth_service.upgrade_guest_account(
             request=request,
             current_user_id=current_user_id,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
+            ip_address=ip_address,
+            user_agent=user_agent
         )
 
-        # 构建响应
-        response = AuthTokenResponse(
-            success=True,
-            message="账号升级成功",
-            data={
-                "user_id": result["user_id"],
-                "access_token": result["access_token"],
-                "refresh_token": result["refresh_token"],
-                "token_type": result["token_type"],
-                "expires_in": result["expires_in"],
-                "is_guest": False
-            }
-        )
+        return create_success_response(result)
 
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[GuestUpgrade] 账号升级失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_response.dict()
-        )
+    except UserNotFoundException as e:
+        return create_error_response(404, str(e))
+    except ValidationError as e:
+        return create_error_response(400, str(e))
+    except AuthenticationException as e:
+        return create_error_response(401, str(e))
 
 
-@router.post("/sms/send", response_model=SMSCodeResponse)
-async def send_sms_code(
-    request: SMSCodeRequest,
-    http_request: Request,
-    current_user_id: UUID = Depends(get_current_user_id)
-):
-    """
-    发送短信验证码
-
-    向指定手机号发送验证码，用于登录、注册、账号升级等场景。
-    实施发送频率限制，防止短信轰炸。
-
-    Args:
-        request: 短信发送请求
-        current_user_id: 当前用户ID（可选）
-        http_request: HTTP请求对象
-
-    Returns:
-        SMSCodeResponse: 短信发送结果
-
-    Raises:
-        HTTPException: 当发送失败时
-    """
-    try:
-        # 获取客户端信息
-        client_info = get_client_info(http_request)
-
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 发送短信验证码
-        code = await auth_service.send_sms_code(
-            request=request,
-            user_id=current_user_id,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
-        )
-
-        # 构建响应（不返回实际验证码，只返回成功信息）
-        response = SMSCodeResponse(
-            success=True,
-            message="验证码发送成功",
-            data={
-                "phone": request.phone,
-                "verification_type": request.verification_type,
-                "expires_in": 300,  # 5分钟
-                "sent_at": datetime.now(timezone.utc).isoformat()
-            }
-        )
-
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[SMSSend] 短信发送失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_response.dict()
-        )
-
-
-@router.post("/login", response_model=AuthTokenResponse)
-async def login(
-    request: LoginRequest,
-    http_request: Request
-):
-    """
-    用户登录
-
-    支持密码登录和短信验证码登录两种方式。
-    成功登录后返回JWT访问令牌和刷新令牌。
-
-    Args:
-        request: 登录请求
-        http_request: HTTP请求对象
-
-    Returns:
-        AuthTokenResponse: 登录成功响应
-
-    Raises:
-        HTTPException: 当登录失败时
-    """
-    try:
-        # 获取客户端信息
-        client_info = get_client_info(http_request)
-
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 执行登录
-        result = await auth_service.login(
-            request=request,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
-        )
-
-        # 构建响应
-        response = AuthTokenResponse(
-            success=True,
-            message="登录成功",
-            data={
-                "user_id": result["user_id"],
-                "access_token": result["access_token"],
-                "refresh_token": result["refresh_token"],
-                "token_type": result["token_type"],
-                "expires_in": result["expires_in"],
-                "is_guest": result["is_guest"]
-            }
-        )
-
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[Login] 登录失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_response.dict()
-        )
-
-
-@router.post("/refresh", response_model=AuthTokenResponse)
+@router.post(
+    "/refresh",
+    response_model=UnifiedResponse,
+    summary="刷新访问令牌",
+    description="使用刷新令牌获取新的访问令牌。"
+)
 async def refresh_token(
     request: TokenRefreshRequest,
     http_request: Request
-):
+) -> JSONResponse:
     """
     刷新访问令牌
 
-    使用刷新令牌获取新的访问令牌。
-    当访问令牌即将过期时，客户端应使用此接口续期。
-
-    Args:
-        request: 令牌刷新请求
-        http_request: HTTP请求对象
-
-    Returns:
-        AuthTokenResponse: 新的令牌信息
-
-    Raises:
-        HTTPException: 当刷新失败时
+    使用有效的刷新令牌获取新的访问令牌和刷新令牌。
     """
     try:
         # 获取客户端信息
-        client_info = get_client_info(http_request)
+        ip_address = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
 
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 刷新令牌
-        result = await auth_service.refresh_token(
+        # 执行令牌刷新
+        auth_service = AuthService()
+        result = auth_service.refresh_token(
             request=request,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
+            ip_address=ip_address,
+            user_agent=user_agent
         )
 
-        # 构建响应
-        response = AuthTokenResponse(
-            success=True,
-            message="令牌刷新成功",
-            data={
-                "access_token": result["access_token"],
-                "refresh_token": result["refresh_token"],
-                "token_type": result["token_type"],
-                "expires_in": result["expires_in"]
-            }
-        )
+        return create_success_response(result)
 
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[TokenRefresh] 令牌刷新失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=error_response.dict()
-        )
+    except TokenException as e:
+        return create_error_response(401, str(e))
+    except AuthenticationException as e:
+        return create_error_response(401, str(e))
 
 
-@router.post("/logout", response_model=BaseResponse)
-async def logout(
-    http_request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    用户登出
+# ===== 依赖注入函数 =====
 
-    将当前令牌加入黑名单，使其立即失效。
-    客户端在登出后应删除本地存储的令牌。
-
-    Args:
-        credentials: HTTP认证凭据
-        http_request: HTTP请求对象
-
-    Returns:
-        BaseResponse: 登出结果
-
-    Raises:
-        HTTPException: 当登出失败时
-    """
-    try:
-        if not credentials:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="需要认证令牌"
-            )
-
-        # 获取客户端信息
-        client_info = get_client_info(http_request)
-
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 解析令牌获取用户信息
-        import jwt
-        try:
-            payload = jwt.decode(
-                credentials.credentials,
-                "your-super-secret-jwt-key-here",
-                algorithms=["HS256"]
-            )
-            user_id = UUID(payload.get("sub"))
-            token_jti = payload.get("jti")
-            expires_at = datetime.fromtimestamp(payload.get("exp"), timezone.utc)
-        except jwt.JWTError:
-            raise TokenException("无效的认证令牌")
-
-        # 执行登出
-        await auth_service.logout(
-            token_jti=token_jti,
-            user_id=user_id,
-            token_type="access",
-            expires_at=expires_at,
-            ip_address=client_info["ip_address"],
-            user_agent=client_info["user_agent"]
-        )
-
-        # 构建响应
-        response = BaseResponse(
-            success=True,
-            message="登出成功"
-        )
-
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[Logout] 登出失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_response.dict()
-        )
+async def create_auth_service() -> AuthService:
+    """创建认证服务实例（依赖注入）"""
+    return AuthService()
 
 
-@router.get("/user-info", response_model=UserInfoResponse)
-async def get_user_info(
-    current_user_id: UUID = Depends(get_current_user_id)
-):
-    """
-    获取用户信息
-
-    根据JWT令牌获取当前用户的详细信息。
-    包含用户基本信息、账号状态、积分等级等。
-
-    Args:
-        current_user_id: 当前用户ID（从JWT令牌获取）
-
-    Returns:
-        UserInfoResponse: 用户详细信息
-
-    Raises:
-        HTTPException: 当获取失败时
-    """
-    try:
-        # 创建认证服务
-        auth_service = await create_auth_service()
-
-        # 获取用户信息
-        user_info = await auth_service.get_user_info(current_user_id)
-
-        # 构建响应
-        response = UserInfoResponse(
-            success=True,
-            message="获取用户信息成功",
-            data=user_info
-        )
-
-        return response
-
-    except Exception as e:
-        # 记录错误并返回统一错误响应
-        print(f"[UserInfo] 获取用户信息失败: {str(e)}")
-        error_response = create_error_response(e)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=error_response.dict()
-        )
+# ===== 移除的端点注释 =====
+# 以下端点已被移除，原因：
+# - DELETE /auth/logout: 移除登出功能
+# - GET /auth/user-info: 移除用户信息查询
+# - POST /auth/sms/send: 移除短信验证码发送
+# - 所有与设备信息相关的操作端点
+# - 复杂的密码登录、多平台登录端点
