@@ -13,8 +13,8 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .config import config
-from .middleware import (
+from src.api.config import config
+from src.api.middleware import (
     CORSMiddleware,
     LoggingMiddleware,
     ExceptionHandlerMiddleware,
@@ -22,7 +22,7 @@ from .middleware import (
     SecurityMiddleware,
     AuthMiddleware
 )
-from .responses import create_success_response, create_error_response
+from src.api.responses import create_success_response, create_error_response
 
 
 @asynccontextmanager
@@ -144,35 +144,35 @@ async def api_info():
             "api_version": config.app_version,
             "api_prefix": config.api_prefix,
             "endpoints": {
-                "认证系统": 7,
-                "AI对话系统": 10,
-                "任务管理": 12,
-                "专注系统": 15,
-                "奖励系统": 12,
-                "统计分析": 10,
-                "用户管理": 6
+                "认证系统": 7
             },
-            "total_endpoints": 72,
+            "total_endpoints": 7,
             "documentation": {
                 "swagger": "/docs",
                 "redoc": "/redoc",
                 "openapi": "/openapi.json"
-            }
+            },
+            "status": "认证领域已完成，其他领域开发中"
         },
-        message="API信息"
+        message="API信息 - 当前仅包含认证系统"
     )
 
 
 # 添加API路由模块
-from .routers import auth, user, tasks, chat, focus, rewards_new, statistics_new
-app.include_router(auth.router, prefix=config.api_prefix, tags=["认证系统"])
-app.include_router(user.router, prefix=config.api_prefix, tags=["用户管理"])
-app.include_router(tasks.router, prefix=config.api_prefix, tags=["任务管理"])
-app.include_router(chat.router, prefix=config.api_prefix, tags=["AI对话"])
-app.include_router(focus.router, prefix=f"{config.api_prefix}/focus", tags=["专注系统"])
-app.include_router(rewards_new.router, prefix=f"{config.api_prefix}/rewards", tags=["奖励系统"])
-app.include_router(rewards_new.router, prefix=f"{config.api_prefix}/points", tags=["积分系统"])
-app.include_router(statistics_new.router, prefix=f"{config.api_prefix}/statistics", tags=["统计分析"])
+# from src.api.routers import user, tasks, chat, focus, rewards_new, statistics_new
+from src.domains.auth.router import router as auth_router
+
+# 使用新的认证领域路由
+app.include_router(auth_router, prefix=config.api_prefix, tags=["认证系统"])
+
+# 其他路由暂时注释掉，等待DDD架构实现
+# app.include_router(user.router, prefix=config.api_prefix, tags=["用户管理"])
+# app.include_router(tasks.router, prefix=config.api_prefix, tags=["任务管理"])
+# app.include_router(chat.router, prefix=config.api_prefix, tags=["AI对话"])
+# app.include_router(focus.router, prefix=f"{config.api_prefix}/focus", tags=["专注系统"])
+# app.include_router(rewards_new.router, prefix=f"{config.api_prefix}/rewards", tags=["奖励系统"])
+# app.include_router(rewards_new.router, prefix=f"{config.api_prefix}/points", tags=["积分系统"])
+# app.include_router(statistics_new.router, prefix=f"{config.api_prefix}/statistics", tags=["统计分析"])
 
 
 if __name__ == "__main__":

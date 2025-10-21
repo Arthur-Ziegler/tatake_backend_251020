@@ -31,7 +31,6 @@ from .exceptions import (
     create_exception,
     wrap_repository_error,
 )
-from .auth_service import AuthService
 from .jwt_service import JWTService
 from .user_service import UserService
 from .task_service import TaskService

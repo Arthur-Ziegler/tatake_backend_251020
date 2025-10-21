@@ -1,8 +1,43 @@
 # implement-api-business-layer 变更提案
 
+## Why
+
+**业务需求驱动**：
+TaKeKe应用已完成第一阶段的基础架构搭建，但缺乏核心业务功能的实现。用户无法使用任务管理、专注计时、奖励系统等核心功能，应用无法提供实际价值。必须实现完整的业务逻辑才能支撑用户日常使用。
+
+**技术债务清理**：
+当前Service层存在大量TODO项和占位符实现，Redis依赖增加部署复杂度，缺乏真实的JWT认证实现。需要重构架构以提高代码质量、可维护性和可扩展性。
+
+**架构演进需要**：
+随着业务复杂度增加，传统的单体架构已无法满足需求。需要引入领域驱动设计(DDD)思想，实现模块化架构，为后续功能扩展奠定基础。同时需要分离认证数据库和业务数据库，提高系统安全性和性能。
+
+## What Changes
+
+**核心变更**：
+1. **实现46个API端点的完整业务逻辑** - 涵盖认证、任务、专注、奖励、AI对话、统计、用户管理7大模块
+2. **重构认证架构为DDD模式** - 创建独立的认证领域模块，作为其他模块的模板
+3. **数据库分离策略** - 将认证数据库与业务数据库分离，提高安全性和性能
+4. **移除Redis依赖** - 用SQLite替代Redis存储，降低部署复杂度
+5. **集成LangGraph AI对话系统** - 实现智能任务管理和长期记忆功能
+
+**技术架构变更**：
+- 创建`src/domains/auth/`独立领域模块
+- 新增`tatake_auth.db`认证数据库
+- 实现真实的JWT令牌管理和黑名单机制
+- 补全Service层的所有业务逻辑实现
+- 创建MockSMS服务用于测试和开发
+- 优化数据库表结构支持新功能
+
+**分批次实施**：
+- 批次1：认证领域模块重构（已完成）
+- 批次2：任务管理核心（20个API）
+- 批次3：AI对话和增强功能（15个API）
+
 ## 概述
 
 基于TaKeKe项目第一阶段的API层基础架构完成情况，第二阶段将完成剩下全部的API业务功能实现，包括46个API端点的完整业务逻辑、Service层补充实现、LangGraph AI对话集成以及数据库长期记忆系统。采用分批次实施策略，确保完全覆盖所有功能模块。
+
+**重要架构调整**: 本阶段将引入**领域驱动设计(DDD)**思想，首先将认证相关代码重构为独立的领域模块(`src/domains/auth/`)，作为后续其他模块的模板。同时实施**数据库分离策略**，将认证数据库(`tatake_auth.db`)与业务数据库(`tatake.db`)分开管理。
 
 ## 背景
 
@@ -46,41 +81,103 @@
 
 ### 技术架构决策
 
-#### 1. **Redis移除策略**
+#### 1. **领域驱动设计(DDD)引入** 🆕
+- **建立独立认证领域** (`src/domains/auth/`)
+  - 包含完整的router、service、repository、models、database
+  - 自包含的README文档说明架构和使用方法
+  - 作为其他领域模块的标准模板
+- **领域边界清晰**
+  - 认证领域：用户身份、JWT、短信验证
+  - 未来任务领域：任务管理、专注会话
+  - 未来奖励领域：积分、碎片、兑换
+- **渐进式迁移策略**
+  - 当前仅重构认证模块到领域层
+  - 其他模块保持现状(src/api/routers/*)
+  - 后续逐步迁移其他模块
+
+#### 2. **数据库分离策略** 🆕
+- **认证数据库** (`tatake_auth.db`)
+  - users表(用户基本信息)
+  - user_settings表(用户设置)
+  - sms_verification表(短信验证码)
+  - token_blacklist表(JWT黑名单)
+  - user_sessions表(用户会话)
+  - auth_logs表(认证审计日志)
+- **业务数据库** (`tatake.db`)
+  - tasks表及相关任务数据
+  - focus_sessions表
+  - chat_sessions表
+  - rewards表及相关奖励数据
+- **跨库关联策略**
+  - 使用`user_id`字符串关联(不用外键)
+  - 避免跨库事务复杂性
+  - Service层保证数据一致性
+- **⚠️ 潜在风险与缓解**
+  - 风险：数据不一致性(应用层维护关联)
+  - 缓解：软删除策略 + 定期一致性检查脚本
+
+#### 3. **Redis移除策略**
 - **删除Redis依赖**，改用SQLite存储
 - 短信验证码用数据库存储 + 冷却时间逻辑
 - JWT黑名单用数据库维护（token_blacklist表）
 - 用户会话用JWT本身管理
 
-#### 2. **LangGraph集成方案**
+#### 4. **LangGraph集成方案**
 - **使用真实LLM服务**：通过环境变量配置BaseURL和API Key
 - **数据库长期记忆**：替换Redis，使用SQLite存储对话历史
 - **Supervisor-Agent模式**：主supervisor节点路由到专门agent
 - **工具调用集成**：AI通过工具调用操作任务管理功能
 
-#### 3. **分批次实施策略**
-- **批次1**：认证核心模块（11个API）- 3周
+#### 5. **分批次实施策略** (已调整)
+- **批次1**：认证领域模块重构 + Schema层补全（11个API）- 3周
+  - 创建`src/domains/auth/`完整目录结构
+  - 补全`src/api/schemas/auth.py`
+  - 实施数据库分离
+  - 完善测试套件(覆盖率>90%)
 - **批次2**：任务管理核心（20个API）- 3-4周
 - **批次3**：AI对话和增强功能（15个API）- 4-5周
 
-#### 4. **Mock服务策略**
+#### 6. **Mock服务策略** (已优化)
 为外部服务创建完全功能的Mock服务：
 - `src/services/external/mock_sms_service.py` - 短信服务模拟
+  - **控制台彩色输出**验证码(方便测试)
+  - 随机生成6位数字验证码
+  - 5分钟有效期
+  - 频率限制和冷却时间
 - `src/services/external/mock_wechat_service.py` - 微信登录模拟
 - 完全模拟真实响应，包含详细的替换注释
 
-#### 5. **Pydantic Schema设计**
+#### 7. **Pydantic Schema设计**
 独立的schema目录结构：
 ```
 src/api/schemas/
-├── auth/          # 认证相关模型
-├── tasks/         # 任务相关模型
-├── focus/         # 专注相关模型
-├── rewards/       # 奖励相关模型
-├── chat/          # 对话相关模型
-├── statistics/    # 统计相关模型
-└── user/          # 用户相关模型
+├── __init__.py
+└── auth.py        # 🆕 认证相关Schema(7个请求+7个响应)
+                   # GuestInitRequest/Response
+                   # GuestUpgradeRequest/Response
+                   # SMSCodeRequest/Response
+                   # LoginRequest/Response
+                   # TokenRefreshRequest/Response
+                   # LogoutRequest/Response
+                   # UserInfoResponse
+├── tasks/         # 【未来】任务相关模型
+├── focus/         # 【未来】专注相关模型
+├── rewards/       # 【未来】奖励相关模型
+├── chat/          # 【未来】对话相关模型
+├── statistics/    # 【未来】统计相关模型
+└── user/          # 【未来】用户相关模型
 ```
+
+#### 8. **模块注册策略** 🆕
+- **当前阶段**：仅注册认证API到FastAPI app
+  ```python
+  # main.py
+  app.include_router(auth.router, prefix="/api/v1", tags=["认证系统"])
+  # 其他router暂时注释
+  # app.include_router(user.router, ...)
+  # app.include_router(tasks.router, ...)
+  ```
+- **后续阶段**：逐步启用其他模块
 
 ## 详细实施计划
 
@@ -300,13 +397,15 @@ src/api/schemas/
 - ✅ 基础架构已完成（FastAPI、中间件、数据模型）
 - ✅ Service层架构清晰，需要业务逻辑补充
 - ✅ 分批次实施计划已制定
-- 🔄 准备开始批次1：认证核心模块实现
+- ✅ **批次1已完成**：认证核心模块完整实现（DDD架构、数据库分离、完整测试套件）
+- 🔄 准备开始批次2：任务管理核心实现
 
 ---
 
-**更新日期**: 2025-10-20
+**更新日期**: 2025-10-21
 **创建人**: AI Assistant
 **预计完成时间**: 10-12周
-**当前阶段**: 第二阶段完整实施方案
+**当前阶段**: 批次2 - 任务管理核心实现准备
 **优先级**: 高
 **开发方式**: 分批次实施 + TDD + Git版本管理 + 严格质量标准
+**批次1状态**: ✅ 已完成（认证领域模块重构、7个阶段全部完成）

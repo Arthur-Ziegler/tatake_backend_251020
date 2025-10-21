@@ -55,6 +55,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/api/v1/auth/sms/send",
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
+            "/api/v1/info",
             "/docs",
             "/redoc",
             "/openapi.json",
@@ -82,6 +83,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # 提取并验证令牌
         token = self._extract_token(request)
+        print(f"[AuthMiddleware] 提取的令牌: {token[:20]}..." if token else "[AuthMiddleware] 未提取到令牌")
         if not token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -243,21 +245,30 @@ class AuthMiddleware(BaseHTTPMiddleware):
         Returns:
             JWT令牌字符串或None
         """
+        # 打印所有请求头用于调试
+        print(f"[AuthMiddleware] 请求头: {dict(request.headers)}")
+
         # 从Authorization头提取（推荐方式）
         auth_header = request.headers.get("Authorization")
+        print(f"[AuthMiddleware] Authorization头: {auth_header}")
         if auth_header and auth_header.startswith("Bearer "):
-            return auth_header[7:]
+            token = auth_header[7:]
+            print(f"[AuthMiddleware] 从Authorization头提取令牌成功: {token[:20]}...")
+            return token
 
         # 从查询参数提取（临时用途）
         token = request.query_params.get("token")
         if token:
+            print(f"[AuthMiddleware] 从查询参数提取令牌成功: {token[:20]}...")
             return token
 
         # 从Cookie提取（备用方式）
         token = request.cookies.get("access_token")
         if token:
+            print(f"[AuthMiddleware] 从Cookie提取令牌成功: {token[:20]}...")
             return token
 
+        print(f"[AuthMiddleware] 所有令牌提取方式都失败")
         return None
 
 

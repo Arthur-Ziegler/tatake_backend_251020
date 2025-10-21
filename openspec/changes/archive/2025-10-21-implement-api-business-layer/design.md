@@ -57,31 +57,148 @@
 
 ### 分层架构原则
 
-1. **API层**: 处理HTTP请求/响应，参数验证，权限控制
-2. **Service层**: 业务逻辑处理，事务管理，业务规则验证
-3. **Repository层**: 数据访问抽象，数据库操作封装
-4. **Database层**: 数据持久化，SQLite数据库
+1. **Domain层** 🆕: 领域驱动设计，聚合业务逻辑和数据模型
+2. **API层**: 处理HTTP请求/响应，参数验证，权限控制
+3. **Service层**: 业务逻辑处理，事务管理，业务规则验证
+4. **Repository层**: 数据访问抽象，数据库操作封装
+5. **Database层**: 数据持久化，双SQLite数据库(认证库+业务库)
+
+### 领域模块架构设计 🆕
+
+#### 认证领域目录结构
+```
+src/domains/auth/
+├── README.md              # 领域文档(必读)
+│   ├── 架构说明
+│   ├── 使用指南
+│   ├── API文档
+│   └── 测试说明
+├── __init__.py
+├── router.py              # FastAPI路由(7个认证端点)
+├── schemas.py             # Pydantic请求/响应模型
+├── service.py             # 业务逻辑(AsyncAuthService)
+├── repository.py          # 数据访问(AsyncAuthRepository)
+├── models.py              # SQLModel数据模型
+├── database.py            # 认证数据库连接管理
+├── exceptions.py          # 领域特定异常
+└── tests/                 # 领域单元测试
+    ├── __init__.py
+    ├── test_router.py     # Router层测试
+    ├── test_service.py    # Service层测试
+    ├── test_repository.py # Repository层测试
+    └── conftest.py        # Pytest配置和Fixtures
+```
+
+#### 领域设计原则
+1. **自包含性**: 每个领域都是独立可部署的模块
+2. **清晰边界**: 领域间通过Service层通信，不直接访问Repository
+3. **统一标准**: 所有领域遵循相同的目录结构和命名规范
+4. **文档先行**: README.md是领域的入口文档，必须详尽
 
 ### 核心设计模式
 
-1. **ServiceFactory模式**: 统一依赖注入管理
-2. **Repository模式**: 数据访问层抽象
-3. **Strategy模式**: 多种认证方式支持
-4. **Observer模式**: 事件驱动的业务逻辑
-5. **State模式**: LangGraph对话状态管理
+1. **Domain-Driven Design**: 领域驱动设计，业务逻辑聚合
+2. **ServiceFactory模式**: 统一依赖注入管理
+3. **Repository模式**: 数据访问层抽象
+4. **Strategy模式**: 多种认证方式支持
+5. **Observer模式**: 事件驱动的业务逻辑
+6. **State模式**: LangGraph对话状态管理
+7. **Database Per Service**: 每个领域独立数据库（认证领域先行）
 
 ## 数据库设计
+
+### 数据库分离架构 🆕
+
+#### 双数据库设计概览
+
+```
+┌─────────────────────────────────────────────────┐
+│          Application Layer                      │
+└───────────────┬──────────────┬──────────────────┘
+                │              │
+    ┌───────────▼──────┐  ┌───▼──────────────┐
+    │ tatake_auth.db   │  │  tatake.db       │
+    │  (认证数据库)    │  │   (业务数据库)   │
+    ├──────────────────┤  ├──────────────────┤
+    │ ✓ users          │  │ ✓ tasks          │
+    │ ✓ user_settings  │  │ ✓ focus_sessions │
+    │ ✓ sms_verification│ │ ✓ chat_sessions  │
+    │ ✓ token_blacklist│  │ ✓ rewards        │
+    │ ✓ user_sessions  │  │ ✓ fragments      │
+    │ ✓ auth_logs      │  │ ✓ transactions   │
+    └──────────────────┘  └──────────────────┘
+            │                      │
+            └──────────┬───────────┘
+                       │
+              user_id (字符串关联)
+              无外键约束，应用层维护一致性
+```
+
+#### 数据库分离原则
+
+1. **认证数据库职责** (`tatake_auth.db`):
+   - 用户身份认证和授权
+   - 用户基本信息管理
+   - JWT令牌生命周期管理
+   - 短信验证码管理
+   - 认证审计日志
+
+2. **业务数据库职责** (`tatake.db`):
+   - 核心业务数据(任务、专注、聊天)
+   - 奖励系统数据
+   - 统计分析数据
+   - 业务审计日志
+
+3. **跨库关联策略**:
+   ```python
+   # ❌ 不使用外键约束(避免跨库复杂性)
+   # user_id = ForeignKey("users.id")  # 跨库外键不支持
+
+   # ✅ 使用字符串字段关联
+   user_id: str = Field(description="关联到认证库的用户ID")
+
+   # ✅ Service层验证关联有效性
+   async def create_task(user_id: str, task_data: dict):
+       # 验证用户存在(查询认证库)
+       user = await auth_repository.get_user_by_id(user_id)
+       if not user:
+           raise ValidationError("用户不存在")
+       # 创建任务(操作业务库)
+       task = await task_repository.create(user_id, task_data)
+       return task
+   ```
+
+4. **⚠️ 潜在风险评估**:
+   | 风险 | 影响程度 | 缓解措施 | 实施优先级 |
+   |------|---------|---------|-----------|
+   | 数据不一致(孤儿记录) | 中 | 软删除策略 + 定期检查脚本 | 高 |
+   | 跨库事务无法保证 | 低 | 限制事务范围在单库内 | 高 |
+   | 性能下降(双库查询) | 低 | 添加应用层缓存 | 中 |
+   | 数据迁移复杂度 | 中 | 提供迁移工具和回滚脚本 | 高 |
+
+5. **数据库连接管理**:
+   ```python
+   # src/domains/auth/database.py
+   class AuthDatabaseConnection:
+       """认证数据库连接管理"""
+       database_url = "sqlite+aiosqlite:///./tatake_auth.db"
+
+   # src/database/connection.py (业务库保持不变)
+   class DatabaseConnection:
+       """业务数据库连接管理"""
+       database_url = "sqlite+aiosqlite:///./tatake.db"
+   ```
 
 ### Redis移除和替代方案
 
 #### 原Redis功能映射到SQLite
 
-| 原Redis功能 | SQLite替代方案 | 表设计 |
-|-------------|----------------|--------|
-| 验证码存储 | sms_verification表 | 短期验证码存储 |
-| 令牌黑名单 | token_blacklist表 | JWT失效管理 |
-| 用户会话 | JWT令牌本身 | 无状态认证 |
-| 缓存数据 | 应用内存缓存 | 临时数据缓存 |
+| 原Redis功能 | SQLite替代方案 | 表设计 | 所属数据库 |
+|-------------|----------------|--------|-----------|
+| 验证码存储 | sms_verification表 | 短期验证码存储 | 认证库 |
+| 令牌黑名单 | token_blacklist表 | JWT失效管理 | 认证库 |
+| 用户会话 | JWT令牌本身 | 无状态认证 | N/A |
+| 缓存数据 | 应用内存缓存 | 临时数据缓存 | N/A |
 
 ### 新增数据表设计
 
@@ -879,5 +996,6 @@ class UserInfoResponse(BaseModel):
 
 **设计文档版本**: 1.0.0
 **创建日期**: 2025-10-20
-**更新日期**: 2025-10-20
+**更新日期**: 2025-10-21
 **适用版本**: TaKeKe API v2.0.0+
+**批次1状态**: ✅ 已完成（认证领域DDD架构已实现并验证）

@@ -73,10 +73,10 @@ class TokenBlacklist(TokenBlacklistBase, table=True):
 
     # 索引定义
     __table_args__ = (
-        Index("idx_jti", "jti", unique=True),
-        Index("idx_user_id", "user_id"),
-        Index("idx_expires_at", "expires_at"),
-        Index("idx_revoked_at", "revoked_at"),
+        Index("idx_token_jti", "jti", unique=True),
+        Index("idx_token_user_id", "user_id"),
+        Index("idx_token_expires_at", "expires_at"),
+        Index("idx_token_revoked_at", "revoked_at"),
     )
 
 
@@ -109,7 +109,7 @@ class SmsVerification(SmsVerificationBase, table=True):
     __table_args__ = (
         Index("idx_phone_code", "phone_number", "verification_type", "created_at"),
         Index("idx_phone_type", "phone_number", "verification_type"),
-        Index("idx_expires_at", "expires_at"),
+        Index("idx_sms_expires_at", "expires_at"),
         Index("idx_is_used", "is_used"),
     )
 
@@ -141,7 +141,7 @@ class UserSession(UserSessionBase, table=True):
         Index("idx_user_id", "user_id"),
         Index("idx_session_token", "session_token", unique=True),
         Index("idx_refresh_token", "refresh_token"),
-        Index("idx_expires_at", "expires_at"),
+        Index("idx_sms_expires_at", "expires_at"),
         Index("idx_is_active", "is_active"),
     )
 

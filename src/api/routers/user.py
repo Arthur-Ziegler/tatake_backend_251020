@@ -14,7 +14,7 @@ from fastapi.security import HTTPBearer
 
 from ..dependencies import get_current_user, get_user_service
 from ..schemas import (
-    UserProfileResponse,
+    UserInfoResponse,
     UserProfileUpdateRequest,
     UserAvatarResponse,
     UserFeedbackRequest,
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/user", tags=["用户管理"])
 security = HTTPBearer()
 
 
-@router.get("/profile", response_model=UserProfileResponse)
+@router.get("/profile", response_model=UserInfoResponse)
 async def get_user_profile(
     current_user: dict = Depends(get_current_user),
     user_service = Depends(get_user_service)
@@ -45,7 +45,7 @@ async def get_user_profile(
         user_service: 用户服务实例
 
     Returns:
-        UserProfileResponse: 用户详细资料
+        UserInfoResponse: 用户详细资料
 
     Raises:
         HTTPException: 当用户不存在或令牌无效时
@@ -89,7 +89,7 @@ async def get_user_profile(
         }
 
         return create_success_response(
-            data=UserProfileResponse(**user_profile),
+            data=UserInfoResponse(**user_profile),
             message="获取用户资料成功"
         )
 
@@ -104,7 +104,7 @@ async def get_user_profile(
         )
 
 
-@router.put("/profile", response_model=UserProfileResponse)
+@router.put("/profile", response_model=UserInfoResponse)
 async def update_user_profile(
     request: UserProfileUpdateRequest,
     current_user: dict = Depends(get_current_user),
@@ -121,7 +121,7 @@ async def update_user_profile(
         user_service: 用户服务实例
 
     Returns:
-        UserProfileResponse: 更新后的用户详细资料
+        UserInfoResponse: 更新后的用户详细资料
 
     Raises:
         HTTPException: 当用户不存在、验证失败或更新失败时
@@ -172,7 +172,7 @@ async def update_user_profile(
         }
 
         return create_success_response(
-            data=UserProfileResponse(**updated_profile),
+            data=UserInfoResponse(**updated_profile),
             message="用户资料更新成功"
         )
 

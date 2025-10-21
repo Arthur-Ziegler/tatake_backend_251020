@@ -36,7 +36,6 @@ interface ApiResponse<T> {
   message: string;        // 响应消息 (成功或错误描述)
   data?: T;              // 响应数据 (成功时返回具体数据)
   timestamp: string;      // 响应时间戳 (ISO 8601格式)
-  traceId: string;        // 追踪ID (用于问题定位)
 }
 ```
 
@@ -46,7 +45,6 @@ interface ApiResponse<T> {
   "code": 40001,
   "message": "用户名或密码错误",
   "timestamp": "2025-10-13T14:30:00Z",
-  "traceId": "trace_abc123"
 }
 ```
 

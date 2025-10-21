@@ -102,6 +102,17 @@ class User(BaseSQLModel, table=True):
         description="最后登录时间，用于用户活跃度统计"
     )
 
+    # 积分和游戏化字段
+    points: int = Field(
+        default=0,
+        description="用户积分，用于游戏化功能和奖励系统"
+    )
+
+    fragments: int = Field(
+        default=0,
+        description="用户碎片数量，用于收集和兑换系统"
+    )
+
     # 关系定义
     settings: Optional["UserSettings"] = Relationship(
         back_populates="user",
@@ -283,6 +294,36 @@ class User(BaseSQLModel, table=True):
             self.is_guest = False
             return True
         return False
+
+    def to_dict(self) -> dict:
+        """
+        将用户对象转换为字典格式
+
+        用于API响应和数据序列化，包含用户的基本信息。
+
+        Returns:
+            dict: 用户信息的字典表示
+
+        Example:
+            >>> user = User(nickname="张三", phone="13800138001", points=100)
+            >>> user_dict = user.to_dict()
+            >>> print(user_dict["nickname"])
+            张三
+        """
+        return {
+            "id": str(self.id),
+            "nickname": self.nickname,
+            "avatar": self.avatar,
+            "phone": self.phone,
+            "email": self.email,
+            "wechat_openid": self.wechat_openid,
+            "is_guest": self.is_guest,
+            "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,
+            "points": self.points,
+            "fragments": self.fragments,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 class UserSettings(BaseSQLModel, table=True):

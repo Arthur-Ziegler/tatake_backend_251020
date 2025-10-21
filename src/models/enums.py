@@ -361,6 +361,52 @@ class RewardStatus(str, Enum):
     EXPIRED = "expired"
 
 
+class FocusStatus(str, Enum):
+    """
+    专注状态枚举
+
+    定义专注会话在生命周期中的各种状态，用于跟踪专注会话的进展情况。
+
+    状态流转规则：
+    - ACTIVE -> PAUSED -> ACTIVE
+    - ACTIVE/PAUSED -> COMPLETED
+    - ACTIVE/PAUSED -> CANCELLED
+
+    Attributes:
+        ACTIVE (str): 活跃状态，专注会话正在进行
+        PAUSED (str): 暂停状态，专注会话暂时停止
+        COMPLETED (str): 已完成状态，专注会话正常结束
+        CANCELLED (str): 已取消状态，专注会话被手动取消
+    """
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+    def __str__(self) -> str:
+        """返回枚举的字符串值"""
+        return self.value
+
+    @classmethod
+    def get_active_statuses(cls) -> set["FocusStatus"]:
+        """获取所有活跃状态"""
+        return {cls.ACTIVE, cls.PAUSED}
+
+    @classmethod
+    def get_completed_statuses(cls) -> set["FocusStatus"]:
+        """获取所有完成状态"""
+        return {cls.COMPLETED, cls.CANCELLED}
+
+    def is_active(self) -> bool:
+        """判断当前状态是否为活跃状态"""
+        return self in self.get_active_statuses()
+
+    def is_completed(self) -> bool:
+        """判断当前状态是否为完成状态"""
+        return self in self.get_completed_statuses()
+
+
 class TransactionType(str, Enum):
     """
     交易类型枚举
@@ -485,6 +531,7 @@ __all__ = [
     "SessionType",
     "RewardType",
     "RewardStatus",
+    "FocusStatus",
     "TransactionType",
     "ChatMode",
     "MessageRole",

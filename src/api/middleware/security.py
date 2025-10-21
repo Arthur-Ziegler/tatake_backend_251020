@@ -68,16 +68,29 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         # 限制引用来源
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-        # 内容安全策略
-        csp = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self'; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none';"
-        )
+        # 内容安全策略 - 为API文档页面放宽限制
+        if request.url.path in ["/docs", "/redoc"]:
+            # API文档页面需要从CDN加载资源
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' https://cdn.jsdelivr.net; "
+                "connect-src 'self' https://cdn.jsdelivr.net; "
+                "frame-ancestors 'none';"
+            )
+        else:
+            # 其他页面保持严格的安全策略
+            csp = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self'; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none';"
+            )
         response.headers["Content-Security-Policy"] = csp
 
         # HSTS（仅在HTTPS下）
