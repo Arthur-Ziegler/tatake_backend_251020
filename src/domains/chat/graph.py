@@ -40,6 +40,7 @@ from langgraph.prebuilt import ToolNode
 from .models import ChatState
 from .tools.password_opener import sesame_opener
 from .prompts.system import format_system_prompt
+from .context_manager import manage_conversation_context
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -123,8 +124,9 @@ class ChatGraph:
         基于LangGraph最佳实践：
         1. 直接使用状态中的消息
         2. 添加系统提示词
-        3. 让模型决定是否调用工具
-        4. 返回标准消息格式
+        3. 使用上下文管理优化历史消息
+        4. 让模型决定是否调用工具
+        5. 返回标准消息格式
 
         Args:
             state: 当前聊天状态（包含messages字段）
@@ -143,9 +145,19 @@ class ChatGraph:
 
             # 获取模型（已绑定工具）
             model = self._get_model()
+            model_name = model.model_name if hasattr(model, 'model_name') else "gpt-3.5-turbo"
 
             # 构建消息列表 - 使用标准的LangChain消息格式
             messages = state["messages"]
+
+            # 使用上下文管理器优化消息历史
+            if len(messages) > 1:  # 只有多条消息时才需要优化
+                original_count = len(messages)
+                messages = manage_conversation_context(messages, model_name)
+                optimized_count = len(messages)
+
+                if original_count != optimized_count:
+                    logger.info(f"📝 上下文优化: {original_count} -> {optimized_count} 条消息")
 
             # 添加系统提示词到消息开头
             system_prompt = format_system_prompt(user_id, session_id)

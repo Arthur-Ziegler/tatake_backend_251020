@@ -47,8 +47,10 @@ def get_chat_database_path() -> str:
     """
     # 确保使用绝对路径
     if not os.path.isabs(CHAT_DB_PATH):
-        current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        return os.path.join(current_dir, CHAT_DB_PATH)
+        # 从 src/domains/chat/database.py 向上到项目根目录，然后加上 data/chat.db
+        # 需要向上4层：database.py -> chat -> domains -> src -> project_root
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        return os.path.join(project_root, CHAT_DB_PATH)
     return CHAT_DB_PATH
 
 
@@ -56,11 +58,16 @@ def create_chat_checkpointer() -> SqliteSaver:
     """
     创建LangGraph聊天检查点器
 
-    使用SqliteSaver为LangGraph提供状态持久化能力，
+    使用SqliteSaver.from_conn_string()为LangGraph提供状态持久化能力，
     支持会话恢复和历史管理。
 
+    修复说明：
+    - 使用推荐的 SqliteSaver.from_conn_string() 方法
+    - 确保 data/chat.db 文件正确创建和使用
+    - 返回上下文管理器，需要在 with 语句中使用
+
     Returns:
-        SqliteSaver: LangGraph检查点器实例
+        SqliteSaver: LangGraph检查点器实例（上下文管理器）
 
     Raises:
         Exception: 数据库连接或配置失败时抛出
@@ -71,24 +78,18 @@ def create_chat_checkpointer() -> SqliteSaver:
         # 确保数据目录存在
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-        # 创建SQLite连接，设置check_same_thread=False以允许线程共享
-        conn = sqlite3.connect(
-            db_path,
-            check_same_thread=False,
-            timeout=30.0
-        )
-
-        # 配置连接参数
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA journal_mode = WAL")
-        conn.execute("PRAGMA synchronous = NORMAL")
-        conn.execute("PRAGMA cache_size = 10000")
-        conn.execute("PRAGMA temp_store = MEMORY")
-
-        # 创建SqliteSaver
-        checkpointer = SqliteSaver(conn)
+        # 使用推荐的 SqliteSaver.from_conn_string() 方法
+        # 返回上下文管理器，确保资源正确管理
+        checkpointer = SqliteSaver.from_conn_string(db_path)
 
         logger.info(f"聊天检查点器创建成功: {db_path}")
+
+        # 验证检查点器可以被正确创建
+        if checkpointer is None:
+            raise RuntimeError("SqliteSaver 返回了 None")
+
+        logger.info(f"检查点器验证通过: {db_path}")
+
         return checkpointer
 
     except Exception as e:
@@ -205,24 +206,24 @@ class ChatDatabaseManager:
 
     提供聊天域数据库的统一管理接口，包括连接管理、
     健康检查和错误处理等功能。
+
+    注意：由于 SqliteSaver 现在是上下文管理器，这个类主要
+    用于创建检查点器实例，而不是管理连接。
     """
 
     def __init__(self):
         """初始化聊天数据库管理器"""
         self.db_path = get_chat_database_path()
-        self._checkpointer = None
         self._store = None
 
-    def get_checkpointer(self) -> SqliteSaver:
+    def create_checkpointer(self) -> SqliteSaver:
         """
-        获取聊天检查点器实例
+        创建新的聊天检查点器实例
 
         Returns:
-            SqliteSaver: LangGraph检查点器
+            SqliteSaver: LangGraph检查点器（上下文管理器）
         """
-        if self._checkpointer is None:
-            self._checkpointer = create_chat_checkpointer()
-        return self._checkpointer
+        return create_chat_checkpointer()
 
     def get_store(self) -> InMemoryStore:
         """
@@ -253,8 +254,10 @@ class ChatDatabaseManager:
             checkpointer_ok = False
             if is_connected:
                 try:
-                    checkpointer = self.get_checkpointer()
-                    checkpointer_ok = checkpointer is not None
+                    checkpointer = self.create_checkpointer()
+                    # 验证检查点器可以被创建（在上下文管理器中）
+                    with checkpointer as cp:
+                        checkpointer_ok = cp is not None
                 except Exception as e:
                     logger.error(f"检查点器创建失败: {e}")
 
