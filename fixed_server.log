@@ -1,0 +1,842 @@
+INFO:     Will watch for changes in these directories: ['/Users/zalelee/Code/tatake_backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [38340] using WatchFiles
+INFO:     Started server process [38350]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ()
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 00:53:31,214 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 00:53:31,215 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:31,217 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币',)
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine [cached since 0.000307s ago] ('钻石',)
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 00:53:31,218 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:31,219 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+✅ Focus数据库初始化完成
+✅ API服务启动完成
+INFO:     127.0.0.1:64506 - "POST /auth/register HTTP/1.1" 200 OK
+2025-10-25 00:53:37,233 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,234 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:37,234 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('ad988c52-8f76-4e36-8bb6-ee6e33e6a65f',)
+2025-10-25 00:53:37,234 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:37,234 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('ad988c52-8f76-4e36-8bb6-ee6e33e6a65f', 1000, 0)
+INFO:     127.0.0.1:64508 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:37,235 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:37,236 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,237 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:37,237 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b', '2025-10-24 16:53:37.236588', '2025-10-24 16:53:37.236589', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f', '积分调试任务', '用于调试积分API', None, 'pending', 'high', 0, 0.0, None, '[]', '[]', None, None, None)
+2025-10-25 00:53:37,237 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:37,237 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b',)
+2025-10-25 00:53:37,238 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:37,238 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,238 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:37,238 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b',)
+INFO:     127.0.0.1:64510 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:37,238 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:37,240 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,240 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:37,240 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f')
+2025-10-25 00:53:37,240 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:37,240 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('ad988c52-8f76-4e36-8bb6-ee6e33e6a65f', '2025-10-25')
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f')
+🔍 DEBUG: Task 2a6c09a2-6858-404a-8d1c-5b402d33ff8b - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('184adf39-fe65-4d12-ac79-f04ae4b5f48a', '2025-10-24 16:53:37.241249', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f', 2, 'task_complete', '2a6c09a2-6858-404a-8d1c-5b402d33ff8b', '2025-10-24 16:53:37.241210')
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:37,241 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('184adf39-fe65-4d12-ac79-f04ae4b5f48a',)
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine [generated in 0.00003s] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 37, 242349, tzinfo=datetime.timezone.utc), '2a6c09a2-6858-404a-8d1c-5b402d33ff8b', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f')
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine [generated in 0.00002s] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f')
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:37,242 INFO sqlalchemy.engine.Engine [cached since 0.002543s ago] ('2a6c09a2-6858-404a-8d1c-5b402d33ff8b', 'ad988c52-8f76-4e36-8bb6-ee6e33e6a65f')
+INFO:     127.0.0.1:64512 - "POST /tasks/2a6c09a2-6858-404a-8d1c-5b402d33ff8b/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:37,243 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine [cached since 0.0103s ago] ('ad988c52-8f76-4e36-8bb6-ee6e33e6a65f',)
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine [cached since 0.009777s ago] ('ad988c52-8f76-4e36-8bb6-ee6e33e6a65f', 1000, 0)
+INFO:     127.0.0.1:64514 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:37,244 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:64573 - "POST /auth/register HTTP/1.1" 200 OK
+2025-10-25 00:53:40,335 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,335 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,335 INFO sqlalchemy.engine.Engine [cached since 3.102s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,336 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,336 INFO sqlalchemy.engine.Engine [cached since 3.101s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64575 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,336 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,337 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,337 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:40,337 INFO sqlalchemy.engine.Engine [cached since 3.1s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183', '2025-10-24 16:53:40.337449', '2025-10-24 16:53:40.337450', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', '防刷周期测试任务', '用于鲁棒性测试的任务', None, 'pending', 'high', 0, 0.0, None, '["\\u6d4b\\u8bd5", "\\u9c81\\u68d2"]', '["test-service"]', None, None, None)
+2025-10-25 00:53:40,337 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine [cached since 3.1s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183',)
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine [cached since 3.1s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183',)
+INFO:     127.0.0.1:64577 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:40,338 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,339 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,339 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,339 INFO sqlalchemy.engine.Engine [cached since 3.106s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,339 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,340 INFO sqlalchemy.engine.Engine [cached since 3.105s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64579 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,340 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,341 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,342 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,342 INFO sqlalchemy.engine.Engine [cached since 3.108s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,342 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,342 INFO sqlalchemy.engine.Engine [cached since 3.108s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64581 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,342 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,343 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine [cached since 3.104s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', '2025-10-25')
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+🔍 DEBUG: Task 15ee7ad7-35b1-442c-ba63-cb934041b183 - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] ('706d47ad-b6a3-4b16-afd9-01d7770058dd', '2025-10-24 16:53:40.344415', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 2, 'task_complete', '15ee7ad7-35b1-442c-ba63-cb934041b183', '2025-10-24 16:53:40.344374')
+2025-10-25 00:53:40,344 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] ('706d47ad-b6a3-4b16-afd9-01d7770058dd',)
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 40, 345168, tzinfo=datetime.timezone.utc), '15ee7ad7-35b1-442c-ba63-cb934041b183', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine [cached since 3.103s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine [cached since 3.105s ago] ('15ee7ad7-35b1-442c-ba63-cb934041b183', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+INFO:     127.0.0.1:64583 - "POST /tasks/15ee7ad7-35b1-442c-ba63-cb934041b183/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:40,345 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,346 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,347 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,347 INFO sqlalchemy.engine.Engine [cached since 3.113s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,347 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,347 INFO sqlalchemy.engine.Engine [cached since 3.112s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64585 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,347 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,348 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,348 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:40,348 INFO sqlalchemy.engine.Engine [cached since 3.112s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '2025-10-24 16:53:40.348687', '2025-10-24 16:53:40.348688', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', '响应一致性测试', '用于鲁棒性测试的任务', None, 'pending', 'high', 0, 0.0, None, '["\\u6d4b\\u8bd5", "\\u9c81\\u68d2"]', '["test-service"]', None, None, None)
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine [cached since 3.111s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224',)
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine [cached since 3.111s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224',)
+INFO:     127.0.0.1:64587 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:40,349 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64589 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,350 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine [cached since 3.118s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine [cached since 3.117s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64591 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,352 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,353 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,353 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:40,353 INFO sqlalchemy.engine.Engine [cached since 3.113s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,353 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:40,353 INFO sqlalchemy.engine.Engine [cached since 3.113s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', '2025-10-25')
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine [cached since 3.113s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+🔍 DEBUG: Task c7f1fb10-85ec-46c9-95d0-a9bcef8bd224 - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine [cached since 3.113s ago] ('8cf621c9-6f82-4c97-8d3f-a84ff1cc55f1', '2025-10-24 16:53:40.354130', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 2, 'task_complete', 'c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '2025-10-24 16:53:40.354096')
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine [cached since 3.112s ago] ('8cf621c9-6f82-4c97-8d3f-a84ff1cc55f1',)
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine [cached since 3.112s ago] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 40, 354813, tzinfo=datetime.timezone.utc), 'c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:40,354 INFO sqlalchemy.engine.Engine [cached since 3.112s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+2025-10-25 00:53:40,355 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:40,355 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,355 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:40,355 INFO sqlalchemy.engine.Engine [cached since 3.115s ago] ('c7f1fb10-85ec-46c9-95d0-a9bcef8bd224', '8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5')
+INFO:     127.0.0.1:64593 - "POST /tasks/c7f1fb10-85ec-46c9-95d0-a9bcef8bd224/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:40,355 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:40,356 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:40,356 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:40,356 INFO sqlalchemy.engine.Engine [cached since 3.123s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5',)
+2025-10-25 00:53:40,356 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:40,356 INFO sqlalchemy.engine.Engine [cached since 3.122s ago] ('8e6295fc-d3c3-43d0-9f9e-3e9e7ba850a5', 1000, 0)
+INFO:     127.0.0.1:64595 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:40,357 INFO sqlalchemy.engine.Engine ROLLBACK
+WARNING:  WatchFiles detected changes in 'test_robust_task_system.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38350]
+INFO:     Started server process [38464]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine [generated in 0.00006s] ()
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 00:53:47,307 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 00:53:47,308 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:47,310 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 00:53:47,310 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币',)
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine [cached since 0.0003055s ago] ('钻石',)
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('小金币合成钻石',)
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 00:53:47,311 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 00:53:47,312 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+✅ Focus数据库初始化完成
+✅ API服务启动完成
+INFO:     127.0.0.1:64741 - "POST /auth/register HTTP/1.1" 200 OK
+2025-10-25 00:53:49,003 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,003 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,003 INFO sqlalchemy.engine.Engine [generated in 0.00006s] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,004 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,004 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64743 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,004 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,006 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,006 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:49,006 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', '2025-10-24 16:53:49.006167', '2025-10-24 16:53:49.006168', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767', '防刷周期测试任务', '用于鲁棒性测试的任务', None, 'pending', 'high', 0, 0.0, None, '["\\u6d4b\\u8bd5", "\\u9c81\\u68d2"]', '["test-service"]', None, None, None)
+2025-10-25 00:53:49,007 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:49,007 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c',)
+2025-10-25 00:53:49,007 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,008 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,008 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:49,008 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c',)
+INFO:     127.0.0.1:64745 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:49,008 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine [cached since 0.006866s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine [cached since 0.0063s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64747 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,010 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine [cached since 0.008978s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine [cached since 0.008334s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64749 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,012 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,014 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,014 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,014 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', '2025-10-25')
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine [generated in 0.00002s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+🔍 DEBUG: Task b81a1c2c-5337-47a0-b3b9-09e32e6dc39c - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('32ac5589-ace2-4eaf-9ec3-1008a634dbd8', '2025-10-24 16:53:49.015369', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 2, 'task_complete', 'b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', '2025-10-24 16:53:49.015325')
+2025-10-25 00:53:49,015 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('32ac5589-ace2-4eaf-9ec3-1008a634dbd8',)
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine [generated in 0.00003s] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 49, 16495, tzinfo=datetime.timezone.utc), 'b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine [generated in 0.00002s] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,016 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,017 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,017 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,017 INFO sqlalchemy.engine.Engine [cached since 0.002546s ago] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+INFO:     127.0.0.1:64751 - "POST /tasks/b81a1c2c-5337-47a0-b3b9-09e32e6dc39c/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:49,017 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine [cached since 0.01502s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine [cached since 0.0144s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64753 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,018 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,019 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,020 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,020 INFO sqlalchemy.engine.Engine [cached since 0.01671s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,020 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,020 INFO sqlalchemy.engine.Engine [cached since 0.01609s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64755 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,020 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,021 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,021 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,021 INFO sqlalchemy.engine.Engine [cached since 0.007431s ago] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine 
+                    UPDATE tasks
+                    SET status = 'pending', updated_at = ?
+                    WHERE id = ? AND user_id = ?
+                
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine [generated in 0.00003s] (datetime.datetime(2025, 10, 24, 16, 53, 49, 22061, tzinfo=datetime.timezone.utc), 'b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine [cached since 0.005632s ago] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine [cached since 0.008215s ago] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+INFO:     127.0.0.1:64757 - "POST /tasks/b81a1c2c-5337-47a0-b3b9-09e32e6dc39c/uncomplete HTTP/1.1" 200 OK
+2025-10-25 00:53:49,022 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,023 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,023 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,023 INFO sqlalchemy.engine.Engine [cached since 0.02054s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,023 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,023 INFO sqlalchemy.engine.Engine [cached since 0.01987s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64759 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,024 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine [cached since 0.02209s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine [cached since 0.02143s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64761 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,025 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,026 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,026 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,027 INFO sqlalchemy.engine.Engine [cached since 0.01249s ago] ('b81a1c2c-5337-47a0-b3b9-09e32e6dc39c', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+INFO:     127.0.0.1:64763 - "POST /tasks/b81a1c2c-5337-47a0-b3b9-09e32e6dc39c/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:49,027 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine [cached since 0.02482s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine [cached since 0.02414s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64765 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,028 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,029 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,029 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:49,029 INFO sqlalchemy.engine.Engine [cached since 0.02315s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', '2025-10-24 16:53:49.029749', '2025-10-24 16:53:49.029749', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767', '响应一致性测试', '用于鲁棒性测试的任务', None, 'pending', 'high', 0, 0.0, None, '["\\u6d4b\\u8bd5", "\\u9c81\\u68d2"]', '["test-service"]', None, None, None)
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine [cached since 0.0227s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4',)
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine [cached since 0.02204s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4',)
+INFO:     127.0.0.1:64767 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:49,030 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,031 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,031 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,031 INFO sqlalchemy.engine.Engine [cached since 0.02846s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,031 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,031 INFO sqlalchemy.engine.Engine [cached since 0.02779s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64769 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,032 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine [cached since 0.02995s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine [cached since 0.02929s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64771 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,033 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,034 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,034 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,034 INFO sqlalchemy.engine.Engine [cached since 0.02033s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01993s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', '2025-10-25')
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01985s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+🔍 DEBUG: Task c76c6aaf-9f39-4488-9165-858d85c9a4a4 - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01967s ago] ('8cf115d1-9e60-4a60-9ba6-2346abb27207', '2025-10-24 16:53:49.035174', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 2, 'task_complete', 'c76c6aaf-9f39-4488-9165-858d85c9a4a4', '2025-10-24 16:53:49.035137')
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01939s ago] ('8cf115d1-9e60-4a60-9ba6-2346abb27207',)
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01934s ago] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 49, 35831, tzinfo=datetime.timezone.utc), 'c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,035 INFO sqlalchemy.engine.Engine [cached since 0.01929s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,036 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,036 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,036 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,036 INFO sqlalchemy.engine.Engine [cached since 0.02179s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+INFO:     127.0.0.1:64773 - "POST /tasks/c76c6aaf-9f39-4488-9165-858d85c9a4a4/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:49,036 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,037 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,037 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,037 INFO sqlalchemy.engine.Engine [cached since 0.03457s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,038 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,038 INFO sqlalchemy.engine.Engine [cached since 0.03399s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64775 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,038 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,039 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,039 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,039 INFO sqlalchemy.engine.Engine [cached since 0.03654s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,039 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,040 INFO sqlalchemy.engine.Engine [cached since 0.03589s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64777 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,040 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,041 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,041 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,041 INFO sqlalchemy.engine.Engine [cached since 0.02721s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,041 INFO sqlalchemy.engine.Engine 
+                    UPDATE tasks
+                    SET status = 'pending', updated_at = ?
+                    WHERE id = ? AND user_id = ?
+                
+2025-10-25 00:53:49,041 INFO sqlalchemy.engine.Engine [cached since 0.01979s ago] (datetime.datetime(2025, 10, 24, 16, 53, 49, 41853, tzinfo=datetime.timezone.utc), 'c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine [cached since 0.02538s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine [cached since 0.02797s ago] ('c76c6aaf-9f39-4488-9165-858d85c9a4a4', 'c3dbbc9f-7a88-4e89-a6e9-dd762f820767')
+INFO:     127.0.0.1:64779 - "POST /tasks/c76c6aaf-9f39-4488-9165-858d85c9a4a4/uncomplete HTTP/1.1" 200 OK
+2025-10-25 00:53:49,042 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:49,043 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:49,043 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:49,043 INFO sqlalchemy.engine.Engine [cached since 0.0403s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767',)
+2025-10-25 00:53:49,043 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:49,043 INFO sqlalchemy.engine.Engine [cached since 0.03969s ago] ('c3dbbc9f-7a88-4e89-a6e9-dd762f820767', 1000, 0)
+INFO:     127.0.0.1:64781 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:49,044 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:64848 - "POST /auth/register HTTP/1.1" 200 OK
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine INSERT INTO tasks (id, created_at, updated_at, user_id, title, description, parent_id, status, priority, is_deleted, completion_percentage, last_claimed_date, tags, service_ids, due_date, planned_start_time, planned_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine [cached since 3.122s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '2025-10-24 16:53:52.128211', '2025-10-24 16:53:52.128211', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948', '防刷测试任务', '测试防刷机制和取消完成响应状态', None, 'pending', 'high', 0, 0.0, None, '["\\u6d4b\\u8bd5", "\\u9632\\u5237"]', '["test-service"]', None, None, None)
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine [cached since 3.121s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d',)
+2025-10-25 00:53:52,128 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:52,129 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,129 INFO sqlalchemy.engine.Engine SELECT tasks.id AS tasks_id, tasks.created_at AS tasks_created_at, tasks.updated_at AS tasks_updated_at, tasks.user_id AS tasks_user_id, tasks.title AS tasks_title, tasks.description AS tasks_description, tasks.parent_id AS tasks_parent_id, tasks.status AS tasks_status, tasks.priority AS tasks_priority, tasks.is_deleted AS tasks_is_deleted, tasks.completion_percentage AS tasks_completion_percentage, tasks.last_claimed_date AS tasks_last_claimed_date, tasks.tags AS tasks_tags, tasks.service_ids AS tasks_service_ids, tasks.due_date AS tasks_due_date, tasks.planned_start_time AS tasks_planned_start_time, tasks.planned_end_time AS tasks_planned_end_time 
+FROM tasks 
+WHERE tasks.id = ?
+2025-10-25 00:53:52,129 INFO sqlalchemy.engine.Engine [cached since 3.121s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d',)
+INFO:     127.0.0.1:64850 - "POST /tasks/ HTTP/1.1" 200 OK
+2025-10-25 00:53:52,129 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:52,130 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,130 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,130 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,130 INFO sqlalchemy.engine.Engine SELECT task_top3.id, task_top3.created_at, task_top3.updated_at, task_top3.user_id, task_top3.top_date, task_top3.task_ids, task_top3.points_consumed 
+FROM task_top3 
+WHERE task_top3.user_id = ? AND task_top3.top_date = ?
+2025-10-25 00:53:52,130 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('9b9e2ef7-dd9e-44d1-93d2-33da4c447948', '2025-10-25')
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine 
+                        SELECT id, status, title, last_claimed_date
+                        FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+🔍 DEBUG: Task fe0785b7-d9e0-42e5-b936-7e94c809d48d - status: pending, last_claimed_date: None, today: 2025-10-25, type_check: <class 'NoneType'> == <class 'datetime.date'>
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine INSERT INTO points_transactions (id, updated_at, user_id, amount, source_type, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('270b3a37-6e12-428d-902b-e12b10588793', '2025-10-24 16:53:52.131146', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948', 2, 'task_complete', 'fe0785b7-d9e0-42e5-b936-7e94c809d48d', '2025-10-24 16:53:52.131112')
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine SELECT points_transactions.id AS points_transactions_id, points_transactions.updated_at AS points_transactions_updated_at, points_transactions.user_id AS points_transactions_user_id, points_transactions.amount AS points_transactions_amount, points_transactions.source_type AS points_transactions_source_type, points_transactions.source_id AS points_transactions_source_id, points_transactions.created_at AS points_transactions_created_at 
+FROM points_transactions 
+WHERE points_transactions.id = ?
+2025-10-25 00:53:52,131 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] ('270b3a37-6e12-428d-902b-e12b10588793',)
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine 
+                        UPDATE tasks
+                        SET status = 'completed',
+                            last_claimed_date = ?,
+                            updated_at = ?
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine [cached since 3.116s ago] (datetime.date(2025, 10, 25), datetime.datetime(2025, 10, 24, 16, 53, 52, 132032, tzinfo=datetime.timezone.utc), 'fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine [cached since 3.115s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine [cached since 3.118s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+INFO:     127.0.0.1:64852 - "POST /tasks/fe0785b7-d9e0-42e5-b936-7e94c809d48d/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:52,132 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:52,134 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,134 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,134 INFO sqlalchemy.engine.Engine [cached since 3.12s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+INFO:     127.0.0.1:64854 - "POST /tasks/fe0785b7-d9e0-42e5-b936-7e94c809d48d/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:52,134 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:52,135 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,135 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,135 INFO sqlalchemy.engine.Engine [cached since 3.121s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,135 INFO sqlalchemy.engine.Engine 
+                    UPDATE tasks
+                    SET status = 'pending', updated_at = ?
+                    WHERE id = ? AND user_id = ?
+                
+2025-10-25 00:53:52,135 INFO sqlalchemy.engine.Engine [cached since 3.114s ago] (datetime.datetime(2025, 10, 24, 16, 53, 52, 135894, tzinfo=datetime.timezone.utc), 'fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine 
+                        SELECT parent_id FROM tasks
+                        WHERE id = ? AND user_id = ?
+                    
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine [cached since 3.119s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine COMMIT
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine [cached since 3.122s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+INFO:     127.0.0.1:64856 - "POST /tasks/fe0785b7-d9e0-42e5-b936-7e94c809d48d/uncomplete HTTP/1.1" 200 OK
+2025-10-25 00:53:52,136 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:52,137 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,137 INFO sqlalchemy.engine.Engine SELECT tasks.id, tasks.created_at, tasks.updated_at, tasks.user_id, tasks.title, tasks.description, tasks.parent_id, tasks.status, tasks.priority, tasks.is_deleted, tasks.completion_percentage, tasks.last_claimed_date, tasks.tags, tasks.service_ids, tasks.due_date, tasks.planned_start_time, tasks.planned_end_time 
+FROM tasks 
+WHERE tasks.id = ? AND tasks.user_id = ? AND tasks.is_deleted = 0
+2025-10-25 00:53:52,137 INFO sqlalchemy.engine.Engine [cached since 3.123s ago] ('fe0785b7-d9e0-42e5-b936-7e94c809d48d', '9b9e2ef7-dd9e-44d1-93d2-33da4c447948')
+INFO:     127.0.0.1:64858 - "POST /tasks/fe0785b7-d9e0-42e5-b936-7e94c809d48d/complete HTTP/1.1" 200 OK
+2025-10-25 00:53:52,137 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 00:53:52,138 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 00:53:52,138 INFO sqlalchemy.engine.Engine SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = ?
+2025-10-25 00:53:52,138 INFO sqlalchemy.engine.Engine [cached since 3.136s ago] ('9b9e2ef7-dd9e-44d1-93d2-33da4c447948',)
+2025-10-25 00:53:52,139 INFO sqlalchemy.engine.Engine SELECT points_transactions.id, points_transactions.updated_at, points_transactions.user_id, points_transactions.amount, points_transactions.source_type, points_transactions.source_id, points_transactions.created_at 
+FROM points_transactions 
+WHERE points_transactions.user_id = ? ORDER BY points_transactions.created_at DESC
+ LIMIT ? OFFSET ?
+2025-10-25 00:53:52,139 INFO sqlalchemy.engine.Engine [cached since 3.135s ago] ('9b9e2ef7-dd9e-44d1-93d2-33da4c447948', 1000, 0)
+INFO:     127.0.0.1:64860 - "GET /points/balance HTTP/1.1" 200 OK
+2025-10-25 00:53:52,139 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38464]
+INFO:     Stopping reloader process [38340]

@@ -84,7 +84,7 @@
 
 #### 游客初始化
 ```bash
-POST /api/v1/auth/guest/init
+POST /auth/guest/init
 Content-Type: application/json
 
 {
@@ -124,7 +124,7 @@ await create_tables()  # 创建所有认证表
 ```python
 from src.domains.auth.router import router
 
-app.include_router(router, prefix="/api/v1", tags=["认证系统"])
+app.include_router(router, prefix="", tags=["认证系统"])
 ```
 
 3. **使用认证服务**

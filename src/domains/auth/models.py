@@ -23,15 +23,15 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlmodel import Field, SQLModel, Column, DateTime, text
+from sqlmodel import Field, SQLModel, Column, DateTime, text, String
 from sqlalchemy import Index
 
 
 class BaseModel(SQLModel):
     """基础模型类，提供通用字段"""
 
-    id: Optional[UUID] = Field(
-        default_factory=uuid4,
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
         primary_key=True,
         description="主键ID"
     )
@@ -99,7 +99,7 @@ class Auth(BaseModel, table=True):
     )
 
 
-class AuthLog(BaseModel, table=True):
+class AuthLog(SQLModel, table=True):
     """
     认证审计日志表
 
@@ -109,9 +109,23 @@ class AuthLog(BaseModel, table=True):
 
     __tablename__ = "auth_audit_logs"
 
-    user_id: Optional[UUID] = Field(
+    # 基础字段
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        primary_key=True,
+        description="主键ID"
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="创建时间"
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="更新时间"
+    )
+
+    user_id: Optional[str] = Field(
         default=None,
-        foreign_key="auth.id",
         index=True,
         description="用户ID（可为空，用于游客操作）"
     )

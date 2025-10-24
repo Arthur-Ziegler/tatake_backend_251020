@@ -26,9 +26,8 @@ API端点对应的Schema：
 版本：1.0.0
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Dict, Any, Union
-from uuid import UUID
 from enum import Enum
 
 from pydantic import BaseModel, Field, ConfigDict, validator, model_validator
@@ -67,7 +66,7 @@ class CreateTaskRequest(BaseModel):
 
     验证规则：
     - title长度必须在1-100字符之间
-    - 如果设置parent_id，必须为有效的UUID
+    - 如果设置parent_id，必须为有效的字符串ID
     - 如果设置时间范围，结束时间必须晚于开始时间
     - tags最多包含10个标签，每个标签最多20字符
     """
@@ -110,7 +109,7 @@ class CreateTaskRequest(BaseModel):
         default=TaskPriorityConst.MEDIUM,
         description="任务优先级：low/medium/high"
     )
-    parent_id: Optional[UUID] = Field(
+    parent_id: Optional[str] = Field(
         default=None,
         description="父任务ID，支持任务树结构"
     )
@@ -118,6 +117,11 @@ class CreateTaskRequest(BaseModel):
         default=[],
         max_length=10,
         description="任务标签列表，最多10个标签"
+    )
+    service_ids: Optional[List[str]] = Field(
+        default=[],
+        max_length=10,
+        description="关联服务ID列表，占位字段用于后续AI服务匹配"
     )
     due_date: Optional[datetime] = Field(
         default=None,
@@ -219,7 +223,7 @@ class UpdateTaskRequest(BaseModel):
         default=None,
         description="任务优先级：low/medium/high"
     )
-    parent_id: Optional[UUID] = Field(
+    parent_id: Optional[str] = Field(
         default=None,
         description="父任务ID，支持任务树结构"
     )
@@ -227,6 +231,11 @@ class UpdateTaskRequest(BaseModel):
         default=None,
         max_length=10,
         description="任务标签列表，最多10个标签"
+    )
+    service_ids: Optional[List[str]] = Field(
+        default=None,
+        max_length=10,
+        description="关联服务ID列表，占位字段用于后续AI服务匹配"
     )
     due_date: Optional[datetime] = Field(
         default=None,
@@ -356,25 +365,26 @@ class TaskResponse(BaseModel):
     )
 
     # 基本字段
-    id: UUID = Field(..., description="任务ID")
-    user_id: UUID = Field(..., description="用户ID")
+    id: str = Field(..., description="任务ID")
     title: str = Field(..., description="任务标题")
     description: Optional[str] = Field(None, description="任务描述")
     status: TaskStatus = Field(..., description="任务状态")
     priority: TaskPriority = Field(..., description="任务优先级")
-    parent_id: Optional[UUID] = Field(None, description="父任务ID")
+    parent_id: Optional[str] = Field(None, description="父任务ID")
     tags: List[str] = Field(default=[], description="任务标签")
+    service_ids: List[str] = Field(default=[], description="关联服务ID列表，占位字段用于后续AI服务匹配")
     due_date: Optional[datetime] = Field(None, description="截止日期")
     planned_start_time: Optional[datetime] = Field(None, description="计划开始时间")
     planned_end_time: Optional[datetime] = Field(None, description="计划结束时间")
+    last_claimed_date: Optional[date] = Field(None, description="最后领奖日期，用于防刷机制")
     is_deleted: bool = Field(..., description="是否已删除")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 
-    # 计算字段
-    is_overdue: bool = Field(..., description="是否过期")
-    duration_minutes: Optional[int] = Field(None, description="计划持续时间（分钟）")
+    # 简化字段
+    completion_percentage: float = Field(..., description="任务完成百分比，0.0-100.0")
 
+    
 
 class PaginationInfo(BaseModel):
     """
@@ -429,7 +439,7 @@ class TaskDeleteResponse(BaseModel):
     """
     model_config = ConfigDict(from_attributes=True)
 
-    deleted_task_id: UUID = Field(..., description="被删除的任务ID")
+    deleted_task_id: str = Field(..., description="被删除的任务ID")
     deleted_count: int = Field(..., description="删除的任务总数")
     cascade_deleted: bool = Field(..., description="是否有级联删除")
 
@@ -479,3 +489,167 @@ class TaskListResponseWrapper(UnifiedResponse):
     继承自UnifiedResponse，data字段包含任务列表和分页信息。
     """
     data: TaskListResponse = Field(..., description="任务列表和分页信息")
+
+
+# ===== 任务完成相关Schema =====
+
+class CompleteTaskRequest(BaseModel):
+    """
+    完成任务请求Schema
+
+    用于完成任务操作的API请求。此请求不需要额外的请求体，
+    所有必要信息都从URL路径参数和JWT token中获取。
+
+    设计说明：
+    - 任务ID从URL路径参数获取
+    - 用户ID从JWT token中自动提取
+    - 请求体为空，简化API调用
+    """
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="forbid",
+        json_schema_extra={
+            "example": {},
+            "description": "完成任务请求不需要请求体"
+        }
+    )
+
+
+class CompleteTaskResponse(BaseModel):
+    """
+    完成任务响应Schema
+
+    用于返回任务完成操作的详细结果，包含任务信息、奖励信息和父任务更新信息。
+
+    字段说明：
+    - task: 完成后的任务信息
+    - completion_result: 任务完成操作结果（积分奖励等）
+    - lottery_result: 抽奖结果（如果是Top3任务）
+    - parent_update: 父任务完成度更新信息
+    - message: 操作结果描述
+    """
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "task": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "title": "完成项目文档",
+                    "status": "completed",
+                    "completion_percentage": 100.0
+                },
+                "completion_result": {
+                    "success": True,
+                    "points_awarded": 2,
+                    "reward_type": "task_complete"
+                },
+                "lottery_result": {
+                    "reward_type": "points",
+                    "points": 100,
+                    "message": "恭喜获得100积分！"
+                },
+                "parent_update": {
+                    "success": True,
+                    "updated_tasks_count": 2,
+                    "updated_tasks": [
+                        {
+                            "task_id": "parent-uuid",
+                            "completion_percentage": 75.0,
+                            "child_count": 4
+                        }
+                    ]
+                },
+                "message": "任务完成成功"
+            }
+        }
+    )
+
+    task: Dict[str, Any] = Field(..., description="完成后的任务信息")
+    completion_result: Dict[str, Any] = Field(..., description="任务完成操作结果")
+    lottery_result: Optional[Dict[str, Any]] = Field(None, description="抽奖结果（Top3任务）")
+    parent_update: Optional[Dict[str, Any]] = Field(None, description="父任务完成度更新信息")
+    message: str = Field(..., description="操作结果描述")
+
+
+class UncompleteTaskRequest(BaseModel):
+    """
+    取消任务完成请求Schema
+
+    用于取消任务完成状态的API请求。
+
+    设计说明：
+    - 任务ID从URL路径参数获取
+    - 用户ID从JWT token中自动提取
+    - 请求体为空，简化API调用
+    - 注意：取消完成不会回收已发放的积分和奖励
+    """
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="forbid",
+        json_schema_extra={
+            "example": {},
+            "description": "取消任务完成请求不需要请求体"
+        }
+    )
+
+
+class UncompleteTaskResponse(BaseModel):
+    """
+    取消任务完成响应Schema
+
+    用于返回取消任务完成操作的详细结果。
+
+    字段说明：
+    - task: 取消完成后的任务信息
+    - parent_update: 父任务完成度更新信息
+    - message: 操作结果描述（包含不回收奖励的提示）
+    """
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "task": {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "title": "完成项目文档",
+                    "status": "pending",
+                    "completion_percentage": 25.0
+                },
+                "parent_update": {
+                    "success": True,
+                    "updated_tasks_count": 2,
+                    "updated_tasks": [
+                        {
+                            "task_id": "parent-uuid",
+                            "completion_percentage": 50.0,
+                            "child_count": 4
+                        }
+                    ]
+                },
+                "message": "取消完成成功（注意：已发放的积分和奖励不会回收）"
+            }
+        }
+    )
+
+    task: Dict[str, Any] = Field(..., description="取消完成后的任务信息")
+    parent_update: Optional[Dict[str, Any]] = Field(None, description="父任务完成度更新信息")
+    message: str = Field(..., description="操作结果描述")
+
+
+# ===== 任务完成统一响应格式 =====
+
+class TaskCompleteResponseWrapper(UnifiedResponse):
+    """
+    任务完成响应
+
+    继承自UnifiedResponse，data字段包含任务完成的详细结果。
+    """
+    data: CompleteTaskResponse = Field(..., description="任务完成结果")
+
+
+class TaskUncompleteResponseWrapper(UnifiedResponse):
+    """
+    取消任务完成响应
+
+    继承自UnifiedResponse，data字段包含取消任务完成的结果。
+    """
+    data: UncompleteTaskResponse = Field(..., description="取消任务完成结果")

@@ -45,6 +45,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"❌ 任务数据库初始化失败: {e}")
 
+    # 初始化奖励数据库
+    from src.domains.reward.database import initialize_reward_database
+    from src.database import get_db_session
+    try:
+        # 获取数据库会话并初始化
+        session_gen = get_db_session()
+        session = next(session_gen)
+        try:
+            initialize_reward_database(session)
+            print("✅ 奖励数据库初始化完成")
+        finally:
+            session.close()
+    except Exception as e:
+        print(f"❌ 奖励数据库初始化失败: {e}")
+
     # 初始化聊天数据库
     from src.domains.chat.database import create_tables, check_connection
     try:
@@ -55,6 +70,14 @@ async def lifespan(app: FastAPI):
             print("❌ 聊天数据库连接失败")
     except Exception as e:
         print(f"❌ 聊天数据库初始化失败: {e}")
+
+    # 初始化Focus数据库
+    from src.domains.focus.database import create_focus_tables
+    try:
+        create_focus_tables()
+        print("✅ Focus数据库初始化完成")
+    except Exception as e:
+        print(f"❌ Focus数据库初始化失败: {e}")
 
     print("✅ API服务启动完成")
 
@@ -211,17 +234,59 @@ from src.domains.auth.router import router as auth_router
 # 添加任务API路由
 from src.domains.task.router import router as task_router
 
+# 添加任务完成API路由
+
+# 添加奖励系统API路由
+from src.domains.reward.router import router as reward_router, points_router
+
+# 添加Top3系统API路由
+from src.domains.top3.api import router as top3_router
+
 # 添加聊天API路由
 from src.domains.chat.router import router as chat_router
 
+# 添加Focus番茄钟API路由
+from src.domains.focus.router import router as focus_router
+
 # 使用认证领域路由
-app.include_router(auth_router, prefix=config.api_prefix, tags=["认证系统"])
+if config.api_prefix:
+    app.include_router(auth_router, prefix=config.api_prefix, tags=["认证系统"])
+else:
+    app.include_router(auth_router, tags=["认证系统"])
 
 # 使用任务领域路由
-app.include_router(task_router, prefix=config.api_prefix, tags=["任务管理"])
+if config.api_prefix:
+    app.include_router(task_router, prefix=config.api_prefix, tags=["任务管理"])
+else:
+    app.include_router(task_router, tags=["任务管理"])
+
+# 使用任务完成API路由
+
+# 使用奖励系统API路由
+if config.api_prefix:
+    app.include_router(reward_router, prefix=config.api_prefix, tags=["奖励系统"])
+    app.include_router(points_router, prefix=config.api_prefix, tags=["积分系统"])
+else:
+    app.include_router(reward_router, tags=["奖励系统"])
+    app.include_router(points_router, tags=["积分系统"])
+
+# 使用Top3系统API路由
+if config.api_prefix:
+    app.include_router(top3_router, prefix=config.api_prefix, tags=["Top3管理"])
+else:
+    app.include_router(top3_router, tags=["Top3管理"])
 
 # 使用聊天领域路由
-app.include_router(chat_router, prefix=config.api_prefix, tags=["智能聊天"])
+if config.api_prefix:
+    app.include_router(chat_router, prefix=config.api_prefix, tags=["智能聊天"])
+else:
+    app.include_router(chat_router, tags=["智能聊天"])
+
+# 使用Focus番茄钟领域路由
+if config.api_prefix:
+    app.include_router(focus_router, prefix=config.api_prefix, tags=["番茄钟系统"])
+else:
+    app.include_router(focus_router, tags=["番茄钟系统"])
 
 
 if __name__ == "__main__":

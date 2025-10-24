@@ -84,22 +84,23 @@ async def get_optional_current_user(
         return None
 
     try:
-        return await get_current_user(credentials)
+        return await get_current_user_id(credentials)
     except HTTPException:
         return None
 
 
 # 用户权限验证依赖
-async def require_user_type(required_type: str):
-    """要求特定用户类型的依赖工厂函数"""
-    async def dependency(current_user: dict = Depends(get_current_user)):
-        if current_user["user_type"] != required_type:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"需要{required_type}权限"
-            )
-        return current_user
-    return dependency
+# TODO: 修复权限验证逻辑，当前current_user是UUID不是dict
+# async def require_user_type(required_type: str):
+#     """要求特定用户类型的依赖工厂函数"""
+#     async def dependency(current_user: UUID = Depends(get_current_user_id)):
+#         if current_user["user_type"] != required_type:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail=f"需要{required_type}权限"
+#             )
+#         return current_user
+#     return dependency
 
 
 # 分页依赖

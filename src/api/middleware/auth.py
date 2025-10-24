@@ -51,11 +51,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # 不需要认证的路径
         self.public_paths = {
-            "/api/v1/auth/guest/init",
-            "/api/v1/auth/sms/send",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
-            "/api/v1/info",
+            "/auth/guest/init",
+            "/auth/sms/send",
+            "/auth/login",
+            "/auth/refresh",
+            "/info",
             "/docs",
             "/redoc",
             "/openapi.json",
@@ -204,7 +204,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return True
 
         # 前缀匹配 - 仅对特定需要子路径的公开路径进行前缀匹配
-        # 避免错误匹配 /api/v1/auth 开头路径到 /api/v1/tasks
+        # 避免错误匹配 /auth 开头路径到 /tasks
         prefix_paths = {
             "/docs",
             "/redoc",
@@ -218,10 +218,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # 对于认证相关路径，需要更精确的匹配
         auth_public_paths = {
-            "/api/v1/auth/guest/init",
-            "/api/v1/auth/sms/send",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh"
+            "/auth/guest/init",
+            "/auth/sms/send",
+            "/auth/login",
+            "/auth/refresh"
         }
 
         # 认证路径只允许精确匹配，不允许前缀匹配
@@ -278,7 +278,7 @@ class RefreshTokenMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
         self.refresh_token_paths = {
-            "/api/v1/auth/refresh"
+            "/auth/refresh"
         }
 
     async def dispatch(self, request: Request, call_next):

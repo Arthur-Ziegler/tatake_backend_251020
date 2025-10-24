@@ -15,8 +15,8 @@ from typing import Dict, Any
 from datetime import datetime, timezone
 
 # API基础配置
-BASE_URL = "http://localhost:8000"
-API_BASE = f"{BASE_URL}/api/v1"
+BASE_URL = "http://localhost:8001"
+API_BASE = f"{BASE_URL}/"
 
 class TestTaskAPIFixed:
     """Task API修复验证测试类"""

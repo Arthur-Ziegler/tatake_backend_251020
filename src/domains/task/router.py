@@ -46,6 +46,9 @@ from fastapi.security import HTTPBearer
 from sqlmodel import Session
 
 from .service import TaskService
+from src.domains.points.service import PointsService
+from src.domains.reward.service import RewardService
+from .completion_service import TaskCompletionService
 from .schemas import (
     CreateTaskRequest,
     UpdateTaskRequest,
@@ -54,7 +57,13 @@ from .schemas import (
     TaskGetResponse,
     TaskUpdateResponse,
     TaskDeleteResponseWrapper,
-    TaskListResponseWrapper
+    TaskListResponseWrapper,
+    CompleteTaskRequest,
+    CompleteTaskResponse,
+    UncompleteTaskRequest,
+    UncompleteTaskResponse,
+    TaskCompleteResponseWrapper,
+    TaskUncompleteResponseWrapper
 )
 from .exceptions import (
     TaskException,
@@ -65,11 +74,12 @@ from .exceptions import (
     TaskValidationException,
     TaskDatabaseException
 )
-from .database import get_task_session
-
 # 导入认证依赖
 from src.domains.auth.service import AuthService
 from src.api.dependencies import get_current_user_id
+
+# 导入优化后的数据库依赖
+from src.database import SessionDep, get_db_session
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -104,8 +114,8 @@ def create_error_response(exception: TaskException) -> JSONResponse:
 @router.post("/", response_model=TaskCreateResponse, summary="创建任务")
 async def create_task(
     request: CreateTaskRequest,
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_task_session)
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
 ) -> TaskCreateResponse:
     """
     创建新任务
@@ -127,7 +137,8 @@ async def create_task(
         logger.info(f"创建任务API调用: user_id={user_id}, title={request.title}")
 
         # 创建任务服务
-        task_service = TaskService(session)
+        points_service = PointsService(session)
+        task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
         task_response = task_service.create_task(request, user_id)
@@ -156,8 +167,8 @@ async def create_task(
 @router.get("/{task_id}", response_model=TaskGetResponse, summary="获取任务详情")
 async def get_task(
     task_id: UUID,
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_task_session)
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
 ) -> TaskGetResponse:
     """
     获取任务详情
@@ -179,7 +190,8 @@ async def get_task(
         logger.debug(f"获取任务API调用: task_id={task_id}, user_id={user_id}")
 
         # 创建任务服务
-        task_service = TaskService(session)
+        points_service = PointsService(session)
+        task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
         task_response = task_service.get_task(task_id, user_id)
@@ -209,8 +221,8 @@ async def get_task(
 async def update_task(
     task_id: UUID,
     request: UpdateTaskRequest,
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_task_session)
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
 ) -> TaskUpdateResponse:
     """
     更新任务
@@ -233,10 +245,11 @@ async def update_task(
         logger.info(f"更新任务API调用: task_id={task_id}, user_id={user_id}")
 
         # 创建任务服务
-        task_service = TaskService(session)
+        points_service = PointsService(session)
+        task_service = TaskService(session, points_service)
 
-        # 执行业务逻辑
-        task_response = task_service.update_task(task_id, request, user_id)
+        # 执行业务逻辑（使用支持树结构的方法）
+        task_response = task_service.update_task_with_tree_structure(task_id, request, user_id)
 
         # 返回成功响应
         return TaskUpdateResponse(
@@ -262,8 +275,8 @@ async def update_task(
 @router.delete("/{task_id}", response_model=TaskDeleteResponseWrapper, summary="删除任务")
 async def delete_task(
     task_id: UUID,
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_task_session)
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
 ) -> TaskDeleteResponseWrapper:
     """
     删除任务
@@ -285,16 +298,18 @@ async def delete_task(
         logger.info(f"删除任务API调用: task_id={task_id}, user_id={user_id}")
 
         # 创建任务服务
-        task_service = TaskService(session)
+        points_service = PointsService(session)
+        task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
         delete_result = task_service.delete_task(task_id, user_id)
 
         # 返回成功响应
+        deleted_count = delete_result.get("deleted_count", 0)
         return TaskDeleteResponseWrapper(
             code=200,
             data=delete_result,
-            message=f"任务删除成功，共删除{delete_result.deleted_count}个任务"
+            message=f"任务删除成功，共删除{deleted_count}个任务"
         )
 
     except TaskException as e:
@@ -313,11 +328,11 @@ async def delete_task(
 
 @router.get("/", response_model=TaskListResponseWrapper, summary="获取任务列表")
 async def get_task_list(
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id),
     page: int = Query(1, ge=1, description="页码，从1开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页大小，1-100"),
-    include_deleted: bool = Query(False, description="是否包含已删除的任务"),
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_task_session)
+    include_deleted: bool = Query(False, description="是否包含已删除的任务")
 ) -> TaskListResponseWrapper:
     """
     获取任务列表 - 简化版本，只支持基本分页
@@ -350,7 +365,8 @@ async def get_task_list(
         )
 
         # 创建任务服务
-        task_service = TaskService(session)
+        points_service = PointsService(session)
+        task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
         list_response = task_service.get_task_list(query, user_id)
@@ -370,6 +386,158 @@ async def get_task_list(
         )
     except Exception as e:
         logger.error(f"获取任务列表异常: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="内部服务器错误"
+        )
+
+
+@router.post("/{task_id}/complete",
+              response_model=TaskCompleteResponseWrapper,
+              summary="完成任务")
+async def complete_task(
+    task_id: UUID,
+    request: CompleteTaskRequest,
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
+) -> TaskCompleteResponseWrapper:
+    """
+    完成任务并触发奖励分发
+
+    业务流程：
+    1. 验证任务存在性和权限
+    2. 检查任务是否已完成
+    3. 更新任务状态为完成（包含父任务完成度递归更新）
+    4. 检测是否是Top3任务
+    5. 分发积分奖励（普通任务2分，Top3任务抽奖）
+    6. 记录所有流水
+    7. 返回完成结果和奖励信息
+
+    完成逻辑：
+    - Top3任务：50%获得100积分，50%获得随机奖品
+    - 非Top3任务：固定2积分
+    - 支持多层任务树的父任务完成度自动更新
+    - 永久防刷机制：一旦完成任务不能重复获得积分
+
+    Args:
+        task_id (UUID): 任务ID
+        request (CompleteTaskRequest): 完成任务请求（空请求体）
+        user_id (UUID): 当前用户ID（从JWT token中获取）
+        session (Session): 数据库会话
+
+    Returns:
+        TaskCompleteResponseWrapper: 任务完成结果响应
+
+    Raises:
+        HTTPException: 任务不存在、无权限访问或业务逻辑异常
+    """
+    try:
+        logger.info(f"完成任务API调用: task_id={task_id}, user_id={user_id}")
+
+        # 创建任务完成集成服务
+        completion_service = TaskCompletionService(session)
+
+        # 执行任务完成业务流程
+        result = completion_service.complete_task(task_id, user_id)
+
+        # 构建响应数据
+        response_data = CompleteTaskResponse(
+            task=result["data"]["task"],
+            completion_result=result["data"]["completion_result"],
+            lottery_result=result["data"].get("lottery_result"),
+            parent_update=result["data"].get("parent_update"),
+            message=result["data"]["message"]
+        )
+
+        # 返回成功响应
+        return TaskCompleteResponseWrapper(
+            code=result["code"],
+            data=response_data,
+            message=result["message"]
+        )
+
+    except TaskException as e:
+        logger.error(f"完成任务失败: {e}")
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.detail
+        )
+    except Exception as e:
+        logger.error(f"完成任务异常: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="内部服务器错误"
+        )
+
+
+@router.post("/{task_id}/uncomplete",
+              response_model=TaskUncompleteResponseWrapper,
+              summary="取消任务完成")
+async def uncomplete_task(
+    task_id: UUID,
+    request: UncompleteTaskRequest,
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id)
+) -> TaskUncompleteResponseWrapper:
+    """
+    取消任务完成状态
+
+    业务流程：
+    1. 验证任务存在性和权限
+    2. 检查任务是否处于完成状态
+    3. 更新任务状态为pending
+    4. 递归更新父任务完成度
+    5. 记录操作日志
+    6. 返回操作结果
+
+    注意事项：
+    - 取消完成不会回收已发放的积分或奖励，这是业务规则决定
+    - 支持多层任务树的父任务完成度自动回退
+    - 操作不可逆，请谨慎执行
+
+    Args:
+        task_id (UUID): 任务ID
+        request (UncompleteTaskRequest): 取消完成请求（空请求体）
+        user_id (UUID): 当前用户ID（从JWT token中获取）
+        session (Session): 数据库会话
+
+    Returns:
+        TaskUncompleteResponseWrapper: 取消完成操作结果响应
+
+    Raises:
+        HTTPException: 任务不存在、无权限访问或业务逻辑异常
+    """
+    try:
+        logger.info(f"取消任务完成API调用: task_id={task_id}, user_id={user_id}")
+
+        # 创建任务完成集成服务
+        completion_service = TaskCompletionService(session)
+
+        # 执行取消任务完成业务流程
+        result = completion_service.uncomplete_task(task_id, user_id)
+
+        # 构建响应数据
+        response_data = UncompleteTaskResponse(
+            task=result["data"]["task"],
+            parent_update=result["data"].get("parent_update"),
+            message=result["data"]["message"]
+        )
+
+        # 返回成功响应
+        return TaskUncompleteResponseWrapper(
+            code=result["code"],
+            data=response_data,
+            message=result["message"]
+        )
+
+    except TaskException as e:
+        logger.error(f"取消任务完成失败: {e}")
+        raise HTTPException(
+            status_code=e.status_code,
+            detail=e.detail
+        )
+    except Exception as e:
+        logger.error(f"取消任务完成异常: {e}")
         raise HTTPException(
             status_code=500,
             detail="内部服务器错误"

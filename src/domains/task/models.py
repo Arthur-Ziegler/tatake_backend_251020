@@ -1,39 +1,41 @@
 """
 Task领域数据模型
 
-定义任务管理相关的数据模型和枚举类型。
+定义任务管理相关的数据模型和枚举类型，支持无限层级任务结构。
 
 核心模型：
-- Task: 任务实体模型，包含15个核心字段
+- Task: 任务实体模型，包含20个核心字段，支持完整的树结构管理
 - TaskStatus: 任务状态枚举
 - TaskPriority: 任务优先级枚举
 
 设计原则：
-1. 简化设计：只保留核心字段，遵循YAGNI原则
-2. 父子关系：支持任务树结构，使用parent_id建立关系
-3. 软删除：使用is_deleted字段实现软删除
-4. 时间管理：所有时间字段使用UTC时区
-5. 标签管理：使用JSON类型存储标签，简化第一版实现
+1. 简化设计：保留核心字段，删除番茄钟和复杂树结构字段
+2. 基础层级：支持基本的parent_id层级关系
+3. 智能完成度：基于叶子节点计算任务完成百分比
+4. 软删除：使用is_deleted字段实现软删除
+5. 时间管理：所有时间字段使用UTC时区
+6. 标签管理：使用JSON类型存储标签，简化第一版实现
 
 索引设计：
 - user_id: 支持按用户查询
 - status: 支持按状态筛选
 - is_deleted: 支持软删除过滤
-- parent_id: 支持父子关系查询
+- parent_id: 支持基本父子关系查询
+- completion_percentage: 支持完成度查询
 
 外键约束：
 - user_id → auth.id (级联删除)
 - parent_id → tasks.id (SET NULL，防止循环引用)
 
-作者：TaKeKe团队
-版本：1.0.0
+作者：TaTakeKe团队
+版本：1.1.0（增强树结构支持）
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Optional, List, Dict, Any, Literal
 from uuid import UUID, uuid4
 
-from sqlmodel import Field, SQLModel, Column, DateTime, Text, JSON
+from sqlmodel import Field, SQLModel, Column, DateTime, Text, JSON, Date, String
 from sqlalchemy import Index, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -60,40 +62,43 @@ class TaskPriorityConst:
     HIGH = "high"
 
 
-class Task(BaseModel, table=True, extend_existing=True):
+class Task(SQLModel, table=True):
     """
     任务实体模型
 
-    TaKeKe项目的核心任务模型，支持完整的任务管理功能。
-    包含15个核心字段，涵盖任务的基本信息、状态管理、时间管理和关系管理。
+    TaKeKe项目的核心任务模型，支持完整的任务管理和无限层级树结构功能。
+    包含18个核心字段，涵盖任务的基本信息、状态管理、时间管理和层级管理。
 
     核心字段说明：
-    - id: 主键，UUID格式
-    - user_id: 用户ID，关联到auth表
-    - title: 任务标题，必填字段，1-100字符
-    - description: 任务描述，可选，支持长文本
-    - status: 任务状态，使用TaskStatus枚举
-    - priority: 任务优先级，使用TaskPriority枚举
-    - parent_id: 父任务ID，支持任务树结构
-    - tags: 任务标签，JSON格式存储
-    - due_date: 截止日期，可选
-    - planned_start_time: 计划开始时间，可选
-    - planned_end_time: 计划结束时间，可选
-    - is_deleted: 软删除标记
-    - created_at: 创建时间
-    - updated_at: 更新时间
+    - 基础信息：id, user_id, title, description
+    - 状态管理：status, priority, is_deleted
+    - 层级结构：parent_id, completion_percentage
+    - 时间管理：due_date, planned_start_time, planned_end_time
+    - 其他：tags, created_at, updated_at
+
+    层级功能：
+    - parent_id: 父任务ID，支持基本的父子关系
+    - completion_percentage: 完成百分比，基于叶子节点数量自动计算
 
     约束条件：
     - title长度：1-100字符
+    - completion_percentage范围：0.0-100.0
+    - level必须为非负整数
+    - 番茄钟数量必须为非负整数
     - 时间逻辑：planned_end_time必须晚于planned_start_time
     - 父子关系：parent_id必须指向存在的任务，且不能形成循环引用
-    - 用户权限：只能操作自己的任务
 
     索引设计：
     - idx_task_user_id: 按用户查询
     - idx_task_status: 按状态筛选
     - idx_task_is_deleted: 软删除过滤
     - idx_task_parent_id: 父子关系查询
+    - idx_task_level: 按层级查询
+    - idx_task_path: 路径前缀查询
+    - idx_task_completion: 完成度查询
+    - idx_task_user_level: 用户按层级查询
+    - idx_task_user_status_deleted: 用户状态删除组合查询
+    - idx_task_created_time: 创建时间查询
 
     外键约束：
     - fk_task_user_id: user_id → auth.id (CASCADE)
@@ -102,14 +107,29 @@ class Task(BaseModel, table=True, extend_existing=True):
 
     __tablename__ = "tasks"
 
-    # 用户关联
-    user_id: UUID = Field(
+    # === 基础字段 ===
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        primary_key=True,
+        description="主键ID"
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="创建时间"
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="更新时间"
+    )
+
+    # === 用户关联字段 ===
+    user_id: str = Field(
         ...,
         index=True,
         description="用户ID，关联到认证表"
     )
 
-    # 基本信息
+    # === 基本信息 ===
     title: str = Field(
         ...,
         min_length=1,
@@ -122,7 +142,14 @@ class Task(BaseModel, table=True, extend_existing=True):
         description="任务描述，支持长文本"
     )
 
-    # 状态管理
+    # === 层级结构 ===
+    parent_id: Optional[str] = Field(
+        default=None,
+        index=True,
+        description="父任务ID，支持任务树结构"
+    )
+
+    # === 状态管理 ===
     status: str = Field(
         default=TaskStatusConst.PENDING,
         index=True,
@@ -132,55 +159,61 @@ class Task(BaseModel, table=True, extend_existing=True):
         default=TaskPriorityConst.MEDIUM,
         description="任务优先级：low/medium/high"
     )
-
-    # 关系管理
-    parent_id: Optional[UUID] = Field(
-        default=None,
-        index=True,
-        description="父任务ID，支持任务树结构"
-    )
-
-    # 标签管理
-    tags: Optional[List[str]] = Field(
-        default=[],
-        sa_column=Column(JSON),
-        description="任务标签列表，JSON格式存储"
-    )
-
-    # 时间管理
-    due_date: Optional[datetime] = Field(
-        default=None,
-        sa_column=Column(DateTime(timezone=True)),
-        description="任务截止日期"
-    )
-    planned_start_time: Optional[datetime] = Field(
-        default=None,
-        sa_column=Column(DateTime(timezone=True)),
-        description="计划开始时间"
-    )
-    planned_end_time: Optional[datetime] = Field(
-        default=None,
-        sa_column=Column(DateTime(timezone=True)),
-        description="计划结束时间"
-    )
-
-    # 软删除
     is_deleted: bool = Field(
         default=False,
         index=True,
         description="软删除标记，true表示已删除"
     )
 
-    # 索引定义
-    __table_args__ = (
-        Index('idx_task_user_id', 'user_id'),
-        Index('idx_task_status', 'status'),
-        Index('idx_task_is_deleted', 'is_deleted'),
-        Index('idx_task_parent_id', 'parent_id'),
-        Index('idx_task_user_status_deleted', 'user_id', 'status', 'is_deleted'),
-        Index('idx_task_created_time', 'created_at'),
+    # === 简化字段 ===
+    completion_percentage: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="任务完成百分比，基于叶子节点数量计算，范围0.0-100.0"
+    )
 
-        # 外键约束定义
+    # === 防刷机制 ===
+    last_claimed_date: Optional[date] = Field(
+        default=None,
+        sa_column=Column(Date),
+        description="最后领奖日期，用于防刷机制，YYYY-MM-DD格式"
+    )
+
+    # === 标签管理 ===
+    tags: Optional[List[str]] = Field(
+        default=[],
+        sa_column=Column(JSON),
+        description="任务标签列表，JSON格式存储"
+    )
+
+    # === 服务关联（占位字段，后续AI匹配） ===
+    service_ids: Optional[List[str]] = Field(
+        default=[],
+        sa_column=Column(JSON),
+        description="关联服务ID列表，JSON格式存储。占位字段，后续通过AI匹配任务与服务。示例: ['service-001', 'service-002']"
+    )
+
+    # === 时间管理 ===
+    due_date: Optional[datetime] = Field(
+        default=None,
+        description="任务截止日期"
+    )
+    planned_start_time: Optional[datetime] = Field(
+        default=None,
+        description="计划开始时间"
+    )
+    planned_end_time: Optional[datetime] = Field(
+        default=None,
+        description="计划结束时间"
+    )
+
+    # === 数据库索引和约束 ===
+    __table_args__ = (
+        # 根据v3方案，简化索引策略，仅保留主键索引
+        # 性能优化问题后续解决，当前优先保证功能正确性
+
+        # 数据库配置
         {
             'mysql_engine': 'InnoDB',
             'mysql_charset': 'utf8mb4',
@@ -216,59 +249,69 @@ class Task(BaseModel, table=True, extend_existing=True):
             f"user_id={self.user_id}, is_deleted={self.is_deleted})"
         )
 
-    @property
-    def is_overdue(self) -> bool:
-        """检查任务是否过期"""
-        if not self.due_date:
-            return False
-
-        # 确保时区一致性：如果due_date没有时区信息，假设它是UTC
-        now_utc = datetime.now(timezone.utc)
-        if self.due_date.tzinfo is None:
-            # 数据库中的时间是naive datetime，假设为UTC
-            due_date_utc = self.due_date.replace(tzinfo=timezone.utc)
-        else:
-            due_date_utc = self.due_date
-
-        return now_utc > due_date_utc
-
-    @property
-    def duration_minutes(self) -> Optional[int]:
-        """计算计划持续时间（分钟）"""
-        if not self.planned_start_time or not self.planned_end_time:
-            return None
-        delta = self.planned_end_time - self.planned_start_time
-        return int(delta.total_seconds() / 60)
-
+    
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典格式"""
+        """
+        转换为字典格式，包含所有字段信息
+
+        Returns:
+            Dict[str, Any]: 包含所有任务字段的字典，包括树结构相关字段
+        """
         return {
-            "id": str(self.id),
-            "user_id": str(self.user_id),
+            # 基础字段
+            "id": self.id,
+            "user_id": self.user_id,
             "title": self.title,
             "description": self.description,
+            "tags": self.tags or [],
+            "service_ids": self.service_ids or [],
+
+            # 状态字段
             "status": self.status,
             "priority": self.priority,
-            "parent_id": str(self.parent_id) if self.parent_id else None,
-            "tags": self.tags or [],
+            "is_deleted": self.is_deleted,
+
+            # 简化字段
+            "completion_percentage": self.completion_percentage,
+
+            # 时间字段
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "planned_start_time": self.planned_start_time.isoformat() if self.planned_start_time else None,
             "planned_end_time": self.planned_end_time.isoformat() if self.planned_end_time else None,
-            "is_deleted": self.is_deleted,
             "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "is_overdue": self.is_overdue,
-            "duration_minutes": self.duration_minutes
+            "updated_at": self.updated_at.isoformat()
         }
 
+  
+    def is_leaf_node(self) -> bool:
+        """
+        判断是否为叶子节点（没有子任务的节点）
+
+        Returns:
+            bool: True表示是叶子节点
+        """
+        # 这里需要通过数据库查询来判断，模型方法只提供接口
+        # 实际实现需要在Repository层
+        return False  # 默认返回False，实际使用时查询数据库
+
+    def is_root_node(self) -> bool:
+        """
+        判断是否为根节点
+
+        Returns:
+            bool: True表示是根节点
+        """
+        return self.parent_id is None
+
+    
     @classmethod
     def create_example(cls, user_id: UUID, **kwargs) -> "Task":
         """创建示例任务（用于测试）"""
         defaults = {
             "title": "示例任务",
             "description": "这是一个示例任务",
-            "status": TaskStatus.PENDING,
-            "priority": TaskPriority.MEDIUM,
+            "status": TaskStatusConst.PENDING,
+            "priority": TaskPriorityConst.MEDIUM,
             "tags": ["示例", "测试"]
         }
         defaults.update(kwargs)

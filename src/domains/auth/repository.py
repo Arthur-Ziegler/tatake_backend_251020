@@ -74,18 +74,20 @@ class AuthRepository:
 
         return user
 
-    def get_by_id(self, model_class, user_id: UUID) -> Optional[Auth]:
+    def get_by_id(self, model_class, user_id) -> Optional[Auth]:
         """
         通过ID查找用户
 
         Args:
             model_class: 模型类（传入Auth）
-            user_id: 用户ID
+            user_id: 用户ID（UUID或字符串）
 
         Returns:
             Optional[Auth]: 找到的用户实体，未找到时返回None
         """
-        statement = select(model_class).where(model_class.id == user_id)
+        # 将UUID转换为字符串以匹配数据库中的存储格式
+        user_id_str = str(user_id) if isinstance(user_id, UUID) else user_id
+        statement = select(model_class).where(model_class.id == user_id_str)
         result = self.session.execute(statement).first()
         if result:
             return result[0]  # 获取实际的实体对象
@@ -122,9 +124,11 @@ class AuthRepository:
         Returns:
             Auth: 升级后的用户实体
         """
+        # 将UUID转换为字符串以匹配数据库中的存储格式
+        user_id_str = str(user_id)
         statement = (
             update(Auth)
-            .where(Auth.id == user_id)
+            .where(Auth.id == user_id_str)
             .values(
                 is_guest=False,
                 wechat_openid=wechat_openid,

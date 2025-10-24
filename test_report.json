@@ -1,0 +1,77 @@
+{
+  "test_time": "2025-10-24T19:07:44.316709",
+  "summary": {
+    "total_scenarios": 5,
+    "passed_scenarios": 0,
+    "failed_scenarios": 5,
+    "pass_rate": 0.0
+  },
+  "user_id": "a71509e8-5195-44de-ac03-3706ad30eb87",
+  "results": [
+    {
+      "test": "创建测试用户",
+      "status": "✅ PASS",
+      "success": true,
+      "timestamp": "2025-10-24T19:07:44.297962",
+      "data": {
+        "user_id": "a71509e8-5195-44de-ac03-3706ad30eb87",
+        "identifier": "full_system"
+      }
+    },
+    {
+      "test": "创建3个任务",
+      "status": "✅ PASS",
+      "success": true,
+      "timestamp": "2025-10-24T19:07:44.308722",
+      "data": {
+        "tasks": [
+          {
+            "id": "4b80d103-a490-4403-ba0d-d7bdeb0b6aab",
+            "title": "游戏化测试任务1"
+          },
+          {
+            "id": "10ee2483-64aa-4605-8a0d-63f640dac02d",
+            "title": "游戏化测试任务2"
+          },
+          {
+            "id": "6a1783de-34da-49c9-85e0-23792ce838ee",
+            "title": "游戏化测试任务3"
+          }
+        ]
+      }
+    },
+    {
+      "test": "设置Top3",
+      "status": "❌ FAIL",
+      "success": false,
+      "timestamp": "2025-10-24T19:07:44.309953",
+      "error": "HTTP 422"
+    },
+    {
+      "test": "创建Focus测试任务",
+      "status": "❌ FAIL",
+      "success": false,
+      "timestamp": "2025-10-24T19:07:44.312213",
+      "error": "任务创建成功"
+    },
+    {
+      "test": "创建防刷测试任务",
+      "status": "❌ FAIL",
+      "success": false,
+      "timestamp": "2025-10-24T19:07:44.314512",
+      "error": "任务创建成功"
+    },
+    {
+      "test": "查询初始积分余额",
+      "status": "❌ FAIL",
+      "success": false,
+      "timestamp": "2025-10-24T19:07:44.315655"
+    },
+    {
+      "test": "查询积分余额",
+      "status": "❌ FAIL",
+      "success": false,
+      "timestamp": "2025-10-24T19:07:44.316679"
+    }
+  ]
+}

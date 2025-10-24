@@ -30,7 +30,7 @@ Repository职责：
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
 
 from sqlmodel import select, update, delete, func, and_, or_, desc, asc
@@ -42,6 +42,36 @@ from .exceptions import TaskDatabaseException
 
 # 配置日志
 logger = logging.getLogger(__name__)
+
+
+def ensure_str_uuid(uuid_value: Union[UUID, str]) -> str:
+    """
+    确保UUID值转换为字符串格式
+
+    用于所有数据库操作，解决SQLite不支持UUID类型的问题。
+
+    Args:
+        uuid_value (Union[UUID, str]): UUID对象或字符串
+
+    Returns:
+        str: UUID的字符串表示
+    """
+    return str(uuid_value) if isinstance(uuid_value, UUID) else uuid_value
+
+
+def ensure_uuid(uuid_value: Union[UUID, str]) -> UUID:
+    """
+    确保字符串UUID转换为UUID对象
+
+    用于从数据库读取数据时，将字符串转换回UUID对象。
+
+    Args:
+        uuid_value (Union[UUID, str]): 字符串或UUID对象
+
+    Returns:
+        UUID: UUID对象
+    """
+    return UUID(uuid_value) if isinstance(uuid_value, str) else uuid_value
 
 
 class TaskRepository:
@@ -100,16 +130,16 @@ class TaskRepository:
 
     def get_by_id(
         self,
-        task_id: UUID,
-        user_id: UUID,
+        task_id: Union[UUID, str],
+        user_id: Union[UUID, str],
         include_deleted: bool = False
     ) -> Optional[Task]:
         """
         根据ID获取任务
 
         Args:
-            task_id (UUID): 任务ID
-            user_id (UUID): 用户ID（用于权限验证）
+            task_id (Union[UUID, str]): 任务ID
+            user_id (Union[UUID, str]): 用户ID（用于权限验证）
             include_deleted (bool): 是否包含已删除的任务
 
         Returns:
@@ -119,8 +149,12 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
+            # 转换UUID为字符串进行数据库查询
+            task_id_str = ensure_str_uuid(task_id)
+            user_id_str = ensure_str_uuid(user_id)
+
             # 构建查询条件
-            conditions = [Task.id == task_id, Task.user_id == user_id]
+            conditions = [Task.id == task_id_str, Task.user_id == user_id_str]
 
             if not include_deleted:
                 conditions.append(Task.is_deleted == False)
@@ -130,11 +164,13 @@ class TaskRepository:
             result = self.session.execute(statement).first()
 
             if result:
-                task = result[0]  # 获取实际的实体对象
+                task = result[0]  # 从Result对象中获取Task实体
+                # 保持字符串格式，不要转换为UUID，避免数据库写入问题
+                # Task对象的UUID字段保持为字符串，只有在需要时才在应用层转换
             else:
                 task = None
 
-            logger.debug(f"查询任务: {task_id}, 结果: {task is not None}")
+            logger.debug(f"查询任务: {task_id_str}, 结果: {task is not None}")
             return task
 
         except Exception as e:
@@ -181,8 +217,7 @@ class TaskRepository:
                 .where(and_(*conditions))
                 .order_by(Task.created_at)
             )
-            result = self.session.execute(statement).all()
-            tasks = [row[0] for row in result]  # 提取实体对象
+            tasks = list(self.session.execute(statement).scalars().all())  # 直接获取模型对象列表
 
             logger.debug(f"查询子任务: parent_id={parent_id}, 数量: {len(tasks)}")
             return tasks
@@ -293,16 +328,16 @@ class TaskRepository:
 
     def update(
         self,
-        task_id: UUID,
-        user_id: UUID,
+        task_id: Union[UUID, str],
+        user_id: Union[UUID, str],
         update_data: Dict[str, Any]
     ) -> Optional[Task]:
         """
         更新任务
 
         Args:
-            task_id (UUID): 任务ID
-            user_id (UUID): 用户ID（用于权限验证）
+            task_id (Union[UUID, str]): 任务ID
+            user_id (Union[UUID, str]): 用户ID（用于权限验证）
             update_data (Dict[str, Any]): 更新数据
 
         Returns:
@@ -312,6 +347,10 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
+            # 转换UUID为字符串进行数据库查询
+            task_id_str = ensure_str_uuid(task_id)
+            user_id_str = ensure_str_uuid(user_id)
+
             # 首先检查任务是否存在
             existing_task = self.get_by_id(task_id, user_id)
             if not existing_task:
@@ -320,12 +359,12 @@ class TaskRepository:
             # 添加更新时间
             update_data['updated_at'] = datetime.now(timezone.utc)
 
-            # 执行更新
+            # 执行更新 - 使用字符串UUID
             statement = (
                 update(Task)
                 .where(and_(
-                    Task.id == task_id,
-                    Task.user_id == user_id,
+                    Task.id == task_id_str,
+                    Task.user_id == user_id_str,
                     Task.is_deleted == False
                 ))
                 .values(**update_data)
@@ -334,13 +373,21 @@ class TaskRepository:
 
             result = self.session.execute(statement).first()
             self.session.flush()
+            self.session.commit()  # 确保事务提交到数据库
 
             if result:
                 task = result[0]  # 获取实际的实体对象
+                # 确保返回的Task对象中的UUID字段是UUID类型
+                if isinstance(task.id, str):
+                    task.id = ensure_uuid(task.id)
+                if isinstance(task.user_id, str):
+                    task.user_id = ensure_uuid(task.user_id)
+                if isinstance(task.parent_id, str) and task.parent_id:
+                    task.parent_id = ensure_uuid(task.parent_id)
             else:
                 task = None
 
-            logger.debug(f"更新任务成功: {task_id}")
+            logger.debug(f"更新任务成功: {task_id_str}")
             return task
 
         except Exception as e:
@@ -395,13 +442,13 @@ class TaskRepository:
                 original_error=e
             )
 
-    def soft_delete_cascade(self, task_id: UUID, user_id: UUID) -> int:
+    def soft_delete_cascade(self, task_id: Union[UUID, str], user_id: Union[UUID, str]) -> int:
         """
         级联软删除任务及其所有子任务
 
         Args:
-            task_id (UUID): 任务ID
-            user_id (UUID): 用户ID（用于权限验证）
+            task_id (Union[UUID, str]): 任务ID
+            user_id (Union[UUID, str]): 用户ID（用于权限验证）
 
         Returns:
             int: 删除的任务总数
@@ -410,19 +457,23 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
+            # 转换UUID为字符串进行数据库查询
+            task_id_str = ensure_str_uuid(task_id)
+            user_id_str = ensure_str_uuid(user_id)
+
             # 获取所有后代任务ID
             descendants = self.get_all_descendants(task_id, user_id, include_deleted=False)
-            descendant_ids = [desc.id for desc in descendants]
+            descendant_ids = [ensure_str_uuid(desc.id) for desc in descendants]
 
-            # 包含父任务本身
-            all_ids = [task_id] + descendant_ids
+            # 包含父任务本身 - 使用字符串UUID
+            all_ids = [task_id_str] + descendant_ids
 
-            # 批量软删除
+            # 批量软删除 - 所有ID都转换为字符串
             statement = (
                 update(Task)
                 .where(and_(
                     Task.id.in_(all_ids),
-                    Task.user_id == user_id,
+                    Task.user_id == user_id_str,
                     Task.is_deleted == False
                 ))
                 .values(
@@ -434,8 +485,11 @@ class TaskRepository:
             result = self.session.execute(statement)
             self.session.flush()
 
+            # 提交事务 - 确保删除操作持久化
+            self.session.commit()
+
             deleted_count = result.rowcount
-            logger.debug(f"级联软删除任务: task_id={task_id}, 数量: {deleted_count}")
+            logger.debug(f"级联软删除任务: task_id={task_id_str}, 数量: {deleted_count}")
             return deleted_count
 
         except Exception as e:
@@ -483,7 +537,7 @@ class TaskRepository:
 
             # 获取总数
             count_query = select(func.count(Task.id)).where(and_(*conditions))
-            total_count = self.session.execute(count_query).scalar()
+            total_count = self.session.execute(count_query).scalar() or 0
 
             # 固定排序：按创建时间倒序（最新在前）
             base_query = base_query.order_by(desc(Task.created_at))
@@ -496,8 +550,8 @@ class TaskRepository:
             base_query = base_query.offset(offset).limit(page_size)
 
             # 执行查询
-            result = self.session.execute(base_query).all()
-            tasks = [row[0] for row in result]  # 提取实体对象
+            result = self.session.execute(base_query)
+            tasks = [row[0] for row in result.all()]  # 从Result对象中提取模型对象
 
             # 计算分页信息
             total_pages = (total_count + page_size - 1) // page_size
@@ -569,8 +623,7 @@ class TaskRepository:
                 .where(and_(*conditions))
                 .order_by(Task.created_at)
             )
-            result = self.session.execute(statement).all()
-            tasks = [row[0] for row in result]  # 提取实体对象
+            tasks = list(self.session.execute(statement).scalars().all())  # 直接获取模型对象列表
 
             logger.debug(f"标题搜索任务: title={title}, 精确匹配={exact_match}, 数量: {len(tasks)}")
             return tasks
@@ -613,7 +666,7 @@ class TaskRepository:
                 .where(and_(*conditions))
                 .group_by(Task.status)
             )
-            result = self.session.execute(statement).all()
+            result = self.session.execute(statement).scalars().all()
 
             # 构建结果字典
             status_count = {
@@ -633,5 +686,393 @@ class TaskRepository:
             raise TaskDatabaseException(
                 operation="count_by_status",
                 reason=f"数据库统计操作失败: {str(e)}",
+                original_error=e
+            )
+
+    # === 树结构专用方法 ===
+
+    def get_tasks_by_level(
+        self,
+        user_id: UUID,
+        level: int,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        按层级查询任务
+
+        Args:
+            user_id (UUID): 用户ID
+            level (int): 任务层级
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 指定层级的任务列表
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建查询条件
+            conditions = [
+                Task.user_id == user_id,
+                Task.level == level
+            ]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            # 执行查询
+            statement = (
+                select(Task)
+                .where(and_(*conditions))
+                .order_by(Task.created_at)
+            )
+            result = self.session.execute(statement).scalars().all()
+            tasks = [row[0] for row in result]
+
+            logger.debug(f"按层级查询任务: user_id={user_id}, level={level}, 数量: {len(tasks)}")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"按层级查询任务失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_tasks_by_level",
+                reason=f"数据库层级查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_subtree_tasks(
+        self,
+        parent_id: UUID,
+        user_id: UUID,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        使用路径前缀查询子树任务（高效方式）
+
+        Args:
+            parent_id (UUID): 父任务ID
+            user_id (UUID): 用户ID
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 子树中的所有任务
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 首先获取父任务的路径
+            parent_task = self.get_by_id(parent_id, user_id, include_deleted)
+            if not parent_task:
+                return []
+
+            # 构建路径前缀
+            parent_path = parent_task.path
+            if parent_path:
+                path_prefix = f"{parent_path}/{parent_id}"
+            else:
+                path_prefix = f"/{parent_id}"
+
+            # 构建查询条件
+            conditions = [
+                Task.user_id == user_id,
+                Task.path.like(f"{path_prefix}%")
+            ]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            # 执行查询
+            statement = (
+                select(Task)
+                .where(and_(*conditions))
+                .order_by(Task.level, Task.created_at)
+            )
+            result = self.session.execute(statement).scalars().all()
+            tasks = [row[0] for row in result]
+
+            logger.debug(f"路径前缀查询子树: parent_id={parent_id}, 数量: {len(tasks)}")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"路径前缀查询子树失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_subtree_tasks",
+                reason=f"数据库路径前缀查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_leaf_nodes(
+        self,
+        user_id: UUID,
+        parent_id: Optional[UUID] = None,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        获取叶子节点任务（没有子任务的节点）
+
+        Args:
+            user_id (UUID): 用户ID
+            parent_id (Optional[UUID]): 可选的父任务ID，限定查询范围
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 叶子节点任务列表
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建基础查询条件
+            conditions = [Task.user_id == user_id]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            if parent_id:
+                # 使用路径前缀限定范围
+                parent_task = self.get_by_id(parent_id, user_id, include_deleted)
+                if parent_task:
+                    path_prefix = f"{parent_task.path}/{parent_id}" if parent_task.path else f"/{parent_id}"
+                    conditions.append(Task.path.like(f"{path_prefix}%"))
+
+            # 使用LEFT JOIN查找没有子任务的节点
+            subquery = (
+                select(Task.parent_id)
+                .where(and_(
+                    Task.parent_id.isnot(None),
+                    Task.user_id == user_id,
+                    Task.is_deleted == include_deleted  # 保持一致性
+                ))
+                .distinct()
+            )
+
+            # 叶子节点条件：ID不在任何其他任务的parent_id中
+            conditions.append(~Task.id.in_(subquery))
+
+            # 执行查询
+            statement = (
+                select(Task)
+                .where(and_(*conditions))
+                .order_by(Task.level, Task.created_at)
+            )
+            result = self.session.execute(statement).scalars().all()
+            tasks = [row[0] for row in result]
+
+            logger.debug(f"查询叶子节点: user_id={user_id}, parent_id={parent_id}, 数量: {len(tasks)}")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"查询叶子节点失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_leaf_nodes",
+                reason=f"数据库叶子节点查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_tasks_by_path_prefix(
+        self,
+        user_id: UUID,
+        path_prefix: str,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        根据路径前缀查询任务
+
+        Args:
+            user_id (UUID): 用户ID
+            path_prefix (str): 路径前缀
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 匹配路径前缀的任务列表
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建查询条件
+            conditions = [
+                Task.user_id == user_id,
+                Task.path.like(f"{path_prefix}%")
+            ]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            # 执行查询
+            statement = (
+                select(Task)
+                .where(and_(*conditions))
+                .order_by(Task.level, Task.created_at)
+            )
+            result = self.session.execute(statement).scalars().all()
+            tasks = [row[0] for row in result]
+
+            logger.debug(f"路径前缀查询: user_id={user_id}, prefix={path_prefix}, 数量: {len(tasks)}")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"路径前缀查询失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_tasks_by_path_prefix",
+                reason=f"数据库路径前缀查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_root_tasks(
+        self,
+        user_id: UUID,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        获取根任务（parent_id为None的任务）
+
+        Args:
+            user_id (UUID): 用户ID
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 根任务列表
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建查询条件
+            conditions = [
+                Task.user_id == user_id,
+                Task.parent_id.is_(None)
+            ]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            # 执行查询
+            statement = (
+                select(Task)
+                .where(and_(*conditions))
+                .order_by(Task.created_at)
+            )
+            result = self.session.execute(statement).scalars().all()
+            tasks = [row[0] for row in result]
+
+            logger.debug(f"查询根任务: user_id={user_id}, 数量: {len(tasks)}")
+            return tasks
+
+        except Exception as e:
+            logger.error(f"查询根任务失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_root_tasks",
+                reason=f"数据库根任务查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_task_tree_depth(
+        self,
+        user_id: UUID,
+        include_deleted: bool = False
+    ) -> int:
+        """
+        获取用户任务树的最大深度
+
+        Args:
+            user_id (UUID): 用户ID
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            int: 最大层级深度
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建查询条件
+            conditions = [Task.user_id == user_id]
+
+            if not include_deleted:
+                conditions.append(Task.is_deleted == False)
+
+            # 查询最大层级
+            statement = select(func.max(Task.level)).where(and_(*conditions))
+            max_level = self.session.execute(statement).scalar()
+
+            result = max_level if max_level is not None else 0
+            logger.debug(f"查询任务树深度: user_id={user_id}, 深度: {result}")
+            return result
+
+        except Exception as e:
+            logger.error(f"查询任务树深度失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_task_tree_depth",
+                reason=f"数据库深度查询失败: {str(e)}",
+                original_error=e
+            )
+
+    def get_all_leaf_tasks(
+        self,
+        user_id: str,
+        include_deleted: bool = False
+    ) -> List[Task]:
+        """
+        获取用户所有叶子任务（没有子任务的任务）
+
+        叶子任务定义：没有其他任务将其作为父任务的任务
+        这是计算父任务完成百分比的基础
+
+        Args:
+            user_id (str): 用户ID
+            include_deleted (bool): 是否包含已删除的任务
+
+        Returns:
+            List[Task]: 叶子任务列表
+
+        Raises:
+            TaskDatabaseException: 数据库操作失败
+        """
+        try:
+            # 构建基础查询条件
+            base_conditions = [Task.user_id == user_id]
+
+            if not include_deleted:
+                base_conditions.append(Task.is_deleted == False)
+
+            # 使用子查询找到所有有子任务的父任务ID
+            parent_subquery = (
+                select(Task.parent_id)
+                .where(
+                    and_(
+                        Task.parent_id.is_not(None),
+                        Task.user_id == user_id,
+                        *([Task.is_deleted == False] if not include_deleted else [])
+                    )
+                )
+                .distinct()
+            )
+
+            # 查询叶子任务：不在父任务ID列表中的任务
+            statement = (
+                select(Task)
+                .where(
+                    and_(
+                        *base_conditions,
+                        ~Task.id.in_(parent_subquery)  # 不在有子任务的父任务ID列表中
+                    )
+                )
+                .order_by(Task.created_at.desc())
+            )
+
+            results = self.session.execute(statement).all()
+            leaf_tasks = [result[0] for result in results]
+
+            logger.debug(f"查询用户叶子任务: user_id={user_id}, 数量: {len(leaf_tasks)}")
+            return leaf_tasks
+
+        except Exception as e:
+            logger.error(f"查询叶子任务失败: {e}")
+            raise TaskDatabaseException(
+                operation="get_all_leaf_tasks",
+                reason=f"数据库叶子任务查询失败: {str(e)}",
                 original_error=e
             )

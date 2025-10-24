@@ -1,7 +1,18 @@
 # task-crud Specification
 
 ## Purpose
-TBD - created by archiving change implement-task-crud. Update Purpose after archive.
+实现任务管理的完整CRUD操作，支持任务层级关系和状态管理。
+
+## Status
+✅ **COMPLETED** - Task领域测试基础设施完成 (2025-10-24)
+
+## Implementation Summary
+- ✅ 实现了完整的Task CRUD操作
+- ✅ 支持任务层级关系（parent_id）
+- ✅ 实现了任务状态管理
+- ✅ 创建了完整的测试套件（模型/仓库/服务）
+- ✅ 建立了测试数据库隔离机制
+- ⚠️ 需要修复UUID类型一致性问题
 ## Requirements
 ### Requirement: 创建任务
 系统 SHALL 支持用户创建任务。创建时只有 title 字段必填，其他字段均可选。系统 MUST 验证 parent_id 的存在性和所有权，并验证时间字段的逻辑正确性。

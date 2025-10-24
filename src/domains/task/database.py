@@ -337,44 +337,70 @@ def get_task_statistics(user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     try:
         with get_session() as session:
-            # 构建查询条件
-            where_clause = ""
-            params = {}
-
-            if user_id:
-                where_clause = "WHERE user_id = :user_id AND is_deleted = false"
-                params["user_id"] = user_id
-            else:
-                where_clause = "WHERE is_deleted = false"
 
             # 获取基础统计
-            result = session.execute(text(f"""
-                SELECT
-                    COUNT(*) as total_tasks,
-                    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
-                    COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_count,
-                    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
-                    COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_priority_count,
-                    COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_priority_count,
-                    COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_priority_count,
-                    COUNT(CASE WHEN due_date < NOW() AND status != 'completed' THEN 1 END) as overdue_count,
-                    COUNT(CASE WHEN parent_id IS NULL THEN 1 END) as parent_task_count,
-                    COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as subtask_count
-                FROM tasks
-                {where_clause}
-            """), params)
+            if user_id:
+                query = text("""
+                    SELECT
+                        COUNT(*) as total_tasks,
+                        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+                        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_count,
+                        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
+                        COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_priority_count,
+                        COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_priority_count,
+                        COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_priority_count,
+                        COUNT(CASE WHEN due_date < NOW() AND status != 'completed' THEN 1 END) as overdue_count,
+                        COUNT(CASE WHEN parent_id IS NULL THEN 1 END) as parent_task_count,
+                        COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as subtask_count
+                    FROM tasks
+                    WHERE user_id = :user_id AND is_deleted = false
+                """)
+                params = {"user_id": user_id}
+            else:
+                query = text("""
+                    SELECT
+                        COUNT(*) as total_tasks,
+                        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+                        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_count,
+                        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
+                        COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_priority_count,
+                        COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_priority_count,
+                        COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_priority_count,
+                        COUNT(CASE WHEN due_date < NOW() AND status != 'completed' THEN 1 END) as overdue_count,
+                        COUNT(CASE WHEN parent_id IS NULL THEN 1 END) as parent_task_count,
+                        COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as subtask_count
+                    FROM tasks
+                    WHERE is_deleted = false
+                """)
+                params = {}
+
+            result = session.execute(query, params)
 
             stats = result.fetchone()._asdict()
 
             # 获取最近活动统计
-            recent_result = session.execute(text(f"""
-                SELECT
-                    COUNT(*) as tasks_created_today,
-                    COUNT(*) as tasks_updated_today
-                FROM tasks
-                {where_clause}
-                AND DATE(created_at) = CURRENT_DATE
-            """), params)
+            if user_id:
+                recent_query = text("""
+                    SELECT
+                        COUNT(*) as tasks_created_today,
+                        COUNT(*) as tasks_updated_today
+                    FROM tasks
+                    WHERE user_id = :user_id AND is_deleted = false
+                    AND DATE(created_at) = CURRENT_DATE
+                """)
+                recent_params = {"user_id": user_id}
+            else:
+                recent_query = text("""
+                    SELECT
+                        COUNT(*) as tasks_created_today,
+                        COUNT(*) as tasks_updated_today
+                    FROM tasks
+                    WHERE is_deleted = false
+                    AND DATE(created_at) = CURRENT_DATE
+                """)
+                recent_params = {}
+
+            recent_result = session.execute(recent_query, recent_params)
 
             recent_stats = recent_result.fetchone()._asdict()
 
@@ -397,9 +423,9 @@ def get_task_statistics(user_id: Optional[str] = None) -> Dict[str, Any]:
 # 数据库依赖函数，用于FastAPI
 def get_task_session():
     """
-    获取Task领域数据库会话
+    获取Task领域数据库会话（已弃用，请使用src.database.get_db_session）
 
-    用于FastAPI的依赖注入，提供数据库会话。
+    为了保持向后兼容而保留，推荐直接使用 src.database.SessionDep
 
     Yields:
         Session: 数据库会话

@@ -8,6 +8,7 @@ dependencies = [
     "aiosqlite>=0.21.0",
     "bcrypt>=5.0.0",
     "fastapi>=0.115.0",
+    "freezegun>=1.5.5",
     "langchain-anthropic>=1.0.0",
     "langchain-core>=1.0.0",
     "langchain-openai>=1.0.0",
@@ -18,11 +19,15 @@ dependencies = [
     "pydantic-settings>=2.11.0",
     "pydantic[email]>=2.12.3",
     "pyjwt>=2.10.1",
+    "pytest>=8.4.2",
+    "pytest-mock>=3.15.1",
     "python-dotenv>=1.1.1",
     "python-jose[cryptography]>=3.5.0",
     "python-multipart",
+    "requests>=2.32.5",
     "sqlalchemy[asyncio]>=2.0.44",
     "sqlmodel>=0.0.27",
+    "streamlit>=1.28.0",
     "uvicorn[standard]>=0.30.0",
 ]
 
