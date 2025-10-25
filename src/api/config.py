@@ -76,17 +76,10 @@ class APIConfig(BaseSettings):
             'audience': 'tatake-client'
         }
 
-    # CORS配置
+    # CORS配置 - 允许所有访问，解决部署问题
     allowed_origins: list = Field(
-        default=[
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "https://tatake.app",
-            "http://0.0.0.0:3000",
-            "http://0.0.0.0:8080",
-            "https://*.tatake.app"
-        ],
-        description="允许的源地址"
+        default=["*"],
+        description="允许的源地址（部署环境允许所有访问）"
     )
     allowed_methods: list = Field(
         default=["GET", "POST", "PUT", "DELETE", "OPTIONS"],

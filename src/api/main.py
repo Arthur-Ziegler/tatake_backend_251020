@@ -99,6 +99,32 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# 添加CORS中间件 - 解决部署时的跨域问题
+from fastapi.middleware.cors import CORSMiddleware
+
+# 方法1: 使用 FastAPI 内置的 CORS 中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有源，解决部署问题
+    allow_credentials=True,  # 允许认证凭据
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许所有HTTP方法
+    allow_headers=["*"],  # 允许所有请求头
+    expose_headers=["X-Total-Count", "X-Trace-ID"]  # 暴露自定义响应头
+)
+
+# 方法2: 手动设置 CORS 响应头（备用方案）
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+
+    # 允许所有来源
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
+
 # 设置自定义OpenAPI配置
 from src.api.openapi import setup_openapi
 setup_openapi(app)
@@ -270,6 +296,21 @@ app.include_router(chat_router, prefix=config.api_prefix)
 
 # 使用Focus番茄钟领域路由
 app.include_router(focus_router, prefix=config.api_prefix)
+
+# CORS 测试端点 - 验证 CORS 配置
+@app.get("/test-cors", tags=["系统"])
+async def test_cors():
+    """测试 CORS 配置的专用端点"""
+    return create_success_response(
+        data={
+            "cors_enabled": True,
+            "message": "CORS 测试成功！",
+            "access_from_anywhere": True,
+            "all_origins_allowed": True,
+            "server_time": "2025-10-25"
+        },
+        message="CORS 配置测试通过"
+    )
 
 
 if __name__ == "__main__":

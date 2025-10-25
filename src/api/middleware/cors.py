@@ -71,12 +71,12 @@ class CORSMiddleware(BaseHTTPMiddleware):
 
 
 def add_cors_middleware(app: FastAPI):
-    """添加CORS中间件到FastAPI应用"""
+    """添加CORS中间件到FastAPI应用 - 允许所有访问"""
     app.add_middleware(
         FastAPICORSMiddleware,
-        allow_origins=config.allowed_origins,
-        allow_credentials=True,
-        allow_methods=config.allowed_methods,
-        allow_headers=config.allowed_headers,
-        expose_headers=["X-Total-Count", "X-Trace-ID"]
+        allow_origins=["*"],  # 允许所有源，解决部署问题
+        allow_credentials=True,  # 允许凭据
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许所有常用方法
+        allow_headers=["*"],  # 允许所有请求头
+        expose_headers=["X-Total-Count", "X-Trace-ID"]  # 暴露必要的响应头
     )
