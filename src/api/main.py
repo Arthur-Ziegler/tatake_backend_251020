@@ -92,7 +92,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=f"{config.app_name}",
     version=config.app_version,
-    description="",  # 描述将在OpenAPI配置中设置，保持简洁
+    description="TaKeKe API服务，提供认证和任务管理功能",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -253,44 +253,23 @@ from src.domains.chat.router import router as chat_router
 from src.domains.focus.router import router as focus_router
 
 # 使用认证领域路由
-if config.api_prefix:
-    app.include_router(auth_router, prefix=config.api_prefix, tags=["认证系统"])
-else:
-    app.include_router(auth_router, tags=["认证系统"])
+app.include_router(auth_router, prefix=config.api_prefix)
 
 # 使用任务领域路由
-if config.api_prefix:
-    app.include_router(task_router, prefix=config.api_prefix, tags=["任务管理"])
-else:
-    app.include_router(task_router, tags=["任务管理"])
-
-# 使用任务完成API路由
+app.include_router(task_router, prefix=config.api_prefix)
 
 # 使用奖励系统API路由
-if config.api_prefix:
-    app.include_router(reward_router, prefix=config.api_prefix, tags=["奖励系统"])
-    app.include_router(points_router, prefix=config.api_prefix, tags=["积分系统"])
-else:
-    app.include_router(reward_router, tags=["奖励系统"])
-    app.include_router(points_router, tags=["积分系统"])
+app.include_router(reward_router, prefix=config.api_prefix)
+app.include_router(points_router, prefix=config.api_prefix)
 
 # 使用Top3系统API路由
-if config.api_prefix:
-    app.include_router(top3_router, prefix=config.api_prefix, tags=["Top3管理"])
-else:
-    app.include_router(top3_router, tags=["Top3管理"])
+app.include_router(top3_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
-if config.api_prefix:
-    app.include_router(chat_router, prefix=config.api_prefix, tags=["智能聊天"])
-else:
-    app.include_router(chat_router, tags=["智能聊天"])
+app.include_router(chat_router, prefix=config.api_prefix)
 
 # 使用Focus番茄钟领域路由
-if config.api_prefix:
-    app.include_router(focus_router, prefix=config.api_prefix, tags=["番茄钟系统"])
-else:
-    app.include_router(focus_router, tags=["番茄钟系统"])
+app.include_router(focus_router, prefix=config.api_prefix)
 
 
 if __name__ == "__main__":

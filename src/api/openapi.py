@@ -111,67 +111,39 @@ Authorization: Bearer <your_token>
         return [
             {
                 "name": "系统",
-                "description": "系统相关的接口，包括健康检查、API信息等",
-                "externalDocs": {
-                    "description": "系统接口文档",
-                    "url": "https://docs.tatake.app/system"
-                }
+                "description": "系统相关的接口，包括健康检查、API信息等"
             },
             {
                 "name": "认证系统",
-                "description": "用户认证相关接口，包括登录、注册、令牌管理等",
-                "externalDocs": {
-                    "description": "认证接口文档",
-                    "url": "https://docs.tatake.app/auth"
-                }
+                "description": "用户认证相关接口，包括登录、注册、令牌管理等"
             },
             {
                 "name": "用户管理",
-                "description": "用户信息管理相关接口，包括用户资料查询、更新、设置等功能的完整管理",
-                "externalDocs": {
-                    "description": "用户管理文档",
-                    "url": "https://docs.tatake.app/user"
-                }
+                "description": "用户信息管理相关接口，包括用户资料查询、更新、设置等"
             },
             {
                 "name": "任务管理",
-                "description": "任务创建、编辑、删除等管理接口",
-                "externalDocs": {
-                    "description": "任务管理文档",
-                    "url": "https://docs.tatake.app/tasks"
-                }
+                "description": "任务创建、编辑、删除等管理接口"
             },
             {
                 "name": "番茄钟系统",
-                "description": "专注时间管理和番茄钟相关接口",
-                "externalDocs": {
-                    "description": "番茄钟文档",
-                    "url": "https://docs.tatake.app/focus"
-                }
+                "description": "专注时间管理和番茄钟相关接口"
             },
             {
                 "name": "奖励系统",
-                "description": "积分、徽章、等级等奖励相关接口",
-                "externalDocs": {
-                    "description": "奖励系统文档",
-                    "url": "https://docs.tatake.app/rewards"
-                }
+                "description": "积分、徽章、等级等奖励相关接口"
             },
             {
-                "name": "统计分析",
-                "description": "数据统计和分析相关接口",
-                "externalDocs": {
-                    "description": "统计分析文档",
-                    "url": "https://docs.tatake.app/statistics"
-                }
+                "name": "积分系统",
+                "description": "积分流水和积分管理相关接口"
             },
             {
-                "name": "AI对话",
-                "description": "AI智能对话和建议相关接口",
-                "externalDocs": {
-                    "description": "AI对话文档",
-                    "url": "https://docs.tatake.app/chat"
-                }
+                "name": "Top3管理",
+                "description": "每日Top3任务管理相关接口"
+            },
+            {
+                "name": "智能聊天",
+                "description": "AI智能对话和建议相关接口"
             }
         ]
 
@@ -286,29 +258,6 @@ Authorization: Bearer <your_token>
                     "traceId": "550e8400-e29b-41d4-a716-446655440000"
                 }
             },
-
-            # 认证成功示例
-            "AuthenticationSuccess": {
-                "summary": "用户认证成功",
-                "description": "微信登录或注册成功时的响应，包含访问令牌和用户信息",
-                "value": {
-                    "code": 200,
-                    "message": "登录成功",
-                    "data": {
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "token_type": "bearer",
-                        "expires_in": 1800,
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "user": {
-                            "id": "550e8400-e29b-41d4-a716-446655440000",
-                            "wechat_openid": "ox1234567890abcdef",
-                            "created_at": "2025-01-01T00:00:00Z"
-                        }
-                    },
-                    "timestamp": "2025-01-15T15:30:00Z",
-                    "traceId": "550e8400-e29b-41d4-a716-446655440000"
-                }
-            }
         }
 
 
@@ -341,6 +290,26 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         "securitySchemes": openapi_config.get_security_schemes(),
         "examples": openapi_config.get_examples(),
         "schemas": {
+            # 统一响应格式 - 与 auth/schemas.py 保持一致
+            "UnifiedResponse": {
+                "type": "object",
+                "description": "API统一响应格式，所有API端点都使用这个格式",
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "description": "HTTP状态码（200, 400, 401, 403, 404等）"
+                    },
+                    "data": {
+                        "description": "响应数据，成功时包含具体数据，失败时为null"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "响应消息，成功时为success，失败时为具体错误描述"
+                    }
+                },
+                "required": ["code", "message"]
+            },
+
             # 标准响应格式
             "StandardResponse": {
                 "type": "object",
@@ -427,55 +396,7 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         {"BearerAuth": []}
     ]
 
-    # 添加扩展信息 - OpenAPI 3.1兼容
-    openapi_schema["x-tag-groups"] = [
-        {
-            "name": "核心功能",
-            "description": "系统核心功能模块",
-            "tags": ["认证系统", "用户管理", "任务管理"]
-        },
-        {
-            "name": "高级功能",
-            "description": "高级业务功能模块",
-            "tags": ["番茄钟系统", "奖励系统", "AI对话", "Top3管理"]
-        },
-        {
-            "name": "辅助功能",
-            "description": "辅助和管理功能模块",
-            "tags": ["统计分析", "积分系统", "系统"]
-        }
-    ]
-
-    # 添加变更日志扩展
-    openapi_schema["x-changelog"] = [
-        {
-            "version": "1.1.0",
-            "date": "2025-01-15",
-            "changes": [
-                {
-                    "type": "enhanced",
-                    "description": "升级OpenAPI文档至专业级标准",
-                    "impact": "开发者体验显著改善"
-                },
-                {
-                    "type": "added",
-                    "description": "添加完整的响应示例和错误处理说明",
-                    "impact": "API集成更加便捷"
-                }
-            ]
-        },
-        {
-            "version": "1.0.0",
-            "date": "2025-01-01",
-            "changes": [
-                {
-                    "type": "initial",
-                    "description": "初始版本发布，包含基础CRUD功能",
-                    "impact": "系统正式上线"
-                }
-            ]
-        }
-    ]
+    # 移除过度的 x- 扩展，保持简洁
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -485,70 +406,3 @@ def setup_openapi(app: FastAPI) -> None:
     """设置OpenAPI文档"""
     # 设置自定义OpenAPI函数
     app.openapi = lambda: custom_openapi(app)
-
-    # 添加API文档路由
-    @app.get("/api-info", tags=["系统"], summary="获取API详细信息")
-    async def get_api_info(request: Request):
-        """获取API的详细信息和统计数据"""
-        from .responses import create_success_response
-        from .dependencies import service_factory
-
-        # 获取请求ID
-        trace_id = getattr(request.state, "request_id", str(uuid.uuid4()))
-
-        # 获取API统计信息
-        total_routes = len([route for route in app.routes if hasattr(route, 'methods')])
-
-        # 按标签分组统计
-        routes_by_tag = {}
-        for route in app.routes:
-            if hasattr(route, 'tags') and route.tags:
-                for tag in route.tags:
-                    routes_by_tag[tag] = routes_by_tag.get(tag, 0) + 1
-
-        return create_success_response(
-            data={
-                **OpenAPIConfig.get_api_info(),
-                "statistics": {
-                    "total_routes": total_routes,
-                    "routes_by_tag": routes_by_tag,
-                    "openapi_version": "3.1.0",
-                    "documentation_urls": {
-                        "swagger_ui": app.docs_url,
-                        "redoc": app.redoc_url,
-                        "openapi_json": app.openapi_url
-                    }
-                },
-                "configuration": {
-                    "api_prefix": config.api_prefix,
-                    "debug_mode": config.debug,
-                    "rate_limit_enabled": config.rate_limit_enabled,
-                    "cors_enabled": len(config.allowed_origins) > 0
-                }
-            },
-            message="API信息获取成功",
-            trace_id=trace_id
-        )
-
-    # 添加文档健康检查
-    @app.get("/docs-health", tags=["系统"], summary="文档服务健康检查")
-    async def docs_health_check():
-        """检查文档服务是否正常工作"""
-        from .responses import create_success_response
-
-        return create_success_response(
-            data={
-                "status": "healthy",
-                "services": {
-                    "swagger_ui": "available",
-                    "redoc": "available",
-                    "openapi_json": "available"
-                },
-                "endpoints": {
-                    "swagger_ui": app.docs_url,
-                    "redoc": app.redoc_url,
-                    "openapi_json": app.openapi_url
-                }
-            },
-            message="文档服务健康"
-        )
