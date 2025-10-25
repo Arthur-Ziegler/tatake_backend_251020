@@ -14,6 +14,8 @@ Pytest配置和共享fixtures
 
 import pytest
 import asyncio
+import requests
+import json
 from typing import Generator, AsyncGenerator
 from uuid import uuid4
 from fastapi.testclient import TestClient
@@ -24,6 +26,9 @@ from sqlmodel import Session, SQLModel
 
 # 导入FastAPI应用
 from src.api.main import app
+
+# API测试配置
+API_BASE_URL = "http://localhost:8001"
 
 # 测试数据库配置 - 使用内存数据库以提高测试速度
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -341,6 +346,46 @@ def top3_db_session() -> Generator[Session, None, None]:
     finally:
         session.close()
         Top3Entry.metadata.drop_all(test_engine)
+
+
+def get_test_user_token() -> str:
+    """
+    获取测试用户token
+
+    用于集成测试的认证token获取。
+    优先使用已有的token文件，否则创建新的guest用户。
+    """
+    try:
+        # 尝试使用已有的token文件 - 从JSON中提取access_token
+        with open("/tmp/token_new.txt", "r") as f:
+            content = f.read().strip()
+            if content:
+                # 尝试解析JSON并提取access_token
+                try:
+                    data = json.loads(content)
+                    if "data" in data and "access_token" in data["data"]:
+                        return data["data"]["access_token"]
+                except json.JSONDecodeError:
+                    # 如果不是JSON，直接返回内容（可能是纯token）
+                    return content
+    except FileNotFoundError:
+        pass
+
+    # 如果没有token文件，创建guest用户
+    try:
+        response = requests.post(f"{API_BASE_URL}/auth/guest/init")
+        if response.status_code == 200:
+            data = response.json()
+            if "data" in data and "access_token" in data["data"]:
+                # 保存新的token到文件
+                with open("/tmp/token_new.txt", "w") as f:
+                    f.write(json.dumps(data))
+                return data["data"]["access_token"]
+    except Exception:
+        pass
+
+    # 如果都失败，返回空字符串（某些测试可能不需要认证）
+    return ""
 
 
 # 测试标记

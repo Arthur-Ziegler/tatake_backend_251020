@@ -106,15 +106,22 @@ class Top3Service:
                 "created_at": None
             }
 
+        # 确保top3是TaskTop3对象，如果是字典则直接返回
+        if isinstance(top3, dict):
+            # 如果已经是字典格式，直接返回
+            logger.warning(f"Repository返回了字典而不是模型对象: {type(top3)}")
+            return top3
+
         # 提取task_id字符串列表，处理两种数据格式
         task_id_strings = []
-        for item in top3.task_ids:
-            if isinstance(item, dict):
-                # 新格式：{"task_id": "uuid", "position": 1}
-                task_id_strings.append(item["task_id"])
-            else:
-                # 旧格式：直接是task_id字符串
-                task_id_strings.append(item)
+        if hasattr(top3, 'task_ids') and top3.task_ids:
+            for item in top3.task_ids:
+                if isinstance(item, dict):
+                    # 新格式：{"task_id": "uuid", "position": 1}
+                    task_id_strings.append(item["task_id"])
+                else:
+                    # 旧格式：直接是task_id字符串
+                    task_id_strings.append(item)
 
         return {
             "date": top3.top_date.isoformat(),

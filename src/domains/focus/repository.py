@@ -29,17 +29,24 @@ Repository职责：
 import logging
 from datetime import datetime, timezone
 from typing import Optional, List
+from uuid import UUID
 
 from sqlmodel import select, update, func, and_, desc
 from sqlmodel import Session
 
 from .models import FocusSession
+from ..shared.uuid_handler import (
+    UUIDRepositoryMixin,
+    uuid_to_str,
+    str_to_uuid,
+    convert_uuid_params_decorator
+)
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
 
-class FocusRepository:
+class FocusRepository(UUIDRepositoryMixin):
     """
     专注会话数据访问Repository
 
@@ -47,6 +54,7 @@ class FocusRepository:
     - 创建新会话时自动关闭用户未完成的会话
     - 提供便捷的活跃会话查询方法
     - 支持基本的会话生命周期管理
+    - 自动处理UUID类型转换
     """
 
     def __init__(self, session: Session):
@@ -56,7 +64,9 @@ class FocusRepository:
         Args:
             session: SQLModel数据库会话
         """
-        self.session = session
+        super().__init__(session)
+        self.model_class = FocusSession
+        self.uuid_fields = ['id', 'user_id', 'task_id']
 
     def create(self, focus_session: FocusSession) -> FocusSession:
         """
@@ -77,26 +87,40 @@ class FocusRepository:
             Exception: 数据库操作失败
         """
         try:
+            # 确保UUID字段转换为字符串用于数据库操作
+            user_id_str = uuid_to_str(focus_session.user_id)
+            task_id_str = uuid_to_str(focus_session.task_id)
+
             # 查找并关闭用户未完成的会话
-            active_session = self.get_active_session(focus_session.user_id)
+            active_session = self.get_active_session(user_id_str)
             if active_session:
                 active_session.end_time = datetime.now(timezone.utc)
                 self.session.add(active_session)
-                logger.info(f"自动关闭会话 {active_session.id} for user {focus_session.user_id}")
+                logger.info(f"自动关闭会话 {active_session.id} for user {user_id_str}")
 
-            # 创建新会话
-            self.session.add(focus_session)
+            # 创建新的会话对象，使用转换后的字符串UUID
+            new_session = FocusSession(
+                user_id=user_id_str,
+                task_id=task_id_str,
+                session_type=focus_session.session_type,
+                start_time=focus_session.start_time,
+                end_time=focus_session.end_time
+            )
+
+            # 保存到数据库
+            self.session.add(new_session)
             self.session.commit()
-            self.session.refresh(focus_session)
+            self.session.refresh(new_session)
 
-            logger.info(f"创建新会话 {focus_session.id} for user {focus_session.user_id}")
-            return focus_session
+            logger.info(f"创建新会话 {new_session.id} for user {user_id_str}")
+            return new_session
 
         except Exception as e:
             self.session.rollback()
             logger.error(f"创建会话失败: {e}")
             raise
 
+    @convert_uuid_params_decorator(['session_id'])
     def get_by_id(self, session_id: str) -> Optional[FocusSession]:
         """
         根据ID获取会话

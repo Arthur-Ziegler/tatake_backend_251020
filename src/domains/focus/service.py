@@ -82,7 +82,7 @@ class FocusService:
         self.session = session
         self.repository = FocusRepository(session)
 
-    def start_focus(self, user_id: str, request: StartFocusRequest) -> Dict[str, Any]:
+    def start_focus(self, user_id: UUID, request: StartFocusRequest) -> Dict[str, Any]:
         """
         开始专注会话
 
@@ -92,7 +92,7 @@ class FocusService:
         3. 返回会话信息
 
         Args:
-            user_id: 用户ID
+            user_id: 用户ID (UUID对象)
             request: 开始会话请求
 
         Returns:
@@ -105,13 +105,13 @@ class FocusService:
             # 验证任务是否存在（导入TaskRepository）
             from ..task.repository import TaskRepository
             task_repo = TaskRepository(self.session)
-            task = task_repo.get_by_id(request.task_id, user_id)
+            task = task_repo.get_by_id(str(request.task_id), str(user_id))
             if not task:
                 raise FocusException(f"任务不存在或无权限: {request.task_id}", status_code=404)
 
-            # 创建新会话
+            # 创建新会话 - Repository层会自动处理UUID转换
             focus_session = FocusSession(
-                user_id=user_id,
+                user_id=user_id,  # 传入UUID对象
                 task_id=request.task_id,
                 session_type=request.session_type,
                 start_time=datetime.now(timezone.utc)
@@ -162,7 +162,7 @@ class FocusService:
 
             # 创建暂停会话
             pause_session = FocusSession(
-                user_id=user_id,
+                user_id=str(user_id),
                 task_id=original_session.task_id,
                 session_type="pause",
                 start_time=datetime.now(timezone.utc)
@@ -216,7 +216,7 @@ class FocusService:
 
             # 创建新的专注会话
             focus_session = FocusSession(
-                user_id=user_id,
+                user_id=str(user_id),
                 task_id=pause_session.task_id,
                 session_type="focus",
                 start_time=datetime.now(timezone.utc)
@@ -272,7 +272,7 @@ class FocusService:
 
     def get_user_sessions(
         self,
-        user_id: UUID,
+        user_id: str,
         page: int = 1,
         page_size: int = 50
     ) -> Dict[str, Any]:

@@ -71,9 +71,11 @@ async def get_top3(
 ) -> UnifiedResponse[GetTop3Response]:
     """获取指定日期的Top3任务"""
     try:
+        logger.info(f"获取Top3请求: user_id={user_id}, date={date}")
         points_service = PointsService(session)
         service = Top3Service(session, points_service)
         result_dict = service.get_top3(user_id, date)
+        logger.info(f"Top3查询成功: {result_dict}")
 
         # 构造GetTop3Response数据模型
         get_top3_response = GetTop3Response(**result_dict)

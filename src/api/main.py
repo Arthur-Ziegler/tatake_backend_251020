@@ -275,6 +275,7 @@ from src.domains.reward.router import router as reward_router, points_router
 from src.domains.top3.api import router as top3_router
 from src.domains.chat.router import router as chat_router
 from src.domains.focus.router import router as focus_router
+from src.domains.user.router import router as user_router
 
 # 使用认证领域路由
 app.include_router(auth_router, prefix=config.api_prefix)
@@ -291,6 +292,9 @@ app.include_router(top3_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
 app.include_router(chat_router, prefix=config.api_prefix)
+
+# 使用用户管理路由
+app.include_router(user_router, prefix=config.api_prefix)
 
 # 使用Focus番茄钟领域路由
 app.include_router(focus_router, prefix=config.api_prefix)

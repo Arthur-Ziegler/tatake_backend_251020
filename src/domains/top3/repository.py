@@ -21,8 +21,9 @@ class Top3Repository:
             TaskTop3.user_id == str(user_id),
             TaskTop3.top_date == target_date
         )
-        result = self.session.execute(statement).first()
-        return result[0] if result else None
+        # 使用.scalars().first()直接获取模型对象
+        result = self.session.execute(statement).scalars().first()
+        return result
 
     def create(self, user_id: UUID, target_date: date, task_ids: List[str]) -> TaskTop3:
         """创建Top3记录"""

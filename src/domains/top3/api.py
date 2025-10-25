@@ -19,19 +19,20 @@ from sqlmodel import Session
 from .service import Top3Service
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from src.database import SessionDep
-from src.api.response_utils import StandardResponse, ResponseCode
+from src.api.dependencies import get_current_user_id
+from src.domains.auth.schemas import UnifiedResponse
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks/special", tags=["Top3管理"])
 
 
-@router.post("/top3", summary="设置Top3任务")
+@router.post("/top3", response_model=UnifiedResponse[Top3Response], summary="设置Top3任务")
 async def set_top3(
     request: SetTop3Request,
     session: SessionDep,
-    user_id: str = "550e8400-e29b-41d4-a716-446655440000"  # 暂时使用默认用户ID
-) -> Dict[str, Any]:
+    user_id: str = Depends(get_current_user_id)
+) -> UnifiedResponse[Top3Response]:
     """
     设置每日Top3重要任务
 
@@ -73,21 +74,26 @@ async def set_top3(
             "remaining_balance": 0  # TODO: 需要从积分服务获取实际余额
         }
 
-        return StandardResponse.success(
+        return UnifiedResponse(
+            code=200,
             data=response_data,
             message="Top3设置成功"
         )
     except Exception as e:
         logger.error(f"设置Top3失败: {e}")
-        return StandardResponse.server_error("设置Top3失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="设置Top3失败"
+        )
 
 
-@router.get("/top3/{target_date}", summary="查看指定日期Top3")
+@router.get("/top3/{target_date}", response_model=UnifiedResponse[GetTop3Response], summary="查看指定日期Top3")
 async def get_top3(
     target_date: str,
     session: SessionDep,
-    user_id: str = "550e8400-e29b-41d4-a716-446655440000"  # 暂时使用默认用户ID
-) -> Dict[str, Any]:
+    user_id: str = Depends(get_current_user_id)
+) -> UnifiedResponse[GetTop3Response]:
     """
     查看指定日期的Top3任务
 
@@ -98,7 +104,7 @@ async def get_top3(
     """
     try:
         service = Top3Service(session)
-        result = service.get_top3(UUID(user_id), target_date)
+        result = service.get_top3(str(user_id), target_date)
 
         # 转换为v3文档格式，处理两种数据格式
         top3_tasks = []
@@ -121,10 +127,15 @@ async def get_top3(
             "top3_tasks": top3_tasks
         }
 
-        return StandardResponse.success(
+        return UnifiedResponse(
+            code=200,
             data=response_data,
             message="获取Top3成功"
         )
     except Exception as e:
         logger.error(f"获取Top3失败: {e}")
-        return StandardResponse.server_error("获取Top3失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="获取Top3失败"
+        )

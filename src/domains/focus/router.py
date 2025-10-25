@@ -60,7 +60,7 @@ async def start_focus(
     """
     try:
         service = FocusService(session)
-        result = service.start_focus(user_id, request)
+        result = service.start_focus(user_id, request)  # 直接传入UUID对象
         response_data = FocusOperationResponse(session=result)
         return UnifiedResponse(
             code=200,
@@ -101,7 +101,7 @@ async def pause_focus(
     """
     try:
         service = FocusService(session)
-        result = service.pause_focus(UUID(session_id), user_id)
+        result = service.pause_focus(session_id, str(user_id))
         response_data = FocusOperationResponse(session=result)
         return UnifiedResponse(
             code=200,
@@ -142,7 +142,7 @@ async def resume_focus(
     """
     try:
         service = FocusService(session)
-        result = service.resume_focus(UUID(session_id), user_id)
+        result = service.resume_focus(session_id, str(user_id))
         response_data = FocusOperationResponse(session=result)
         return UnifiedResponse(
             code=200,
@@ -182,7 +182,7 @@ async def complete_focus(
     """
     try:
         service = FocusService(session)
-        result = service.complete_focus(UUID(session_id), user_id)
+        result = service.complete_focus(session_id, str(user_id))
         response_data = FocusOperationResponse(session=result)
         return UnifiedResponse(
             code=200,
@@ -222,7 +222,7 @@ async def get_focus_sessions(
     """
     try:
         service = FocusService(session)
-        result = service.get_user_sessions(user_id, page, page_size)
+        result = service.get_user_sessions(str(user_id), page, page_size)
         # service返回的是dict，构造对应的Pydantic数据模型
         response_data = FocusSessionListResponse(**result)
         return UnifiedResponse(
