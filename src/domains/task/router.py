@@ -37,7 +37,7 @@ import logging
 from typing import Dict, Any, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from fastapi import status
 from fastapi import Query
 from fastapi.responses import JSONResponse
@@ -111,7 +111,7 @@ def create_error_response(exception: TaskException) -> JSONResponse:
     )
 
 
-@router.post("/", response_model=TaskCreateResponse, summary="创建任务")
+@router.post("/", response_model=TaskCreateResponse, summary="创建新任务", description="创建一个新的任务，支持设置标题、描述、状态、优先级、父任务等完整信息。")
 async def create_task(
     request: CreateTaskRequest,
     session: SessionDep,
@@ -217,7 +217,7 @@ async def get_task(
         )
 
 
-@router.put("/{task_id}", response_model=TaskUpdateResponse, summary="更新任务")
+@router.put("/{task_id}", response_model=TaskUpdateResponse, summary="更新任务信息", description="更新现有任务的信息，包括标题、描述、状态、优先级等，支持部分更新。")
 async def update_task(
     task_id: UUID,
     request: UpdateTaskRequest,
@@ -272,7 +272,7 @@ async def update_task(
         )
 
 
-@router.delete("/{task_id}", response_model=TaskDeleteResponseWrapper, summary="删除任务")
+@router.delete("/{task_id}", response_model=TaskDeleteResponseWrapper, summary="删除任务", description="软删除指定任务，任务会被标记为已删除但不会物理删除，支持恢复操作。")
 async def delete_task(
     task_id: UUID,
     session: SessionDep,
@@ -394,12 +394,45 @@ async def get_task_list(
 
 @router.post("/{task_id}/complete",
               response_model=TaskCompleteResponseWrapper,
-              summary="完成任务")
+              summary="完成任务",
+              description="完成任务并触发奖励分发。支持普通任务和Top3任务，奖励机制不同。"
+          )
 async def complete_task(
     task_id: UUID,
-    request: CompleteTaskRequest,
     session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
+    user_id: UUID = Depends(get_current_user_id),
+    request: CompleteTaskRequest = Body(..., examples={
+        "NormalTaskCompletion": {
+            "summary": "普通任务完成",
+            "description": "完成普通任务，获得2积分基础奖励",
+            "value": {
+                "mood_feedback": {
+                    "comment": "任务比较简单，顺利完成",
+                    "difficulty": "easy"
+                }
+            }
+        },
+        "Top3TaskCompletion": {
+            "summary": "Top3任务完成",
+            "description": "完成Top3任务，有概率获得100积分或随机奖品",
+            "value": {
+                "mood_feedback": {
+                    "comment": "挑战性任务，很有成就感",
+                    "difficulty": "hard"
+                }
+            }
+        },
+        "TaskWithFeedback": {
+            "summary": "带详细反馈的任务完成",
+            "description": "完成任务并提供详细的情绪和难度反馈",
+            "value": {
+                "mood_feedback": {
+                    "comment": "这个任务让我学到了很多新知识，虽然有些挑战但最终还是完成了",
+                    "difficulty": "medium"
+                }
+            }
+        }
+    })
 ) -> TaskCompleteResponseWrapper:
     """
     完成任务并触发奖励分发

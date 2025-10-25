@@ -147,7 +147,7 @@ class SystemTester:
 
             # 3. 设置Top3
             from datetime import date
-            top3_response = requests.post(f"{self.base_url}/tasks/top3", json={
+            top3_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                 "task_ids": self.task_ids[:3],  # 前3个任务设置为Top3
                 "date": date.today().isoformat()  # 添加日期字段
             }, headers=self.get_headers())

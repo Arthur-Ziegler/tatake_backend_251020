@@ -39,6 +39,10 @@ from langgraph.prebuilt import ToolNode
 
 from .models import ChatState
 from .tools.password_opener import sesame_opener
+from .tools.task_query import query_tasks, get_task_detail
+from .tools.task_crud import create_task, update_task, delete_task
+from .tools.task_search import search_tasks
+from .tools.task_batch import batch_create_subtasks
 from .prompts.system import format_system_prompt
 from .context_manager import manage_conversation_context
 
@@ -79,8 +83,14 @@ class ChatGraph:
         tools -> agent -> [条件路由] -> {tools, END}
         """
         try:
-            # 创建工具节点 - 支持并行工具调用
-            tool_node = ToolNode([sesame_opener])
+            # 创建工具节点 - 支持并行工具调用，包含所有8个工具
+            tool_node = ToolNode([
+                sesame_opener,  # 基础工具
+                query_tasks, get_task_detail,  # 任务查询工具
+                create_task, update_task, delete_task,  # 任务CRUD工具
+                search_tasks,  # 任务搜索工具
+                batch_create_subtasks  # 批量操作工具
+            ])
 
             # 创建状态图构建器
             builder = StateGraph(ChatState)
@@ -168,6 +178,7 @@ class ChatGraph:
             response = model.invoke(messages_with_system)
 
             logger.info(f"✅ Agent节点处理完成: user_id={user_id}, session_id={session_id}")
+            logger.debug(f"🔧 user_id传递状态验证: {user_id} -> ChatState")
 
             # 检查是否有工具调用
             if hasattr(response, 'tool_calls') and response.tool_calls:
@@ -249,8 +260,16 @@ class ChatGraph:
             # 绑定工具 - 只对支持工具调用的模型绑定
             if "gpt" in model_name.lower() or "openai" in model_name.lower():
                 try:
-                    model = model.bind_tools([sesame_opener])
-                    logger.info(f"✅ 模型创建成功（带工具）: {model_name} @ {base_url}")
+                    # 绑定所有8个工具
+                    all_tools = [
+                        sesame_opener,  # 基础工具
+                        query_tasks, get_task_detail,  # 任务查询工具
+                        create_task, update_task, delete_task,  # 任务CRUD工具
+                        search_tasks,  # 任务搜索工具
+                        batch_create_subtasks  # 批量操作工具
+                    ]
+                    model = model.bind_tools(all_tools)
+                    logger.info(f"✅ 模型创建成功（带8个工具）: {model_name} @ {base_url}")
                 except Exception as tool_error:
                     logger.warning(f"⚠️ 工具绑定失败，使用不带工具的模型: {tool_error}")
                     logger.info(f"📝 模型创建成功（不带工具）: {model_name} @ {base_url}")

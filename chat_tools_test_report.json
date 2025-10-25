@@ -1,0 +1,168 @@
+{
+  "execution_info": {
+    "start_time": "2025-10-25T03:43:26.588722",
+    "execution_time_seconds": 0.719166,
+    "execution_time_formatted": "0:00:00"
+  },
+  "module_summary": {
+    "total_modules": 10,
+    "passed_modules": 1,
+    "failed_modules": 1,
+    "crashed_modules": 8
+  },
+  "test_summary": {
+    "total_tests": 11,
+    "total_passed": 10,
+    "total_failed": 9,
+    "overall_success_rate": 90.9090909090909
+  },
+  "detailed_results": [
+    {
+      "module": "tests.domains.chat.test_chat_tools_basic",
+      "class": "TestBasicTools",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_basic.py\", line 26, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_task_crud",
+      "class": "TestTaskCrudTools",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "invalid syntax. Perhaps you forgot a comma? (test_task_crud.py, line 79)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_task_crud.py\", line 79\n    updated_at=datetime.now(timezone.utc)\n               \nSyntaxError: invalid syntax. Perhaps you forgot a comma?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_task_search",
+      "class": "TestSearchTasks",
+      "total_tests": 5,
+      "passed_tests": 5,
+      "failed_tests": 0,
+      "success_rate": 100.0,
+      "failed_details": [],
+      "status": "PASSED"
+    },
+    {
+      "module": "tests.domains.chat.test_task_batch",
+      "class": "TestBatchCreateSubtasks",
+      "total_tests": 6,
+      "passed_tests": 5,
+      "failed_tests": 1,
+      "success_rate": 83.33333333333334,
+      "failed_details": [
+        {
+          "method": "test_batch_create_subtasks_invalid_subtask_format",
+          "error": "",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 78, in run_test_module\n    method()\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_task_batch.py\", line 382, in test_batch_create_subtasks_invalid_subtask_format\n    assert \"子任务格式无效\" in result['error']\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+        }
+      ],
+      "status": "FAILED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestCompleteWorkflow",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestToolChaining",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestErrorHandlingAndRecovery",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestPerformanceIntegration",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestRealWorldScenarios",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    },
+    {
+      "module": "tests.domains.chat.test_chat_tools_integration",
+      "class": "TestLangGraphIntegration",
+      "total_tests": 0,
+      "passed_tests": 0,
+      "failed_tests": 1,
+      "success_rate": 0.0,
+      "failed_details": [
+        {
+          "error": "cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py)",
+          "traceback": "Traceback (most recent call last):\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/run_all_tests.py\", line 58, in run_test_module\n    module = __import__(module_name, fromlist=[test_class_name])\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_integration.py\", line 47, in <module>\n    from .test_chat_tools_infrastructure import (\n  File \"/Users/zalelee/Code/tatake_backend/tests/domains/chat/test_chat_tools_infrastructure.py\", line 28, in <module>\n    from uuid import uuid\nImportError: cannot import name 'uuid' from 'uuid' (/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/uuid.py). Did you mean: '_uuid'?\n"
+        }
+      ],
+      "status": "CRASHED"
+    }
+  ],
+  "overall_status": "FAILED"
+}

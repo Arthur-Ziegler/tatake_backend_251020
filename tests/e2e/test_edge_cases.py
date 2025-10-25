@@ -136,7 +136,7 @@ class EdgeCaseTester:
             self.log_result("创建明日任务", True, {"task_id": task_id})
 
             # 尝试将明日任务设置为Top3
-            top3_response = requests.post(f"{self.base_url}/tasks/top3", json={
+            top3_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                 "task_ids": [task_id]
             }, headers=self.get_headers("user1"))
 
@@ -186,7 +186,7 @@ class EdgeCaseTester:
             self.log_result("创建后日任务", True, {"task_id": task_id})
 
             # 尝试将后日任务设置为Top3（应该被拒绝）
-            top3_response = requests.post(f"{self.base_url}/tasks/top3", json={
+            top3_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                 "task_ids": [task_id]
             }, headers=self.get_headers("user1"))
 
@@ -245,7 +245,7 @@ class EdgeCaseTester:
                 self.log_result("查询积分余额", True, {"balance": balance})
 
                 # 尝试设置Top3（如果积分少于300应该失败）
-                top3_response = requests.post(f"{self.base_url}/tasks/top3", json={
+                top3_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                     "task_ids": task_ids
                 }, headers=self.get_headers("poor_user"))
 
@@ -367,7 +367,7 @@ class EdgeCaseTester:
                 ("POST", "/tasks/"),
                 ("GET", "/rewards/catalog"),
                 ("GET", "/points/my-points"),
-                ("GET", "/tasks/top3"),
+                ("GET", "/tasks/special/top3"),
                 ("GET", "/focus/sessions")
             ]
 

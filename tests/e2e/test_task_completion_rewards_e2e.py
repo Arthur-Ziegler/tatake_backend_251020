@@ -189,7 +189,7 @@ class TaskCompletionE2ETester:
 
             # 2. 设置为Top3（直接操作数据库）
             today = date.today().isoformat()
-            top3_setup_response = requests.post(f"{self.base_url}/tasks/top3", json={
+            top3_setup_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                 "task_ids": [top3_task_id],
                 "date": today
             }, headers=self.get_headers())

@@ -419,7 +419,7 @@ def create_top3_with_validation(client: httpx.Client, top3_data: Dict[str, Any])
     Returns:
         创建的Top3数据
     """
-    response = client.post("/tasks/top3", json=top3_data)
+    response = client.post("/tasks/special/top3", json=top3_data)
     assert_api_success(response, f"创建Top3失败: {top3_data['title']}")
 
     result = response.json()

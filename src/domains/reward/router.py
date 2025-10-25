@@ -40,7 +40,7 @@ points_router = APIRouter(prefix="/points", tags=["积分系统"])
 
 # ===== 奖品API =====
 
-@router.get("/catalog", response_model=RewardCatalogResponse, summary="获取奖品目录")
+@router.get("/catalog", response_model=RewardCatalogResponse, summary="获取奖品目录", description="获取系统中所有可用奖品的完整目录，包括奖品名称、描述、价值和兑换条件。")
 async def get_reward_catalog(
     session: SessionDep
 ):
@@ -54,7 +54,7 @@ async def get_reward_catalog(
         raise HTTPException(status_code=500, detail="获取奖品目录失败")
 
 
-@router.get("/my-rewards", response_model=MyRewardsResponse, summary="获取我的奖品")
+@router.get("/my-rewards", response_model=MyRewardsResponse, summary="获取我的奖品", description="获取当前用户拥有的所有奖品及数量，包括通过任务完成和兑换获得的奖品。")
 async def get_my_rewards(
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)

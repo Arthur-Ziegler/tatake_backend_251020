@@ -1,0 +1,138 @@
+# 零Bug测试体系 - Pylint配置
+# 严格的代码质量标准
+
+[MASTER]
+# 启用的检查器
+disable=
+  # R0801: 相同行过多 - 在测试文件中可能需要
+  C0114: 缺少模块文档字符串 - 模块级别的文档
+  C0115: 缺少类文档字符串 - 类级别的文档
+  C0116: 缺少函数文档字符串 - 简单函数可能不需要
+
+# 导入顺序检查
+load-plugins=
+  pylint_django,
+  pylint_flask,
+  pylint_pytest
+
+# 忽略的文件或目录
+ignore=
+  tests/*,
+  migrations/*,
+  venv/*,
+  __pycache__/*,
+  .venv/*,
+  .pytest_cache/*,
+  htmlcov/*
+
+[BASIC]
+# 命名约定
+good-names=^[a-z_][a-z0-9_]{2,30}$
+bad-names=foo,bar,baz,toto,tutu,tata,data,result,item,obj,tmp
+variable-naming-style=snake_case
+function-naming-style=snake_case
+method-naming-style=snake_case
+class-attribute-naming-style=snake_case
+const-naming-style=UPPER_CASE
+argument-naming-style=snake_case
+module-naming-style=snake_case
+
+# 文档字符串
+docstring-min-length=-1  # 简单函数可能不需要文档字符串
+
+# 变量类型
+init-import-format=no
+
+# 异常处理
+raises=missing
+
+# 导入
+imports-order=std,third-party,first-party,local
+import-relative-style=relative
+
+# 代码复杂度
+max-args=7
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=7
+max-public-methods=20
+
+# 行长度
+max-line-length=88
+max-module-lines=1000
+
+[DESIGN]
+# 设计模式检查
+max-args=7
+max-positional-args=5
+max-locals=15
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=7
+min-public-methods=2
+max-public-methods=20
+
+# 避免使用全局变量
+global-statement-disabled=yes
+
+[FORMAT]
+# 格式化
+max-line-length=88
+max-module-lines=1000
+
+[LOGGING]
+# 日志记录
+logging-format-style=new
+logging-fstring-interpolation=allowed
+
+[TYPECHECK]
+# 类型检查
+signature-mutators=no
+set-mutable=no
+generated-members=
+  id,
+  pk,
+  created_at,
+  updated_at,
+  uuid,
+  request,
+  user,
+  session,
+  db,
+  cache,
+  logger
+
+[VARIABLES]
+# 变量命名
+dummy-variables-rgx=^_+$|dummy
+init-import=no
+additional-builtins=_
+
+[REFACTORING]
+# 重构建议
+# 启用重构检查
+max-nested-blocks=5
+cognitive-complexity=15
+
+[SIMILARITIES]
+# 相似代码检查
+min-similarity-lines=4
+ignore-imports=yes
+ignore-docstrings=yes
+ignore-comments=yes
+
+[MESSAGES CONTROL]
+# 消息控制
+disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
+[REPORTS]
+# 报告格式
+output-format=colorized
+reports=yes
+score=yes
+msg-template="{path}:{line}: {column}: {msg_id}: {msg} ({symbol})"

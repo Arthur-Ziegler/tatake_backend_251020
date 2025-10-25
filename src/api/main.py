@@ -92,12 +92,16 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=f"{config.app_name}",
     version=config.app_version,
-    description="TaKeKe API服务，提供认证和任务管理功能",
+    description="",  # 描述将在OpenAPI配置中设置，保持简洁
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan
 )
+
+# 设置自定义OpenAPI配置
+from src.api.openapi import setup_openapi
+setup_openapi(app)
 
 # 添加全局异常处理器
 @app.exception_handler(StarletteHTTPException)

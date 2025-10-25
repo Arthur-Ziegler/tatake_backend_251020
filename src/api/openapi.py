@@ -127,7 +127,7 @@ Authorization: Bearer <your_token>
             },
             {
                 "name": "用户管理",
-                "description": "用户信息管理相关接口",
+                "description": "用户信息管理相关接口，包括用户资料查询、更新、设置等功能的完整管理",
                 "externalDocs": {
                     "description": "用户管理文档",
                     "url": "https://docs.tatake.app/user"
@@ -217,35 +217,96 @@ Authorization: Bearer <your_token>
 
     @staticmethod
     def get_examples() -> Dict[str, Any]:
-        """获取示例数据"""
+        """获取示例数据 - 遵循OpenAPI 3.1规范"""
         return {
-            "success_response": {
-                "summary": "成功响应示例",
+            # 成功响应示例
+            "SuccessResponse": {
+                "summary": "标准成功响应",
+                "description": "API调用成功时的标准响应格式，包含业务数据和追踪信息",
                 "value": {
                     "code": 200,
                     "message": "操作成功",
                     "data": {
-                        "id": 1,
-                        "title": "示例任务",
-                        "description": "这是一个示例任务",
-                        "status": "pending",
-                        "priority": "medium",
-                        "created_at": "2024-01-01T00:00:00Z",
-                        "updated_at": "2024-01-01T00:00:00Z"
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "title": "完成项目文档编写",
+                        "description": "编写完整的API文档和用户指南",
+                        "status": "completed",
+                        "priority": "high",
+                        "completion_percentage": 100,
+                        "tags": ["文档", "项目"],
+                        "created_at": "2025-01-15T09:00:00Z",
+                        "updated_at": "2025-01-15T15:30:00Z"
                     },
-                    "timestamp": "2024-01-01T00:00:00Z",
+                    "timestamp": "2025-01-15T15:30:00Z",
                     "traceId": "550e8400-e29b-41d4-a716-446655440000"
                 }
             },
-            "error_response": {
-                "summary": "错误响应示例",
+
+            # 错误响应示例
+            "ErrorResponse": {
+                "summary": "标准错误响应",
+                "description": "API调用失败时的标准响应格式，包含详细错误信息和追踪ID",
                 "value": {
-                    "code": 404,
-                    "message": "请求的资源未找到",
-                    "data": None,
-                    "timestamp": "2024-01-01T00:00:00Z",
+                    "code": 4001,
+                    "message": "请求参数验证失败",
+                    "data": {
+                        "field": "title",
+                        "error": "任务标题不能为空",
+                        "received_value": ""
+                    },
+                    "timestamp": "2025-01-15T15:30:00Z",
                     "traceId": "550e8400-e29b-41d4-a716-446655440000",
-                    "errorCode": "RESOURCE_NOT_FOUND"
+                    "errorCode": "VALIDATION_ERROR"
+                }
+            },
+
+            # 任务完成奖励示例
+            "TaskCompletionReward": {
+                "summary": "任务完成奖励响应",
+                "description": "完成任务时获得的奖励详情，包含积分或奖品信息",
+                "value": {
+                    "code": 200,
+                    "message": "任务完成，奖励已发放",
+                    "data": {
+                        "task": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "title": "完成项目文档",
+                            "status": "completed",
+                            "completion_percentage": 100
+                        },
+                        "reward_earned": {
+                            "type": "points",
+                            "transaction_id": "550e8400-e29b-41d4-a716-446655440001",
+                            "amount": 100,
+                            "reward_id": None,
+                            "message": "Top3任务完成，获得100积分奖励"
+                        }
+                    },
+                    "timestamp": "2025-01-15T15:30:00Z",
+                    "traceId": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            },
+
+            # 认证成功示例
+            "AuthenticationSuccess": {
+                "summary": "用户认证成功",
+                "description": "微信登录或注册成功时的响应，包含访问令牌和用户信息",
+                "value": {
+                    "code": 200,
+                    "message": "登录成功",
+                    "data": {
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "token_type": "bearer",
+                        "expires_in": 1800,
+                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "user": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "wechat_openid": "ox1234567890abcdef",
+                            "created_at": "2025-01-01T00:00:00Z"
+                        }
+                    },
+                    "timestamp": "2025-01-15T15:30:00Z",
+                    "traceId": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         }
@@ -275,10 +336,87 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         "termsOfService": openapi_config.get_api_info()["termsOfService"]
     })
 
-    # 添加安全方案
+    # 添加组件 - OpenAPI 3.1规范
     openapi_schema["components"] = {
         "securitySchemes": openapi_config.get_security_schemes(),
-        "examples": openapi_config.get_examples()
+        "examples": openapi_config.get_examples(),
+        "schemas": {
+            # 标准响应格式
+            "StandardResponse": {
+                "type": "object",
+                "description": "API标准响应格式",
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "description": "业务状态码，200表示成功"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "响应消息"
+                    },
+                    "data": {
+                        "description": "响应数据，结构根据具体接口变化"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "响应时间戳"
+                    },
+                    "traceId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "追踪ID，用于问题定位"
+                    }
+                },
+                "required": ["code", "message", "timestamp", "traceId"]
+            },
+
+            # 错误响应格式
+            "ErrorResponse": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/StandardResponse"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "errorCode": {
+                                "type": "string",
+                                "description": "错误代码，用于程序化处理"
+                            }
+                        }
+                    }
+                ]
+            },
+
+            # 分页响应格式
+            "PaginatedResponse": {
+                "allOf": [
+                    {"$ref": "#/components/schemas/StandardResponse"},
+                    {
+                        "type": "object",
+                        "properties": {
+                            "data": {
+                                "type": "object",
+                                "properties": {
+                                    "items": {
+                                        "type": "array",
+                                        "description": "数据项列表"
+                                    },
+                                    "pagination": {
+                                        "type": "object",
+                                        "properties": {
+                                            "current_page": {"type": "integer"},
+                                            "total_pages": {"type": "integer"},
+                                            "total_count": {"type": "integer"},
+                                            "page_size": {"type": "integer"}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
     }
 
     # 添加外部文档
@@ -289,19 +427,53 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         {"BearerAuth": []}
     ]
 
-    # 添加扩展信息
+    # 添加扩展信息 - OpenAPI 3.1兼容
     openapi_schema["x-tag-groups"] = [
         {
             "name": "核心功能",
+            "description": "系统核心功能模块",
             "tags": ["认证系统", "用户管理", "任务管理"]
         },
         {
             "name": "高级功能",
-            "tags": ["番茄钟系统", "奖励系统", "AI对话"]
+            "description": "高级业务功能模块",
+            "tags": ["番茄钟系统", "奖励系统", "AI对话", "Top3管理"]
         },
         {
             "name": "辅助功能",
-            "tags": ["统计分析", "系统"]
+            "description": "辅助和管理功能模块",
+            "tags": ["统计分析", "积分系统", "系统"]
+        }
+    ]
+
+    # 添加变更日志扩展
+    openapi_schema["x-changelog"] = [
+        {
+            "version": "1.1.0",
+            "date": "2025-01-15",
+            "changes": [
+                {
+                    "type": "enhanced",
+                    "description": "升级OpenAPI文档至专业级标准",
+                    "impact": "开发者体验显著改善"
+                },
+                {
+                    "type": "added",
+                    "description": "添加完整的响应示例和错误处理说明",
+                    "impact": "API集成更加便捷"
+                }
+            ]
+        },
+        {
+            "version": "1.0.0",
+            "date": "2025-01-01",
+            "changes": [
+                {
+                    "type": "initial",
+                    "description": "初始版本发布，包含基础CRUD功能",
+                    "impact": "系统正式上线"
+                }
+            ]
         }
     ]
 

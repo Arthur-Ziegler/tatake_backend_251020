@@ -356,7 +356,7 @@ class TestUserRegistrationToTaskFlow:
             top3_tasks.append(task_response.json()["data"]["id"])
 
         # 设置Top3
-        top3_response = client.post("/tasks/top3", json={
+        top3_response = client.post("/tasks/special/top3", json={
             "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             "tasks": [
                 {"task_id": top3_tasks[0], "position": 1},

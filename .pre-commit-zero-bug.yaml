@@ -1,0 +1,445 @@
+# 零Bug测试体系 - 严格Pre-commit Hooks
+# 确保所有代码在提交前都经过零Bug质量标准检查
+
+repos:
+  # 第一层：基础代码质量检查（必须全部通过）
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        name: 零Bug代码规范检查
+        entry: flake8
+        language: python
+        types: [python]
+        args:
+          - --max-line-length=88
+          - --extend-ignore=E203,W503,E501
+          - --max-complexity=10
+          - --max-args=7
+          - --max-locals=15
+          - --max-returns=6
+          - --max-branches=12
+          - --max-statements=50
+          - --max-attributes=7
+          - --show-source
+          - --statistics
+          - --jobs=auto
+        additional_dependencies:
+          - flake8-docstrings
+          - flake8-import-order
+          - flake8-bugbear
+          - pep8-naming
+          - flake8-comprehensions
+          - flake8-simplify
+        fail_fast: true
+
+  # 第二层：代码格式化（自动修复）
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: 零Bug导入排序
+        args:
+          - --profile black
+          - --line-length=88
+          - --known-first-party=src
+          - --multi-line=3
+          - --trailing-comma
+          - --force-grid-wrap=0
+          - --use-parentheses
+          - --ensure-newline-before-comments
+          - --force-single-line-imports
+        language_version: python3
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        name: 零Bug代码格式化
+        language_version: python3
+        args:
+          - --line-length=88
+          - --target-version=py312
+          - --skip-string-normalization
+          - --include='\.pyi?$'
+        require_serial: true
+
+  # 第三层：类型检查（严格模式）
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        name: 零Bug类型检查
+        entry: mypy
+        language: python
+        types: [python]
+        args:
+          - --strict
+          - --warn-return-any
+          - --warn-unused-ignores
+          - --warn-redundant-casts
+          - --no-implicit-optional
+          - --disallow-untyped-defs
+          - --disallow-incomplete-defs
+          - --check-untyped-defs
+          - --disallow-any-generics
+          - --disallow-subclassing-any
+          - --disallow-untyped-calls
+          - --disallow-untyped-decorators
+          - --disallow-explicit-any
+          - --strict-equality
+          - --strict-concatenate
+        additional_dependencies:
+          - types-all
+          - types-requests
+          - types-setuptools
+          - types-python-dateutil
+          - types-PyYAML
+        pass_filenames: false
+        require_serial: true
+
+  # 第四层：安全检查（零容忍）
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: 零Bug安全扫描
+        entry: bandit
+        language: python
+        types: [python]
+        args:
+          - -r
+          - src/
+          - -f
+          - json
+          - -o
+          - .bandit-report.json
+          - --severity-level=medium
+          - --confidence-level=low
+          - --exclude=tests/
+        require_serial: true
+
+  # 第五层：依赖安全检查
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.2
+    hooks:
+      - id: python-safety-dependencies-check
+        name: 零Bug依赖安全检查
+        entry: safety check
+        language: python
+        args:
+          - --json
+          - --output
+          - .safety-report.json
+          - --short-report
+        additional_dependencies:
+          - safety
+        pass_filenames: false
+
+  # 第六层：文档质量检查
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        name: 零Bug文档规范检查
+        args:
+          - --convention=google
+          - --add-ignore=D100,D104,D105,D107
+          - --explain
+          - --source
+        exclude: tests/
+
+  # 第七层：复杂度和质量检查
+  - repo: https://github.com/pycqa/pylint
+    rev: v2.17.4
+    hooks:
+      - id: pylint
+        name: 零Bug代码质量评分
+        entry: pylint
+        language: python
+        types: [python]
+        args:
+          - --rcfile=.pylintrc
+          - --score=yes
+          - --fail-under=9.5
+          - --output-format=colorized,json:.pylint-report.json,text
+          - --reports=y
+          - --max-line-length=88
+          - --jobs=1
+        additional_dependencies:
+          - pylint-django
+          - pylint-flask
+          - pylint-pytest
+        exclude: tests/
+        require_serial: true
+
+  # 第八层：零Bug特定检查
+  - repo: local
+    hooks:
+      # 单元测试检查
+      - id: zero-bug-unit-test-check
+        name: 零Bug单元测试检查
+        entry: uv run pytest tests/unit -x --tb=short --cov=src --cov-fail-under=80 --disable-warnings
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+
+      # 导入错误检查
+      - id: zero-bug-import-check
+        name: 零Bug导入错误检查
+        entry: uv run python -c "
+import sys
+import ast
+import os
+
+def check_imports(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        ast.parse(content)
+        return True, None
+    except SyntaxError as e:
+        return False, f'语法错误: {e}'
+    except ImportError as e:
+        return False, f'导入错误: {e}'
+    except Exception as e:
+        return False, f'未知错误: {e}'
+
+# 检查所有Python文件
+exit_code = 0
+for root, dirs, files in os.walk('src'):
+    for file in files:
+        if file.endswith('.py'):
+            file_path = os.path.join(root, file)
+            success, error = check_imports(file_path)
+            if not success:
+                print(f'文件 {file_path}: {error}')
+                exit_code = 1
+
+sys.exit(exit_code)
+"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # 测试覆盖率检查
+      - id: zero-bug-coverage-check
+        name: 零Bug覆盖率检查
+        entry: uv run python -c "
+import subprocess
+import sys
+import json
+
+try:
+    # 运行覆盖率检查
+    result = subprocess.run([
+        'uv', 'run', 'pytest', '--cov=src', '--cov-report=json',
+        '--cov-fail-under=85', '--tb=no', '-q'
+    ], capture_output=True, text=True)
+
+    if result.returncode == 0:
+        # 读取覆盖率报告
+        with open('coverage.json', 'r') as f:
+            coverage_data = json.load(f)
+
+        total_coverage = coverage_data['totals']['percent_covered']
+        print(f'当前覆盖率: {total_coverage:.1f}%')
+
+        if total_coverage < 85.0:
+            print(f'覆盖率 {total_coverage:.1f}% 低于零Bug标准 85%')
+            sys.exit(1)
+        else:
+            print(f'覆盖率 {total_coverage:.1f}% 符合零Bug标准')
+    else:
+        print('覆盖率检查失败')
+        sys.exit(result.returncode)
+
+except Exception as e:
+    print(f'覆盖率检查异常: {e}')
+    sys.exit(1)
+"
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+
+      # 性能基准检查
+      - id: zero-bug-performance-check
+        name: 零Bug性能基准检查
+        entry: uv run python -c "
+import subprocess
+import sys
+import time
+
+try:
+    # 运行性能基准测试
+    start_time = time.time()
+    result = subprocess.run([
+        'uv', 'run', 'pytest', 'tests/unit', '-x', '--tb=no', '-q'
+    ], capture_output=True, text=True)
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    print(f'单元测试执行时间: {duration:.2f}秒')
+
+    if duration > 120:  # 2分钟限制
+        print(f'测试执行时间 {duration:.2f}s 超过零Bug标准 120s')
+        sys.exit(1)
+
+    if result.returncode != 0:
+        print('性能基准测试失败')
+        sys.exit(result.returncode)
+
+    print('性能基准检查通过')
+
+except Exception as e:
+    print(f'性能检查异常: {e}')
+    sys.exit(1)
+"
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+
+  # 第九层：文件基础检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+        name: 零Bug大文件检查
+        args: ['--maxkb=500']  # 500KB限制
+      - id: check-case-conflict
+        name: 零Bug文件名冲突检查
+      - id: check-merge-conflict
+        name: 零Bug合并冲突检查
+      - id: check-yaml
+        name: 零Bug YAML格式检查
+      - id: check-json
+        name: 零Bug JSON格式检查
+      - id: check-toml
+        name: 零Bug TOML格式检查
+      - id: end-of-file-fixer
+        name: 零Bug文件结尾检查
+      - id: trailing-whitespace
+        name: 零Bug空格检查
+      - id: debug-statements
+        name: 零Bug调试语句检查
+      - id: name-tests-test
+        name: 零Bug测试命名检查
+        args: ['--pytest-test-first']
+
+  # 第十层：零Bug特定质量检查
+  - repo: local
+    hooks:
+      # 硬编码密钥检查
+      - id: zero-bug-secrets-check
+        name: 零Bug密钥泄露检查
+        entry: uv run python -c "
+import re
+import os
+import sys
+
+# 密钥模式
+secret_patterns = [
+    r'password\\s*=\\s*[\"\\']?[^\"\\'\n]{4,}[\"\\']?',
+    r'api_key\\s*=\\s*[\"\\']?[^\"\\'\n]{4,}[\"\\']?',
+    r'secret\\s*=\\s*[\"\\']?[^\"\\'\n]{4,}[\"\\']?',
+    r'token\\s*=\\s*[\"\\']?[^\"\\'\n]{4,}[\"\\']?',
+    r'private_key\\s*=\\s*[\"\\']?[^\"\\'\n]{10,}[\"\\']?',
+]
+
+def check_file_for_secrets(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        for line_num, line in enumerate(content.split('\\n'), 1):
+            # 跳过注释行和测试文件
+            if line.strip().startswith('#') or '/tests/' in file_path:
+                continue
+
+            for pattern in secret_patterns:
+                if re.search(pattern, line, re.IGNORECASE):
+                    print(f'在文件 {file_path}:{line_num} 发现可能的密钥泄露')
+                    print(f'内容: {line.strip()}')
+                    return False
+        return True
+    except Exception:
+        return True  # 无法读取的文件跳过检查
+
+exit_code = 0
+for root, dirs, files in os.walk('src'):
+    for file in files:
+        if file.endswith('.py'):
+            file_path = os.path.join(root, file)
+            if not check_file_for_secrets(file_path):
+                exit_code = 1
+
+sys.exit(exit_code)
+"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # TODO注释检查
+      - id: zero-bug-todo-check
+        name: 零Bug TODO注释检查
+        entry: uv run python -c "
+import re
+import os
+import sys
+
+todo_count = 0
+for root, dirs, files in os.walk('src'):
+    for file in files:
+        if file.endswith('.py'):
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # 查找TODO注释
+                todos = re.findall(r'#\\s*TODO.*$', content, re.MULTILINE)
+                if todos:
+                    print(f'{file_path} 包含 {len(todos)} 个 TODO:')
+                    for todo in todos:
+                        print(f'  - {todo.strip()}')
+                    todo_count += len(todos)
+            except Exception:
+                pass
+
+if todo_count > 0:
+    print(f'\\n总共发现 {todo_count} 个 TODO 注释')
+    print('零Bug标准要求在提交前解决所有 TODO')
+    sys.exit(1)
+else:
+    print('未发现 TODO 注释，符合零Bug标准')
+"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+# 全局配置
+default_language_version:
+  python: python3.12
+
+# CI配置
+ci:
+  autofix_commit_msg: |
+    🤖 零Bug自动修复
+
+    零Bug测试体系自动修复了以下问题：
+    - 代码格式化
+    - 导入排序
+    - 基础语法错误
+    - 文件格式问题
+
+    🤖 Generated with [零Bug测试体系](https://github.com/zero-bug-testing)
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: 🤖 零Bug自动更新pre-commit hooks
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

@@ -1,0 +1,68 @@
+{
+  "test_summary": {
+    "total_tests": 4,
+    "passed": 3,
+    "failed": 1,
+    "success_rate": 75.0,
+    "avg_response_time": 0.0038841962814331055
+  },
+  "system_statistics": {
+    "系统": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0
+    },
+    "认证系统": {
+      "total": 1,
+      "passed": 0,
+      "failed": 1
+    }
+  },
+  "test_details": [
+    {
+      "test_name": "/",
+      "method": "GET",
+      "url": "http://localhost:8001/",
+      "status_code": 200,
+      "expected_status": 200,
+      "response_time": 0.0047338008880615234,
+      "success": true,
+      "details": "API服务正常运行",
+      "timestamp": "2025-10-25T03:44:30.065164"
+    },
+    {
+      "test_name": "/health",
+      "method": "GET",
+      "url": "http://localhost:8001/health",
+      "status_code": 200,
+      "expected_status": 200,
+      "response_time": 0.007483959197998047,
+      "success": true,
+      "details": "API服务健康",
+      "timestamp": "2025-10-25T03:44:30.072694"
+    },
+    {
+      "test_name": "/info",
+      "method": "GET",
+      "url": "http://localhost:8001/info",
+      "status_code": 200,
+      "expected_status": 200,
+      "response_time": 0.0023720264434814453,
+      "success": true,
+      "details": "API信息 - 认证、任务管理和智能聊天服务",
+      "timestamp": "2025-10-25T03:44:30.075120"
+    },
+    {
+      "test_name": "/auth/guest/register",
+      "method": "POST",
+      "url": "http://localhost:8001/auth/guest/register",
+      "status_code": 404,
+      "expected_status": 200,
+      "response_time": 0.0009469985961914062,
+      "success": false,
+      "details": "请求的资源未找到",
+      "timestamp": "2025-10-25T03:44:30.076113"
+    }
+  ],
+  "test_time": "2025-10-25T03:44:30.076151"
+}

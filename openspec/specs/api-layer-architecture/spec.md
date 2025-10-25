@@ -425,5 +425,34 @@
   - 错误处理一致性
   - 数据流正确性
 
+## ADDED Requirements
+
+### Requirement: User Route Registration
+系统必须正确注册用户系统路由到主应用。
+
+#### Scenario: User Profile Access
+- **GIVEN** 用户需要访问个人信息
+- **WHEN** 发送GET请求到 `/user/profile`
+- **THEN** 系统 SHALL返回用户基本信息而不是404错误
+- **Implementation**: 在main.py中导入并注册user路由器
+
+### Requirement: Unified JWT Authentication
+系统必须统一所有API的JWT认证机制，从token获取user_id。
+
+#### Scenario: Points API Authentication
+- **GIVEN** 用户查询积分余额
+- **WHEN** 发送带JWT token的GET请求到 `/points/my-points`
+- **THEN** 系统 SHALL从token自动解析user_id，不需要查询参数
+- **Implementation**: 统一所有API使用FastAPI依赖注入获取user_id
+
+### Requirement: Focus Single Session Management
+系统必须维护单一活跃Focus会话，新会话创建时自动关闭旧会话。
+
+#### Scenario: Focus Session Auto-Close
+- **GIVEN** 用户存在未完成的专注会话
+- **WHEN** 创建新的专注会话时
+- **THEN** 系统 SHALL自动关闭旧会话并创建新会话
+- **Implementation**: 修改会话创建逻辑，添加会话状态转换验证
+
 ## Notes
 该API层设计基于现有的Service Layer架构，通过FastAPI框架实现完整的RESTful API功能。系统采用分层架构，确保API层、Service层和Repository层之间的清晰分离，同时保持高性能和良好的可维护性。

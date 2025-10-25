@@ -5,8 +5,10 @@ description = "TaKeKe API 后端数据层实现"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "aiohttp>=3.13.1",
     "aiosqlite>=0.21.0",
     "bcrypt>=5.0.0",
+    "faker>=37.12.0",
     "fastapi>=0.115.0",
     "freezegun>=1.5.5",
     "langchain-anthropic>=1.0.0",

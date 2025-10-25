@@ -89,7 +89,7 @@ def test_top3_complete_flow(authenticated_client: httpx.Client):
             ]
         }
 
-        response = client.post("/tasks/top3", json=top3_data)
+        response = client.post("/tasks/special/top3", json=top3_data)
         assert_api_success(response, "设置Top3失败")
         top3_result = response.json()["data"]
         assert_contains_fields(top3_result, ["date", "top3_tasks", "points_consumed"], "Top3响应缺少必需字段")
@@ -103,7 +103,7 @@ def test_top3_complete_flow(authenticated_client: httpx.Client):
 
         # 步骤5: 验证Top3设置结果
         print_test_step("验证Top3设置结果")
-        response = client.get(f"/tasks/top3/{today}")
+        response = client.get(f"/tasks/special/top3/{today}")
         assert_api_success(response, "获取Top3失败")
         top3_detail = response.json()["data"]
         assert len(top3_detail["top3_tasks"]) == 3, "Top3任务数量不正确"
@@ -212,7 +212,7 @@ def test_top3_error_handling(authenticated_client: httpx.Client):
                 ]
             }
 
-            response = client.post("/tasks/top3", json=top3_data)
+            response = client.post("/tasks/special/top3", json=top3_data)
             # 如果积分不足，应该返回错误
             if response.status_code != 200:
                 print_test_success("积分不足时正确拒绝设置Top3")
@@ -257,11 +257,11 @@ def test_top3_error_handling(authenticated_client: httpx.Client):
         }
 
         # 第一次设置Top3
-        response1 = client.post("/tasks/top3", json=top3_data)
+        response1 = client.post("/tasks/special/top3", json=top3_data)
         assert_api_success(response1, "第一次设置Top3失败")
 
         # 第二次设置同一天的Top3
-        response2 = client.post("/tasks/top3", json=top3_data)
+        response2 = client.post("/tasks/special/top3", json=top3_data)
         # 应该拒绝重复设置
         assert response2.status_code in [400, 422], f"重复设置Top3应返回错误，实际: {response2.status_code}"
         print_test_success("正确拒绝重复设置Top3")
@@ -284,14 +284,14 @@ def test_top3_error_handling(authenticated_client: httpx.Client):
         ]
     }
 
-    response = client.post("/tasks/top3", json=invalid_top3_data)
+    response = client.post("/tasks/special/top3", json=invalid_top3_data)
     assert response.status_code in [400, 404, 422], f"使用无效任务ID应返回错误，实际: {response.status_code}"
     print_test_success("正确拒绝无效任务ID的Top3设置")
 
     # 步骤4: 测试获取不存在日期的Top3
     print_test_step("测试获取不存在日期的Top3")
     future_date = "2099-12-31"
-    response = client.get(f"/tasks/top3/{future_date}")
+    response = client.get(f"/tasks/special/top3/{future_date}")
     # 应该返回空结果或相应状态
     assert response.status_code == 200, "获取不存在日期的Top3应返回200"
     print_test_success("正确处理不存在日期的Top3查询")
@@ -330,7 +330,7 @@ def test_top3_task_relationship(authenticated_client: httpx.Client):
             ]
         }
 
-        response = client.post("/tasks/top3", json=top3_data)
+        response = client.post("/tasks/special/top3", json=top3_data)
         assert_api_success(response, "设置Top3失败")
         print_test_success("Top3设置成功")
 
@@ -353,7 +353,7 @@ def test_top3_task_relationship(authenticated_client: httpx.Client):
 
         # 步骤4: 验证Top3状态
         print_test_step("验证Top3状态更新")
-        response = client.get(f"/tasks/top3/{today}")
+        response = client.get(f"/tasks/special/top3/{today}")
         assert_api_success(response, "获取Top3状态失败")
         top3_detail = response.json()["data"]
         # 这里可以验证Top3的完成状态等

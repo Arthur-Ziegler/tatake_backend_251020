@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status, Request, Depends
+from fastapi import APIRouter, HTTPException, status, Request, Depends, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 
@@ -170,8 +170,8 @@ async def guest_init(
 @router.post(
     "/register",
     response_model=UnifiedResponse,
-    summary="微信注册",
-    description="通过微信OpenID注册新用户。内部实现为创建游客账号并立即升级为正式用户。"
+    summary="微信用户注册",
+    description="通过微信OpenID注册新用户。内部实现为创建游客账号并立即升级为正式用户，包含完整的用户初始化流程。"
 )
 async def wechat_register(
     request: WeChatRegisterRequest,
@@ -207,12 +207,27 @@ async def wechat_register(
 @router.post(
     "/login",
     response_model=UnifiedResponse,
-    summary="微信登录",
-    description="通过微信OpenID登录已有用户账号。"
+    summary="微信用户登录",
+    description="通过微信OpenID登录已有用户账号。支持新用户自动注册和已有用户登录，返回JWT访问令牌。"
 )
 async def wechat_login(
-    request: WeChatLoginRequest,
-    http_request: Request
+    http_request: Request,
+    request: WeChatLoginRequest = Body(..., examples={
+        "NormalLogin": {
+            "summary": "标准微信登录",
+            "description": "使用有效的微信OpenID登录系统",
+            "value": {
+                "wechat_openid": "ox1234567890abcdef1234567890abcdef"
+            }
+        },
+        "NewUserLogin": {
+            "summary": "新用户首次登录",
+            "description": "新用户首次使用微信登录，系统会自动创建账号",
+            "value": {
+                "wechat_openid": "ox0987654321fedcba0987654321fedcba"
+            }
+        }
+    })
 ) -> JSONResponse:
     """
     微信登录

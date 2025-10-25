@@ -191,7 +191,7 @@ def test_top3_focus_task_tree_flow(authenticated_client: httpx.Client):
             ]
         }
 
-        response = client.post("/tasks/top3", json=top3_data)
+        response = client.post("/tasks/special/top3", json=top3_data)
         assert_api_success(response, "设置Top3失败")
         top3_result = response.json()["data"]
         print_test_success("Top3设置成功")
@@ -302,7 +302,7 @@ def test_cross_module_error_scenarios(authenticated_client: httpx.Client):
             ]
         }
 
-        response = client.post("/tasks/top3", json=top3_data)
+        response = client.post("/tasks/special/top3", json=top3_data)
         if response.status_code == 200:
             # Top3设置成功，测试删除正在Top3中的任务
             print_test_step("测试删除正在Top3中的任务")
@@ -465,7 +465,7 @@ def test_comprehensive_business_flow(authenticated_client: httpx.Client):
                     ]
                 }
 
-                response = client.post("/tasks/top3", json=top3_data)
+                response = client.post("/tasks/special/top3", json=top3_data)
                 if response.status_code == 200:
                     print_test_success("Top3设置成功")
 

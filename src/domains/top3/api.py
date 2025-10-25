@@ -23,7 +23,7 @@ from src.api.response_utils import StandardResponse, ResponseCode
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/tasks", tags=["Top3管理"])
+router = APIRouter(prefix="/tasks/special", tags=["Top3管理"])
 
 
 @router.post("/top3", summary="设置Top3任务")

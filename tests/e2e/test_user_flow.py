@@ -244,13 +244,13 @@ class UserFlowTester:
                 "task_ids": task_ids[:2]  # 使用前两个任务
             }
 
-            top3_response = self.test_api("POST", "/tasks/top3", top3_data, expected_status=200, headers=headers)
+            top3_response = self.test_api("POST", "/tasks/special/top3", top3_data, expected_status=200, headers=headers)
 
             if top3_response.get("code") == 200:
                 print(f"   ✅ Top3设置成功: {top3_response.get('data', {})}")
 
             # 获取Top3
-            self.test_api("GET", "/tasks/top3/2025-10-23", expected_status=200, headers=headers)
+            self.test_api("GET", "/tasks/special/top3/2025-10-23", expected_status=200, headers=headers)
         else:
             print("   ⚠️ 没有足够的任务进行Top3测试")
 

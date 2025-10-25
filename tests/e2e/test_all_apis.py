@@ -389,8 +389,8 @@ class APICoverageTester:
     def test_top3_apis(self) -> int:
         """
         测试Top3 API（2个）
-        - GET /tasks/top3 - 查询Top3
-        - POST /tasks/top3 - 设置Top3
+        - GET /tasks/special/top3 - 查询Top3
+        - POST /tasks/special/top3 - 设置Top3
         """
         print("\n" + "="*60)
         print("Top3 API测试（2个）")
@@ -416,7 +416,7 @@ class APICoverageTester:
 
         # 1. 查询Top3
         try:
-            top3_response = requests.get(f"{self.base_url}/tasks/top3", headers=self.get_headers())
+            top3_response = requests.get(f"{self.base_url}/tasks/special/top3", headers=self.get_headers())
             if top3_response.status_code == 200 and top3_response.json().get("code") == 200:
                 top3_data = top3_response.json()["data"]
                 self.log_result("查询Top3", True, {"tasks_count": len(top3_data.get("tasks", []))})
@@ -429,7 +429,7 @@ class APICoverageTester:
         # 2. 设置Top3
         if "top3_task" in self.created_resources:
             try:
-                set_top3_response = requests.post(f"{self.base_url}/tasks/top3", json={
+                set_top3_response = requests.post(f"{self.base_url}/tasks/special/top3", json={
                     "task_ids": [self.created_resources["top3_task"]]
                 }, headers=self.get_headers())
 

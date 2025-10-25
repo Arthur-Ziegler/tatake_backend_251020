@@ -16,7 +16,7 @@ from src.api.dependencies import get_current_user_id
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/tasks/top3", tags=["Top3管理"])
+router = APIRouter(prefix="/tasks/special/top3", tags=["Top3管理"])
 
 
 @router.post("", response_model=dict, summary="设置Top3任务")
