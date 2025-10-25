@@ -19,16 +19,17 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from uuid import uuid4
+from typing import Dict, Any, List, Optional, Union
+from uuid import UUID, uuid4
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from .models import RewardTransaction
 from .repository import RewardRepository
 from src.domains.points.models import PointsTransaction
 from src.domains.points.service import PointsService
+from src.utils.uuid_helpers import ensure_str
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -62,14 +63,14 @@ class WelcomeGiftService:
         self.points_service = points_service
         self.reward_repository = RewardRepository(session)
 
-    def claim_welcome_gift(self, user_id: str) -> Dict[str, Any]:
+    def claim_welcome_gift(self, user_id: Union[str, UUID]) -> Dict[str, Any]:
         """
         领取欢迎礼包
 
         发放1000积分和固定奖励组合，支持重复领取。
 
         Args:
-            user_id: 用户ID
+            user_id: 用户ID，支持字符串和UUID对象
 
         Returns:
             包含发放结果的字典
@@ -87,19 +88,41 @@ class WelcomeGiftService:
         Raises:
             SQLAlchemyError: 数据库操作失败
         """
+        # 使用UUID工具确保类型安全
+        user_id_str = ensure_str(user_id)
+
         try:
             # 生成事务组ID，用于关联本次礼包发放的所有操作
-            transaction_group = f"welcome_gift_{user_id}_{uuid4().hex[:8]}"
+            transaction_group = f"welcome_gift_{user_id_str}_{uuid4().hex[:8]}"
 
-            logger.info(f"开始为用户 {user_id} 发放欢迎礼包，事务组: {transaction_group}")
+            logger.info(f"开始为用户 {user_id_str} 发放欢迎礼包，事务组: {transaction_group}")
 
             # 1. 发放1000积分
-            self._grant_points(user_id, transaction_group)
+            self._grant_points(user_id_str, transaction_group)
 
             # 2. 发放固定奖励
-            rewards_granted = self._grant_rewards(user_id, transaction_group)
+            rewards_granted = self._grant_rewards(user_id_str, transaction_group)
 
-            # 3. 构建返回结果
+            # 3. 立即flush，写入数据库但不提交
+            self.session.flush()
+
+            # 4. 验证数据写入
+            verify_count = self.session.execute(
+                select(func.count()).select_from(RewardTransaction)
+                .where(RewardTransaction.user_id == user_id_str)
+                .where(RewardTransaction.source_type == "welcome_gift")
+            ).scalar()
+
+            if verify_count == 0:
+                self.session.rollback()
+                raise Exception(f"奖励数据写入验证失败，应写入{len(self.GIFT_REWARDS)}条，实际0条")
+
+            logger.info(f"奖励数据写入验证成功：{verify_count}条记录")
+
+            # 5. 提交事务
+            self.session.commit()
+            logger.info(f"欢迎礼包发放成功，用户: {user_id_str}, 积分: {self.GIFT_POINTS}, 奖励: {len(rewards_granted)}种")
+
             result = {
                 "points_granted": self.GIFT_POINTS,
                 "rewards_granted": rewards_granted,
@@ -107,19 +130,15 @@ class WelcomeGiftService:
                 "granted_at": datetime.now(timezone.utc).isoformat()
             }
 
-            # 提交事务
-            self.session.commit()
-            logger.info(f"欢迎礼包发放成功，用户: {user_id}, 积分: {self.GIFT_POINTS}, 奖励: {len(rewards_granted)}种")
-
             return result
 
         except SQLAlchemyError as e:
             self.session.rollback()
-            logger.error(f"欢迎礼包发放失败，用户: {user_id}, 错误: {str(e)}")
+            logger.error(f"欢迎礼包发放失败，用户: {user_id_str}, 错误: {str(e)}")
             raise
         except Exception as e:
             self.session.rollback()
-            logger.error(f"欢迎礼包发放出现意外错误，用户: {user_id}, 错误: {str(e)}")
+            logger.error(f"欢迎礼包发放出现意外错误，用户: {user_id_str}, 错误: {str(e)}")
             raise
 
     def _grant_points(self, user_id: str, transaction_group: str) -> None:
@@ -204,7 +223,7 @@ class WelcomeGiftService:
 
         return reward_id
 
-    def get_user_gift_history(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_user_gift_history(self, user_id: Union[str, UUID], limit: int = 10) -> List[Dict[str, Any]]:
         """
         获取用户礼包领取历史
 
@@ -215,10 +234,11 @@ class WelcomeGiftService:
         Returns:
             礼包领取历史列表
         """
+        user_id_str = ensure_str(user_id)
         try:
             # 查询积分流水记录
             points_query = select(PointsTransaction).where(
-                PointsTransaction.user_id == user_id,
+                PointsTransaction.user_id == user_id_str,
                 PointsTransaction.source_type == "welcome_gift"
             ).order_by(PointsTransaction.created_at.desc()).limit(limit)
 
@@ -229,7 +249,7 @@ class WelcomeGiftService:
             for points_tx in points_transactions:
                 # 获取同事务组的奖励记录
                 rewards_query = select(RewardTransaction).where(
-                    RewardTransaction.user_id == user_id,
+                    RewardTransaction.user_id == user_id_str,
                     RewardTransaction.transaction_group == points_tx.source_id
                 )
                 reward_transactions = self.session.exec(rewards_query).all()
@@ -254,7 +274,7 @@ class WelcomeGiftService:
             return history
 
         except SQLAlchemyError as e:
-            logger.error(f"获取礼包历史失败，用户: {user_id}, 错误: {str(e)}")
+            logger.error(f"获取礼包历史失败，用户: {user_id_str}, 错误: {str(e)}")
             return []
 
     def get_gift_statistics(self) -> Dict[str, Any]:

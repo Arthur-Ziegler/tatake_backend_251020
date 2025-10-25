@@ -21,7 +21,7 @@ Reward领域Service层 v2.0
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from uuid import UUID, uuid4
 from contextlib import contextmanager
 import random
@@ -33,6 +33,7 @@ from .models import Reward, RewardTransaction, RewardRecipe
 from .exceptions import RewardNotFoundException, InsufficientPointsException
 from src.config.game_config import reward_config, TransactionSource
 from .repository import RewardRepository, RecipeRepository
+from src.utils.uuid_helpers import ensure_str
 
 
 class RewardService:
@@ -137,7 +138,7 @@ class RewardService:
             self.logger.error(f"Error getting reward catalog: {e}")
             raise
 
-    def redeem_reward(self, user_id: str, reward_id: str) -> Dict[str, Any]:
+    def redeem_reward(self, user_id: Union[str, UUID], reward_id: str) -> Dict[str, Any]:
         """
         兑换奖品
 
@@ -159,7 +160,8 @@ class RewardService:
             InsufficientPointsException: 积分不足
             Exception: 其他错误
         """
-        self.logger.info(f"User {user_id} redeeming reward {reward_id}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"User {user_id_str} redeeming reward {reward_id}")
 
         try:
             with self.transaction_scope():
@@ -182,7 +184,7 @@ class RewardService:
                     raise Exception("奖品库存不足")
 
                 # 2. 检查用户积分
-                current_balance = self.points_service.calculate_balance(user_id)
+                current_balance = self.points_service.calculate_balance(user_id_str)
 
                 required_points = cost_value if cost_type == "points" else 0
 
@@ -205,12 +207,12 @@ class RewardService:
                 # 扣减积分
                 if required_points > 0:
                     self.points_service.add_points(
-                        str(user_id), -required_points, "reward_redemption", str(reward_id)
+                        user_id_str, -required_points, "reward_redemption", str(reward_id)
                     )
 
                 # 创建兑换记录
                 redemption_record = RewardTransaction(
-                    user_id=user_id,
+                    user_id=user_id_str,
                     reward_id=reward_id,
                     source_type="redemption",
                     source_id=reward_id,
@@ -235,18 +237,18 @@ class RewardService:
                     "message": f"成功兑换奖品: {name}"
                 }
 
-                self.logger.info(f"Successfully redeemed reward {reward_id} for user {user_id}")
+                self.logger.info(f"Successfully redeemed reward {reward_id} for user {user_id_str}")
                 return result
 
         except (RewardNotFoundException, InsufficientPointsException):
             # 业务异常，重新抛出
-            self.logger.warning(f"Redemption failed for user {user_id}, reward {reward_id}: {e}")
+            self.logger.warning(f"Redemption failed for user {user_id_str}, reward {reward_id}: {e}")
             raise
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error redeeming reward {reward_id} for user {user_id}: {e}")
+            self.logger.error(f"Database error redeeming reward {reward_id} for user {user_id_str}: {e}")
             raise Exception(f"数据库错误: {e}")
 
-    def top3_lottery(self, user_id: str) -> Dict[str, Any]:
+    def top3_lottery(self, user_id: Union[str, UUID]) -> Dict[str, Any]:
         """
         Top3抽奖
 
@@ -260,7 +262,8 @@ class RewardService:
         Returns:
             Dict[str, Any]: 抽奖结果
         """
-        self.logger.info(f"User {user_id} participating in Top3 lottery")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"User {user_id_str} participating in Top3 lottery")
 
         try:
             with self.transaction_scope():
@@ -292,10 +295,10 @@ class RewardService:
                     # 创建中奖记录
                     transaction_group = str(uuid4())
                     lottery_record = RewardTransaction(
-                        user_id=user_id,
+                        user_id=user_id_str,
                         reward_id=prize_id,
                         source_type="lottery_reward",
-                        source_id=user_id,  # 使用用户ID作为来源ID
+                        source_id=user_id_str,  # 使用用户ID作为来源ID
                         quantity=1,  # 中奖获得1个奖品
                         transaction_group=transaction_group,
                         created_at=datetime.now(timezone.utc)
@@ -316,7 +319,7 @@ class RewardService:
                         "message": "恭喜中奖！获得奖品"
                     }
 
-                    self.logger.info(f"User {user_id} won Top3 lottery, prize: {prize_id}")
+                    self.logger.info(f"User {user_id_str} won Top3 lottery, prize: {prize_id}")
                     return result
 
                 else:
@@ -327,10 +330,10 @@ class RewardService:
                     # 创建事务组ID用于关联
                     transaction_group = str(uuid4())
                     self.points_service.add_points(
-                        user_id=user_id,
+                        user_id=user_id_str,
                         amount=consolation_points,
                         source_type=TransactionSource.LOTTERY_POINTS,
-                        source_id=user_id,  # 使用用户ID作为来源ID
+                        source_id=user_id_str,  # 使用用户ID作为来源ID
                         transaction_group=transaction_group
                     )
 
@@ -341,14 +344,14 @@ class RewardService:
                         "message": f"未中奖，获得{consolation_points}积分安慰奖"
                     }
 
-                    self.logger.info(f"User {user_id} lost Top3 lottery, got {consolation_points} points")
+                    self.logger.info(f"User {user_id_str} lost Top3 lottery, got {consolation_points} points")
                     return result
 
         except Exception as e:
-            self.logger.error(f"Error in Top3 lottery for user {user_id}: {e}")
+            self.logger.error(f"Error in Top3 lottery for user {user_id_str}: {e}")
             raise Exception(f"抽奖错误: {e}")
 
-    def get_reward_transactions(self, user_id: str, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_reward_transactions(self, user_id: Union[str, UUID], limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
         获取用户奖励流水记录
 
@@ -360,7 +363,8 @@ class RewardService:
         Returns:
             List[Dict[str, Any]]: 交易记录
         """
-        self.logger.info(f"Getting reward transactions for user {user_id}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"Getting reward transactions for user {user_id_str}")
 
         try:
             result = self.session.execute(
@@ -376,7 +380,7 @@ class RewardService:
                     LIMIT :limit OFFSET :offset
                 """),
                 {
-                    "user_id": user_id,
+                    "user_id": user_id_str,
                     "limit": limit,
                     "offset": offset
                 }
@@ -396,11 +400,11 @@ class RewardService:
                 for row in result
             ]
 
-            self.logger.info(f"Retrieved {len(transactions)} reward transactions for user {user_id}")
+            self.logger.info(f"Retrieved {len(transactions)} reward transactions for user {user_id_str}")
             return transactions
 
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error getting reward transactions for user {user_id}: {e}")
+            self.logger.error(f"Database error getting reward transactions for user {user_id_str}: {e}")
             raise
 
     @contextmanager
@@ -423,7 +427,7 @@ class RewardService:
         finally:
             self.logger.debug("Reward transaction scope ended")
 
-    def compose_rewards(self, user_id: str, recipe_id: str) -> Dict[str, Any]:
+    def compose_rewards(self, user_id: Union[str, UUID], recipe_id: str) -> Dict[str, Any]:
         """
         配方合成奖品
 
@@ -444,7 +448,8 @@ class RewardService:
         Raises:
             Exception: 配方不存在、材料不足、数据库错误等
         """
-        self.logger.info(f"User {user_id} composing recipe {recipe_id}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"User {user_id_str} composing recipe {recipe_id}")
 
         try:
             with self.transaction_scope():
@@ -461,7 +466,7 @@ class RewardService:
                     raise Exception(f"配方材料配置为空: {recipe_id}")
 
                 # 2. 获取用户当前材料
-                user_materials = self.reward_repository.get_user_materials(user_id)
+                user_materials = self.reward_repository.get_user_materials(user_id_str)
                 user_materials_dict = {
                     material["reward_id"]: material["quantity"]
                     for material in user_materials
@@ -560,10 +565,10 @@ class RewardService:
                 return result
 
         except Exception as e:
-            self.logger.error(f"Error composing recipe {recipe_id} for user {user_id}: {e}")
+            self.logger.error(f"Error composing recipe {recipe_id} for user {user_id_str}: {e}")
             raise
 
-    def get_user_materials(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_materials(self, user_id: Union[str, UUID]) -> List[Dict[str, Any]]:
         """
         获取用户材料列表（用于前端展示）
 
@@ -574,9 +579,10 @@ class RewardService:
             List[Dict[str, Any]]: 用户材料列表
         """
         try:
-            return self.reward_repository.get_user_materials(user_id)
+            user_id_str = ensure_str(user_id)
+            return self.reward_repository.get_user_materials(user_id_str)
         except Exception as e:
-            self.logger.error(f"Error getting user materials for {user_id}: {e}")
+            self.logger.error(f"Error getting user materials for {user_id_str}: {e}")
             raise
 
     def get_available_recipes(self) -> List[Dict[str, Any]]:
@@ -592,7 +598,7 @@ class RewardService:
             self.logger.error(f"Error getting available recipes: {e}")
             raise
 
-    def get_my_rewards(self, user_id: UUID) -> Dict[str, Any]:
+    def get_my_rewards(self, user_id: Union[str, UUID]) -> Dict[str, Any]:
         """
         获取用户拥有的所有奖品
 
@@ -607,7 +613,7 @@ class RewardService:
         """
         try:
             # 获取用户的所有奖励交易记录
-            reward_transactions = self.get_reward_transactions(str(user_id))
+            reward_transactions = self.get_reward_transactions(user_id)
 
             # 按奖励ID分组并计算数量
             reward_counts = {}
@@ -638,5 +644,6 @@ class RewardService:
                 "total_types": len(rewards)
             }
         except Exception as e:
-            self.logger.error(f"Error getting my rewards for user {user_id}: {e}")
+            user_id_str = ensure_str(user_id)
+            self.logger.error(f"Error getting my rewards for user {user_id_str}: {e}")
             raise

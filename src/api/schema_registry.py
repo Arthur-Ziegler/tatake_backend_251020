@@ -48,7 +48,7 @@ from src.domains.top3.schemas import (
 )
 
 from src.domains.user.schemas import (
-    UserProfileResponse, UpdateProfileRequest, FeedbackRequest
+    UserProfileResponse, UpdateProfileRequest
 )
 
 # 所有需要注册的Schema模型
@@ -127,7 +127,6 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     # 用户管理
     "UserProfileResponse": UserProfileResponse,
     "UpdateProfileRequest": UpdateProfileRequest,
-    "FeedbackRequest": FeedbackRequest,
 }
 
 

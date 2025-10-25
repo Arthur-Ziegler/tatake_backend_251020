@@ -1,5 +1,4 @@
-"""
-Top3系统API路由器
+"""Top3系统API路由器
 
 实现v3文档中定义的Top3系统API，包括：
 - 设置Top3任务
@@ -48,35 +47,16 @@ async def set_top3(
         session: 数据库会话
     """
     try:
-        service = Top3Service(session)
-        result = service.set_top3(UUID(user_id), request)
+        # 修复UUID类型问题 - service层期望字符串UUID
+        from src.domains.points.service import PointsService
+        points_service = PointsService(session)
+        service = Top3Service(session, points_service)
+        result_dict = service.set_top3(user_id, request)  # service返回完整字典
 
-        # 转换为v3文档格式，处理两种数据格式
-        top3_tasks = []
-        for idx, task_info in enumerate(result.task_ids):
-            if isinstance(task_info, dict):
-                # 新格式：{"task_id": "uuid", "position": 1}
-                top3_tasks.append({
-                    "position": task_info.get("position", idx + 1),
-                    "task_id": task_info["task_id"]
-                })
-            else:
-                # 旧格式：直接是task_id字符串
-                top3_tasks.append({
-                    "position": idx + 1,
-                    "task_id": task_info
-                })
-
-        response_data = {
-            "date": result.date,
-            "top3_tasks": top3_tasks,
-            "points_consumed": result.points_consumed,
-            "remaining_balance": 0  # TODO: 需要从积分服务获取实际余额
-        }
-
+        # 直接使用service返回的数据，不做任何转换
         return UnifiedResponse(
             code=200,
-            data=response_data,
+            data=result_dict,  # 直接使用service返回的字典
             message="Top3设置成功"
         )
     except Exception as e:
@@ -103,33 +83,16 @@ async def get_top3(
         session: 数据库会话
     """
     try:
-        service = Top3Service(session)
-        result = service.get_top3(str(user_id), target_date)
+        # 修复UUID类型问题 - service层期望字符串UUID
+        from src.domains.points.service import PointsService
+        points_service = PointsService(session)
+        service = Top3Service(session, points_service)
+        result_dict = service.get_top3(user_id, target_date)  # service返回完整字典
 
-        # 转换为v3文档格式，处理两种数据格式
-        top3_tasks = []
-        for idx, task_info in enumerate(result.task_ids):
-            if isinstance(task_info, dict):
-                # 新格式：{"task_id": "uuid", "position": 1}
-                top3_tasks.append({
-                    "position": task_info.get("position", idx + 1),
-                    "task_id": task_info["task_id"]
-                })
-            else:
-                # 旧格式：直接是task_id字符串
-                top3_tasks.append({
-                    "position": idx + 1,
-                    "task_id": task_info
-                })
-
-        response_data = {
-            "date": result.date,
-            "top3_tasks": top3_tasks
-        }
-
+        # 直接使用service返回的数据，不做任何转换
         return UnifiedResponse(
             code=200,
-            data=response_data,
+            data=result_dict,  # 直接使用service返回的字典
             message="获取Top3成功"
         )
     except Exception as e:

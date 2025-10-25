@@ -37,15 +37,6 @@ class UpdateProfileRequest(BaseModel):
     nickname: Optional[str] = Field(None, example="新昵称", description="用户昵称")
 
 
-class FeedbackRequest(BaseModel):
-    """用户反馈请求"""
-    type: str = Field(...,
-        example="bug_report", description="反馈类型: bug_report/feature_request/other")
-    title: str = Field(..., min_length=1, max_length=100, example="登录问题", description="反馈标题")
-    content: str = Field(..., min_length=1, max_length=2000, example="无法通过微信登录", description="反馈内容")
-    contact_info: Optional[str] = Field(None, example="user@example.com", description="联系方式")
-
-
 # ===== 响应模型 =====
 
 class UpdateProfileResponse(BaseModel):
@@ -53,19 +44,6 @@ class UpdateProfileResponse(BaseModel):
     id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="用户ID")
     nickname: str = Field(..., example="张三", description="用户昵称")
     updated_fields: list[str] = Field(..., example=["nickname"], description="已更新的字段列表")
-
-
-class AvatarUploadResponse(BaseModel):
-    """头像上传响应"""
-    avatar_url: str = Field(..., example="https://example.com/avatars/550e8400-e29b-41d4-a716-446655440000.jpg", description="头像URL")
-    message: str = Field(..., example="头像上传成功（占位实现）", description="处理消息")
-
-
-class FeedbackSubmitResponse(BaseModel):
-    """反馈提交响应"""
-    feedback_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="反馈ID")
-    status: str = Field(..., example="pending", description="反馈状态")
-    message: str = Field(..., example="反馈已提交，我们会尽快处理", description="处理消息")
 
 
 class WelcomeGiftRewardItem(BaseModel):

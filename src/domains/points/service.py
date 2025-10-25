@@ -21,7 +21,7 @@ Points领域Service层
 
 import logging
 from datetime import datetime, timezone, date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
 from contextlib import contextmanager
 
@@ -29,6 +29,7 @@ from sqlmodel import Session, text, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from .models import PointsTransaction
+from src.utils.uuid_helpers import ensure_str
 
 
 class PointsService:
@@ -49,7 +50,7 @@ class PointsService:
         self.session = session
         self.logger = logging.getLogger(__name__)
 
-    def calculate_balance(self, user_id) -> int:
+    def calculate_balance(self, user_id: Union[str, UUID]) -> int:
         """
         计算用户积分余额
 
@@ -59,34 +60,35 @@ class PointsService:
         WHERE user_id = :user_id
 
         Args:
-            user_id (str): 用户ID
+            user_id (Union[str, UUID]): 用户ID，支持字符串和UUID对象
 
         Returns:
             int: 积分余额
         """
-        self.logger.info(f"Calculating balance for user {user_id}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"Calculating balance for user {user_id_str}")
 
         try:
             result = self.session.execute(
                 text("SELECT COALESCE(SUM(amount), 0) FROM points_transactions WHERE user_id = :user_id"),
-                {"user_id": str(user_id)}
+                {"user_id": user_id_str}
             ).scalar()
 
             balance = result or 0
-            self.logger.info(f"Balance calculated for user {user_id}: {balance}")
+            self.logger.info(f"Balance calculated for user {user_id_str}: {balance}")
 
             return balance
 
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error calculating balance for user {user_id}: {e}")
+            self.logger.error(f"Database error calculating balance for user {user_id_str}: {e}")
             raise
 
-    def get_balance(self, user_id) -> int:
+    def get_balance(self, user_id: Union[str, UUID]) -> int:
         """
         获取用户积分余额 (别名方法)
 
         Args:
-            user_id (str): 用户ID
+            user_id (Union[str, UUID]): 用户ID，支持字符串和UUID对象
 
         Returns:
             int: 积分余额
@@ -95,37 +97,34 @@ class PointsService:
 
     def add_points(
         self,
-        user_id,
+        user_id: Union[str, UUID],
         amount: int,
         source_type: str,
-        source_id: Optional[str] = None,
-        transaction_group: Optional[str] = None
-    ):
+        source_id: Optional[Union[str, UUID]] = None,
+        transaction_group: Optional[Union[str, UUID]] = None
+    ) -> PointsTransaction:
         """
         添加积分流水记录
 
         为用户的积分变动创建记录，支持不同来源类型和事务组。
 
         Args:
-            user_id (str): 用户ID
+            user_id (Union[str, UUID]): 用户ID，支持字符串和UUID对象
             amount (int): 积分数量，正数表示获得，负数表示消费
             source_type (str): 来源类型，如task_complete, top3_cost, lottery_points等
-            source_id (Optional[UUID]): 来源对象ID，如任务ID、配方ID等
-            transaction_group (Optional[str]): 事务组ID，用于关联同一操作的多个记录
+            source_id (Optional[Union[str, UUID]]): 来源对象ID，如任务ID、配方ID等
+            transaction_group (Optional[Union[str, UUID]]): 事务组ID，用于关联同一操作的多个记录
 
         Returns:
             PointsTransaction: 创建的积分记录
         """
-        import traceback
-
-        # 确保所有参数都是字符串类型，避免UUID的replace方法错误
-        user_id_str = str(user_id) if user_id else None
-        source_id_str = str(source_id) if source_id else None
-        transaction_group_str = str(transaction_group) if transaction_group else None
+        # 使用UUID工具确保类型安全
+        user_id_str = ensure_str(user_id)
+        source_id_str = ensure_str(source_id)
+        transaction_group_str = ensure_str(transaction_group)
 
         self.logger.info(f"Adding {amount} points for user {user_id_str}, source_type: {source_type}")
-        self.logger.info(f"source_id type: {type(source_id)}, value: {source_id}")
-        self.logger.info(f"transaction_group type: {type(transaction_group)}, value: {transaction_group}")
+        self.logger.info(f"source_id: {source_id_str}, transaction_group: {transaction_group_str}")
 
         try:
             transaction = PointsTransaction(
@@ -141,16 +140,16 @@ class PointsService:
             self.session.flush()  # 获取ID
             self.session.commit()  # 立即提交事务确保积分记录持久化
 
-            self.logger.info(f"Added {amount} points transaction for user {user_id}, transaction ID: {transaction.id}")
+            self.logger.info(f"Added {amount} points transaction for user {user_id_str}, transaction ID: {transaction.id}")
 
             return transaction
 
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error adding points for user {user_id}: {e}")
+            self.logger.error(f"Database error adding points for user {user_id_str}: {e}")
             self.session.rollback()
             raise
 
-    def get_statistics(self, user_id, start_date: Optional[date] = None, end_date: Optional[date] = None) -> List[Dict[str, Any]]:
+    def get_statistics(self, user_id: Union[str, UUID], start_date: Optional[date] = None, end_date: Optional[date] = None) -> List[Dict[str, Any]]:
         """
         获取用户积分统计
 
@@ -166,18 +165,19 @@ class PointsService:
         GROUP BY source_type
 
         Args:
-            user_id (str): 用户ID
+            user_id (Union[str, UUID]): 用户ID，支持字符串和UUID对象
             start_date (Optional[date]): 开始日期
             end_date (Optional[date]): 结束日期
 
         Returns:
             List[Dict[str, Any]]: 统计结果
         """
-        self.logger.info(f"Getting points statistics for user {user_id}, from {start_date} to {end_date}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"Getting points statistics for user {user_id_str}, from {start_date} to {end_date}")
 
         try:
             query_params = {
-                "user_id": str(user_id),
+                "user_id": user_id_str,
                 "start_date": start_date.isoformat() if start_date else None,
                 "end_date": end_date.isoformat() if end_date else None
             }
@@ -213,32 +213,33 @@ class PointsService:
                 for row in result
             ]
 
-            self.logger.info(f"Retrieved {len(statistics)} statistics entries for user {user_id}")
+            self.logger.info(f"Retrieved {len(statistics)} statistics entries for user {user_id_str}")
 
             return statistics
 
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error getting statistics for user {user_id}: {e}")
+            self.logger.error(f"Database error getting statistics for user {user_id_str}: {e}")
             raise
 
-    def get_transactions(self, user_id, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_transactions(self, user_id: Union[str, UUID], limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
         获取用户积分流水记录
 
         Args:
-            user_id (str): 用户ID
+            user_id (Union[str, UUID]): 用户ID，支持字符串和UUID对象
             limit (int): 限制数量
             offset (int): 偏移数量
 
         Returns:
             List[Dict[str, Any]]: 积分交易记录字典列表
         """
-        self.logger.info(f"Getting transactions for user {user_id}, limit: {limit}, offset: {offset}")
+        user_id_str = ensure_str(user_id)
+        self.logger.info(f"Getting transactions for user {user_id_str}, limit: {limit}, offset: {offset}")
 
         try:
             statement = (
                 select(PointsTransaction)
-                .where(PointsTransaction.user_id == str(user_id))
+                .where(PointsTransaction.user_id == user_id_str)
                 .order_by(PointsTransaction.created_at.desc())
                 .limit(limit)
                 .offset(offset)
@@ -258,12 +259,12 @@ class PointsService:
                     "created_at": transaction.created_at
                 })
 
-            self.logger.info(f"Retrieved {len(transactions)} transactions for user {user_id}")
+            self.logger.info(f"Retrieved {len(transactions)} transactions for user {user_id_str}")
 
             return transactions
 
         except SQLAlchemyError as e:
-            self.logger.error(f"Database error getting transactions for user {user_id}: {e}")
+            self.logger.error(f"Database error getting transactions for user {user_id_str}: {e}")
             raise
 
     @contextmanager

@@ -1,10 +1,13 @@
 """Top3领域Service层"""
 
+import logging
 from datetime import date, datetime
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from sqlmodel import Session
+
+logger = logging.getLogger(__name__)
 
 from .repository import Top3Repository
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
@@ -81,11 +84,13 @@ class Top3Service:
                 # 旧格式：直接是task_id字符串
                 task_id_strings.append(item)
 
+        # 直接返回符合Top3Response schema的字典
         return {
             "date": top3.top_date.isoformat(),
             "task_ids": task_id_strings,
             "points_consumed": top3.points_consumed,
-            "remaining_balance": remaining_balance  # 新增字段
+            "remaining_balance": remaining_balance,
+            "created_at": top3.created_at.isoformat() if hasattr(top3, 'created_at') else None
         }
 
     def get_user_top3(self, user_id: UUID, target_date: date) -> Optional[Dict[str, Any]]:

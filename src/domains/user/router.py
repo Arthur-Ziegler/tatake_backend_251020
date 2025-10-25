@@ -3,25 +3,22 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 
 from .schemas import (
     UserProfileResponse,
     UpdateProfileRequest,
-    FeedbackRequest,
     UpdateProfileResponse,
-    AvatarUploadResponse,
-    FeedbackSubmitResponse,
     WelcomeGiftResponse,
     WelcomeGiftHistoryResponse,
-    UnifiedResponse
+    UnifiedResponse,
+    WelcomeGiftHistoryItem  # 添加这个missing的import
 )
-from .database import get_user_session
+from src.database import SessionDep
 
 from src.api.dependencies import get_current_user_id
 from src.domains.auth.models import Auth
-from src.database import get_db_session
 from src.domains.points.service import PointsService
 from src.domains.reward.welcome_gift_service import WelcomeGiftService
 
@@ -33,7 +30,7 @@ router = APIRouter(prefix="/user", tags=["用户管理"])
 @router.get("/profile", response_model=UnifiedResponse[UserProfileResponse], summary="获取用户信息")
 async def get_user_profile(
     user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_user_session)
+    session: Session = Depends(SessionDep)
 ) -> UnifiedResponse[UserProfileResponse]:
     """获取当前用户基本信息"""
     try:
@@ -74,7 +71,7 @@ async def get_user_profile(
 async def update_user_profile(
     request: UpdateProfileRequest,
     user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_user_session)
+    session: Session = Depends(SessionDep)
 ) -> UnifiedResponse[UpdateProfileResponse]:
     """更新用户基本信息"""
     try:
@@ -117,87 +114,12 @@ async def update_user_profile(
         )
 
 
-@router.post("/avatar", response_model=UnifiedResponse[AvatarUploadResponse], summary="上传用户头像")
-async def upload_avatar(
-    file: UploadFile = File(...),
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_user_session)
-) -> UnifiedResponse[AvatarUploadResponse]:
-    """
-    上传用户头像
-
-    注：当前为占位实现，实际需要集成OSS存储
-    """
-    try:
-        # TODO: 实现文件上传到OSS
-        # 当前返回占位URL
-        avatar_url = f"https://example.com/avatars/{user_id}.jpg"
-
-        user = session.get(Auth, user_id)
-        if user:
-            user.avatar = avatar_url
-            session.add(user)
-            session.commit()
-
-        # 构造头像上传响应数据模型
-        avatar_response = AvatarUploadResponse(
-            avatar_url=avatar_url,
-            message="头像上传成功（占位实现）"
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=avatar_response,
-            message="success"
-        )
-    except Exception as e:
-        logger.error(f"上传头像失败: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="上传头像失败"
-        )
-
-
-@router.post("/feedback", response_model=UnifiedResponse[FeedbackSubmitResponse], summary="提交用户反馈")
-async def submit_feedback(
-    request: FeedbackRequest,
-    user_id: UUID = Depends(get_current_user_id),
-    session: Session = Depends(get_user_session)
-) -> UnifiedResponse[FeedbackSubmitResponse]:
-    """
-    提交用户反馈
-
-    注：当前为占位实现，实际需要存储到数据库
-    """
-    try:
-        # TODO: 创建Feedback表并存储反馈
-        logger.info(f"用户反馈: user_id={user_id}, type={request.type}, title={request.title}")
-
-        # 构造反馈提交响应数据模型
-        feedback_response = FeedbackSubmitResponse(
-            feedback_id=str(user_id),  # 占位ID
-            status="pending",
-            message="反馈已提交，我们会尽快处理"
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=feedback_response,
-            message="success"
-        )
-    except Exception as e:
-        logger.error(f"提交反馈失败: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="提交反馈失败"
-        )
 
 
 @router.post("/welcome-gift/claim", response_model=UnifiedResponse[WelcomeGiftResponse], summary="领取欢迎礼包")
 def claim_welcome_gift(
-    user_id: UUID = Depends(get_current_user_id)
+    user_id: UUID = Depends(get_current_user_id),
+    session: Session = Depends(SessionDep)
 ) -> UnifiedResponse[WelcomeGiftResponse]:
     """
     领取用户欢迎礼包
@@ -214,42 +136,35 @@ def claim_welcome_gift(
     - 事务性发放
     """
     try:
-        # 获取数据库会话和积分服务
-        session_gen = get_db_session()
-        session = next(session_gen)
-        try:
-            # 初始化服务
-            points_service = PointsService(session)
-            welcome_gift_service = WelcomeGiftService(session, points_service)
+        # 初始化服务
+        points_service = PointsService(session)
+        welcome_gift_service = WelcomeGiftService(session, points_service)
 
-            # 领取欢迎礼包
-            result = welcome_gift_service.claim_welcome_gift(str(user_id))
+        # 领取欢迎礼包
+        result = welcome_gift_service.claim_welcome_gift(str(user_id))
 
-            # 构建响应数据
-            rewards_granted = [
-                {
-                    "name": reward["name"],
-                    "quantity": reward["quantity"],
-                    "description": reward["description"]
-                }
-                for reward in result["rewards_granted"]
-            ]
+        # 构建响应数据
+        rewards_granted = [
+            {
+                "name": reward["name"],
+                "quantity": reward["quantity"],
+                "description": reward["description"]
+            }
+            for reward in result["rewards_granted"]
+        ]
 
-            welcome_gift_response = WelcomeGiftResponse(
-                points_granted=result["points_granted"],
-                rewards_granted=rewards_granted,
-                transaction_group=result["transaction_group"],
-                granted_at=result["granted_at"]
-            )
+        welcome_gift_response = WelcomeGiftResponse(
+            points_granted=result["points_granted"],
+            rewards_granted=rewards_granted,
+            transaction_group=result["transaction_group"],
+            granted_at=result["granted_at"]
+        )
 
-            return UnifiedResponse(
-                code=200,
-                data=welcome_gift_response,
-                message="success"
-            )
-
-        finally:
-            session.close()
+        return UnifiedResponse(
+            code=200,
+            data=welcome_gift_response,
+            message="success"
+        )
 
     except Exception as e:
         logger.error(f"领取欢迎礼包失败: user_id={user_id}, error={str(e)}")
@@ -263,7 +178,8 @@ def claim_welcome_gift(
 @router.get("/welcome-gift/history", response_model=UnifiedResponse[WelcomeGiftHistoryResponse], summary="获取欢迎礼包历史")
 def get_welcome_gift_history(
     user_id: UUID = Depends(get_current_user_id),
-    limit: int = 10
+    limit: int = 10,
+    session: Session = Depends(SessionDep)
 ) -> UnifiedResponse[WelcomeGiftHistoryResponse]:
     """
     获取用户欢迎礼包领取历史
@@ -273,42 +189,35 @@ def get_welcome_gift_history(
         limit: 返回记录数量限制，默认10条
     """
     try:
-        # 获取数据库会话和积分服务
-        session_gen = get_db_session()
-        session = next(session_gen)
-        try:
-            # 初始化服务
-            points_service = PointsService(session)
-            welcome_gift_service = WelcomeGiftService(session, points_service)
+        # 初始化服务
+        points_service = PointsService(session)
+        welcome_gift_service = WelcomeGiftService(session, points_service)
 
-            # 获取历史记录
-            history = welcome_gift_service.get_user_gift_history(str(user_id), limit)
+        # 获取历史记录
+        history = welcome_gift_service.get_user_gift_history(str(user_id), limit)
 
-            # 构建响应数据
-            history_items = [
-                WelcomeGiftHistoryItem(
-                    transaction_group=item["transaction_group"],
-                    granted_at=item["granted_at"],
-                    points_granted=item["points_granted"],
-                    rewards_count=item["rewards_count"],
-                    reward_items=item["reward_items"]
-                )
-                for item in history
-            ]
-
-            history_response = WelcomeGiftHistoryResponse(
-                history=history_items,
-                total_count=len(history_items)
+        # 构建响应数据
+        history_items = [
+            WelcomeGiftHistoryItem(
+                transaction_group=item["transaction_group"],
+                granted_at=item["granted_at"],
+                points_granted=item["points_granted"],
+                rewards_count=item["rewards_count"],
+                reward_items=item["reward_items"]
             )
+            for item in history
+        ]
 
-            return UnifiedResponse(
-                code=200,
-                data=history_response,
-                message="success"
-            )
+        history_response = WelcomeGiftHistoryResponse(
+            history=history_items,
+            total_count=len(history_items)
+        )
 
-        finally:
-            session.close()
+        return UnifiedResponse(
+            code=200,
+            data=history_response,
+            message="success"
+        )
 
     except Exception as e:
         logger.error(f"获取欢迎礼包历史失败: user_id={user_id}, error={str(e)}")

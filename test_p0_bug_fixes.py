@@ -18,7 +18,7 @@ import uuid
 from typing import Dict, Any, Tuple
 
 # API基础配置
-BASE_URL = "http://localhost:8003"
+BASE_URL = "http://localhost:8005"
 API_BASE = f"{BASE_URL}/"
 
 class TestP0BugFixes:
