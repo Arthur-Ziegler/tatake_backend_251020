@@ -58,7 +58,7 @@ class PointsTransaction(BaseModel, table=True):
     source_type: str = Field(
         ...,
         index=True,
-        description="积分来源类型：task_complete | task_complete_top3 | top3_cost | lottery_points | recharge"
+        description="积分来源类型：task_complete | task_complete_top3 | top3_cost | lottery_points | recharge | welcome_gift"
     )
 
     source_id: Optional[str] = Field(

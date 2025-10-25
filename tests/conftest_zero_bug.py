@@ -31,7 +31,7 @@ from tests.factories import (
 
 # 项目导入
 from src.api.main import app
-from src.database import get_db
+from src.database import get_db_session
 from src.domains.auth.models import Auth
 from src.domains.task.models import Task
 from src.domains.reward.models import Reward, UserReward

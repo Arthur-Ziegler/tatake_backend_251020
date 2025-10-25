@@ -13,6 +13,7 @@ Pytest配置和共享fixtures
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
 import requests
 import json
@@ -64,6 +65,18 @@ def client() -> Generator[TestClient, None, None]:
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """
     异步HTTP客户端fixture
+
+    提供用于异步测试的httpx AsyncClient，使用ASGITransport
+    直接与FastAPI应用交互，无需运行服务器。
+    """
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+
+@pytest_asyncio.fixture
+async def test_client() -> AsyncGenerator[AsyncClient, None]:
+    """
+    测试客户端fixture（别名async_client，用于兼容现有测试）
 
     提供用于异步测试的httpx AsyncClient，使用ASGITransport
     直接与FastAPI应用交互，无需运行服务器。
@@ -386,6 +399,40 @@ def get_test_user_token() -> str:
 
     # 如果都失败，返回空字符串（某些测试可能不需要认证）
     return ""
+
+
+@pytest_asyncio.fixture
+async def guest_user(test_client: AsyncClient) -> dict:
+    """创建游客用户"""
+    response = await test_client.post("/api/v3/auth/guest-init")
+    assert response.status_code == 200
+    data = response.json()
+    return {
+        "user_id": data["data"]["user_id"],
+        "access_token": data["data"]["access_token"],
+        "refresh_token": data["data"]["refresh_token"]
+    }
+
+
+@pytest_asyncio.fixture
+async def registered_user(test_client: AsyncClient) -> dict:
+    """创建注册用户"""
+    # 先创建游客
+    guest_data = await guest_user(test_client)
+    # 模拟微信注册
+    register_data = {
+        "wechat_openid": f"test_openid_{id(guest_data)}",
+        "nickname": "测试用户"
+    }
+    headers = {"Authorization": f"Bearer {guest_data['access_token']}"}
+    response = await test_client.post("/api/v3/auth/wechat-register", json=register_data, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    return {
+        "user_id": data["data"]["user_id"],
+        "access_token": data["data"]["access_token"],
+        "wechat_openid": register_data["wechat_openid"]
+    }
 
 
 # 测试标记

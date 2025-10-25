@@ -439,44 +439,49 @@ async def get_task_list(
 @router.post("/{task_id}/complete",
               response_model=UnifiedResponse[CompleteTaskResponse],
               summary="完成任务",
-              description="完成任务并触发奖励分发。支持普通任务和Top3任务，奖励机制不同。"
+              description="完成任务并触发奖励分发。支持普通任务和Top3任务，奖励机制不同。",
+              responses={
+                  200: {
+                      "description": "任务完成成功",
+                      "content": {
+                          "application/json": {
+                              "examples": {
+                                  "NormalTaskCompletion": {
+                                      "summary": "普通任务完成",
+                                      "description": "完成普通任务，获得2积分基础奖励",
+                                      "value": {
+                                          "code": 200,
+                                          "data": {
+                                              "task": {"status": "completed"},
+                                              "completion_result": {"success": True},
+                                              "message": "任务完成成功"
+                                          }
+                                      }
+                                  },
+                                  "Top3TaskCompletion": {
+                                      "summary": "Top3任务完成",
+                                      "description": "完成Top3任务，有概率获得100积分或随机奖品",
+                                      "value": {
+                                          "code": 200,
+                                          "data": {
+                                              "task": {"status": "completed"},
+                                              "completion_result": {"success": True},
+                                              "lottery_result": {"reward_type": "points", "amount": 100},
+                                              "message": "恭喜！获得100积分奖励"
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
           )
 async def complete_task(
     task_id: UUID,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id),
-    request: CompleteTaskRequest = Body(..., examples={
-        "NormalTaskCompletion": {
-            "summary": "普通任务完成",
-            "description": "完成普通任务，获得2积分基础奖励",
-            "value": {
-                "mood_feedback": {
-                    "comment": "任务比较简单，顺利完成",
-                    "difficulty": "easy"
-                }
-            }
-        },
-        "Top3TaskCompletion": {
-            "summary": "Top3任务完成",
-            "description": "完成Top3任务，有概率获得100积分或随机奖品",
-            "value": {
-                "mood_feedback": {
-                    "comment": "挑战性任务，很有成就感",
-                    "difficulty": "hard"
-                }
-            }
-        },
-        "TaskWithFeedback": {
-            "summary": "带详细反馈的任务完成",
-            "description": "完成任务并提供详细的情绪和难度反馈",
-            "value": {
-                "mood_feedback": {
-                    "comment": "这个任务让我学到了很多新知识，虽然有些挑战但最终还是完成了",
-                    "difficulty": "medium"
-                }
-            }
-        }
-    })
+    request: Optional[CompleteTaskRequest] = Body(None)  # 修复：请求体可选，支持空请求
 ) -> UnifiedResponse[CompleteTaskResponse]:
     """
     完成任务并触发奖励分发

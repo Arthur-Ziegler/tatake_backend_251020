@@ -205,7 +205,7 @@ class RewardTransaction(BaseModel, table=True):
     source_type: str = Field(
         ...,
         max_length=50,
-        description="来源类型：top3_lottery | recipe_consume | recipe_produce"
+        description="来源类型：top3_lottery | recipe_consume | recipe_produce | welcome_gift"
     )
     source_id: Optional[str] = Field(
         default=None,

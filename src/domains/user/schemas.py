@@ -66,3 +66,33 @@ class FeedbackSubmitResponse(BaseModel):
     feedback_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="反馈ID")
     status: str = Field(..., example="pending", description="反馈状态")
     message: str = Field(..., example="反馈已提交，我们会尽快处理", description="处理消息")
+
+
+class WelcomeGiftRewardItem(BaseModel):
+    """欢迎礼包奖励物品"""
+    name: str = Field(..., example="积分加成卡", description="奖励名称")
+    quantity: int = Field(..., example=3, description="奖励数量")
+    description: str = Field(..., example="+50%积分，有效期1小时", description="奖励描述")
+
+
+class WelcomeGiftResponse(BaseModel):
+    """欢迎礼包领取响应"""
+    points_granted: int = Field(..., example=1000, description="发放的积分数")
+    rewards_granted: list[WelcomeGiftRewardItem] = Field(..., description="发放的奖励物品列表")
+    transaction_group: str = Field(..., example="welcome_gift_user123_abc12345", description="事务组ID")
+    granted_at: str = Field(..., example="2025-01-20T15:45:00Z", description="发放时间")
+
+
+class WelcomeGiftHistoryItem(BaseModel):
+    """欢迎礼包历史记录项"""
+    transaction_group: str = Field(..., example="welcome_gift_user123_abc12345", description="事务组ID")
+    granted_at: str = Field(..., example="2025-01-20T15:45:00Z", description="发放时间")
+    points_granted: int = Field(..., example=1000, description="发放的积分数")
+    rewards_count: int = Field(..., example=18, description="奖励物品总数")
+    reward_items: list[dict] = Field(..., description="奖励物品详情")
+
+
+class WelcomeGiftHistoryResponse(BaseModel):
+    """欢迎礼包历史响应"""
+    history: list[WelcomeGiftHistoryItem] = Field(..., description="领取历史列表")
+    total_count: int = Field(..., example=5, description="总领取次数")

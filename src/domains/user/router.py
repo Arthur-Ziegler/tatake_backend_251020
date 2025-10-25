@@ -13,12 +13,17 @@ from .schemas import (
     UpdateProfileResponse,
     AvatarUploadResponse,
     FeedbackSubmitResponse,
+    WelcomeGiftResponse,
+    WelcomeGiftHistoryResponse,
     UnifiedResponse
 )
 from .database import get_user_session
 
 from src.api.dependencies import get_current_user_id
 from src.domains.auth.models import Auth
+from src.database import get_db_session
+from src.domains.points.service import PointsService
+from src.domains.reward.welcome_gift_service import WelcomeGiftService
 
 logger = logging.getLogger(__name__)
 
@@ -187,4 +192,128 @@ async def submit_feedback(
             code=500,
             data=None,
             message="提交反馈失败"
+        )
+
+
+@router.post("/welcome-gift/claim", response_model=UnifiedResponse[WelcomeGiftResponse], summary="领取欢迎礼包")
+def claim_welcome_gift(
+    user_id: UUID = Depends(get_current_user_id)
+) -> UnifiedResponse[WelcomeGiftResponse]:
+    """
+    领取用户欢迎礼包
+
+    发放内容：
+    - 1000积分
+    - 积分加成卡x3（+50%积分，有效期1小时）
+    - 专注道具x10（立即完成专注会话）
+    - 时间管理券x5（延长任务截止时间1天）
+
+    特性：
+    - 可重复领取，无防刷限制
+    - 完整流水记录
+    - 事务性发放
+    """
+    try:
+        # 获取数据库会话和积分服务
+        session_gen = get_db_session()
+        session = next(session_gen)
+        try:
+            # 初始化服务
+            points_service = PointsService(session)
+            welcome_gift_service = WelcomeGiftService(session, points_service)
+
+            # 领取欢迎礼包
+            result = welcome_gift_service.claim_welcome_gift(str(user_id))
+
+            # 构建响应数据
+            rewards_granted = [
+                {
+                    "name": reward["name"],
+                    "quantity": reward["quantity"],
+                    "description": reward["description"]
+                }
+                for reward in result["rewards_granted"]
+            ]
+
+            welcome_gift_response = WelcomeGiftResponse(
+                points_granted=result["points_granted"],
+                rewards_granted=rewards_granted,
+                transaction_group=result["transaction_group"],
+                granted_at=result["granted_at"]
+            )
+
+            return UnifiedResponse(
+                code=200,
+                data=welcome_gift_response,
+                message="success"
+            )
+
+        finally:
+            session.close()
+
+    except Exception as e:
+        logger.error(f"领取欢迎礼包失败: user_id={user_id}, error={str(e)}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"领取欢迎礼包失败: {str(e)}"
+        )
+
+
+@router.get("/welcome-gift/history", response_model=UnifiedResponse[WelcomeGiftHistoryResponse], summary="获取欢迎礼包历史")
+def get_welcome_gift_history(
+    user_id: UUID = Depends(get_current_user_id),
+    limit: int = 10
+) -> UnifiedResponse[WelcomeGiftHistoryResponse]:
+    """
+    获取用户欢迎礼包领取历史
+
+    Args:
+        user_id: 用户ID
+        limit: 返回记录数量限制，默认10条
+    """
+    try:
+        # 获取数据库会话和积分服务
+        session_gen = get_db_session()
+        session = next(session_gen)
+        try:
+            # 初始化服务
+            points_service = PointsService(session)
+            welcome_gift_service = WelcomeGiftService(session, points_service)
+
+            # 获取历史记录
+            history = welcome_gift_service.get_user_gift_history(str(user_id), limit)
+
+            # 构建响应数据
+            history_items = [
+                WelcomeGiftHistoryItem(
+                    transaction_group=item["transaction_group"],
+                    granted_at=item["granted_at"],
+                    points_granted=item["points_granted"],
+                    rewards_count=item["rewards_count"],
+                    reward_items=item["reward_items"]
+                )
+                for item in history
+            ]
+
+            history_response = WelcomeGiftHistoryResponse(
+                history=history_items,
+                total_count=len(history_items)
+            )
+
+            return UnifiedResponse(
+                code=200,
+                data=history_response,
+                message="success"
+            )
+
+        finally:
+            session.close()
+
+    except Exception as e:
+        logger.error(f"获取欢迎礼包历史失败: user_id={user_id}, error={str(e)}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"获取欢迎礼包历史失败: {str(e)}"
         )

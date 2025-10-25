@@ -40,12 +40,12 @@ class Top3Service:
         target_date = date.fromisoformat(request.date)
 
         # 检查是否已设置
-        existing = self.top3_repo.get_by_user_and_date(user_id, target_date)
+        existing = self.top3_repo.get_by_user_and_date(str(user_id), target_date)
         if existing:
             raise Top3AlreadyExistsException(request.date)
 
         # 检查积分（使用PointsService获取实时余额）
-        current_balance = self.points_service.get_balance(user_id)
+        current_balance = self.points_service.get_balance(str(user_id))  # 显式转换UUID->str
         if current_balance < 300:
             raise InsufficientPointsException(300, current_balance)
 
@@ -60,7 +60,7 @@ class Top3Service:
 
         # 扣除积分（使用PointsService）
         self.points_service.add_points(
-            user_id=user_id,
+            user_id=str(user_id),  # 显式转换UUID->str，TODO(Phase 2): 统一UUID类型系统
             amount=-300,  # 负数表示扣除
             source_type="top3_cost"
         )
@@ -90,12 +90,12 @@ class Top3Service:
 
     def get_user_top3(self, user_id: UUID, target_date: date) -> Optional[Dict[str, Any]]:
         """获取用户指定日期的Top3记录"""
-        return self.top3_repo.get_by_user_and_date(user_id, target_date)
+        return self.top3_repo.get_by_user_and_date(str(user_id), target_date)  # 显式转换UUID->str
 
     def get_top3(self, user_id: UUID, target_date_str: str) -> Dict[str, Any]:
         """获取指定日期的Top3"""
         target_date = date.fromisoformat(target_date_str)
-        top3 = self.top3_repo.get_by_user_and_date(user_id, target_date)
+        top3 = self.top3_repo.get_by_user_and_date(str(user_id), target_date)  # 显式转换UUID->str
 
         if not top3:
             # 返回空的Top3响应，而不是抛出异常
@@ -106,11 +106,11 @@ class Top3Service:
                 "created_at": None
             }
 
-        # 确保top3是TaskTop3对象，如果是字典则直接返回
+        # 确保top3是TaskTop3对象，如果是字典则处理并返回
         if isinstance(top3, dict):
-            # 如果已经是字典格式，直接返回
+            # 如果是字典格式，需要提取task_ids字段
             logger.warning(f"Repository返回了字典而不是模型对象: {type(top3)}")
-            return top3
+            return top3  # 直接返回字典，Top3Response schema应该能处理
 
         # 提取task_id字符串列表，处理两种数据格式
         task_id_strings = []
@@ -145,7 +145,7 @@ class Top3Service:
         today = date.today()
 
         # 获取用户今日的Top3记录
-        today_top3 = self.top3_repo.get_by_user_and_date(UUID(user_id), today)
+        today_top3 = self.top3_repo.get_by_user_and_date(str(user_id), today)
 
         # 如果今日没有设置Top3，返回False
         if not today_top3:

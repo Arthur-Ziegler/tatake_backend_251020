@@ -116,12 +116,12 @@ async def exchange_reward_with_points(
 @points_router.get("/my-points", summary="获取积分余额")
 async def get_points_balance_my_points(
     session: SessionDep,
-    user_id: str = Query(..., description="用户ID")
+    user_id: UUID = Depends(get_current_user_id)
 ):
     """获取当前用户积分余额 - v3 API路径"""
     try:
         points_service = PointsService(session)
-        balance = points_service.get_balance(user_id)
+        balance = points_service.get_balance(str(user_id))
 
         # 计算统计数据
         transactions = points_service.get_transactions(user_id, limit=1000)
@@ -142,39 +142,7 @@ async def get_points_balance_my_points(
         raise HTTPException(status_code=500, detail="获取积分余额失败")
 
 
-@points_router.get("/balance", summary="获取积分余额")
-async def get_points_balance(
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
-):
-    """获取当前用户积分余额"""
-    try:
-        points_service = PointsService(session)
-        balance = points_service.get_balance(str(user_id))
-
-        # 计算统计数据
-        transactions = points_service.get_transactions(str(user_id), limit=1000)
-        total_earned = sum(t.amount for t in transactions if t.amount > 0)
-        total_spent = abs(sum(t.amount for t in transactions if t.amount < 0))
-
-        balance_data = PointsBalanceResponse(
-            current_balance=balance,
-            total_earned=total_earned,
-            total_spent=total_spent
-        )
-
-        # 使用标准响应格式
-        from src.api.response_utils import StandardResponse
-        return StandardResponse.success(
-            data=balance_data.dict(),
-            message="获取积分余额成功"
-        )
-    except Exception as e:
-        logger.error(f"获取积分余额失败: {e}")
-        from src.api.response_utils import StandardResponse
-        return StandardResponse.server_error("获取积分余额失败")
-
-
+  
 @points_router.get("/transactions", summary="获取积分流水")
 async def get_points_transactions(
     session: SessionDep,

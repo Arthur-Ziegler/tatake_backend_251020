@@ -116,17 +116,24 @@ class PointsService:
         Returns:
             PointsTransaction: 创建的积分记录
         """
-        self.logger.info(f"Adding {amount} points for user {user_id}, source_type: {source_type}")
+        import traceback
 
-        # 不限制积分数量，允许正数（获得）和负数（消费）
+        # 确保所有参数都是字符串类型，避免UUID的replace方法错误
+        user_id_str = str(user_id) if user_id else None
+        source_id_str = str(source_id) if source_id else None
+        transaction_group_str = str(transaction_group) if transaction_group else None
+
+        self.logger.info(f"Adding {amount} points for user {user_id_str}, source_type: {source_type}")
+        self.logger.info(f"source_id type: {type(source_id)}, value: {source_id}")
+        self.logger.info(f"transaction_group type: {type(transaction_group)}, value: {transaction_group}")
 
         try:
             transaction = PointsTransaction(
-                user_id=str(user_id),
+                user_id=user_id_str,
                 amount=amount,
                 source_type=source_type,
-                source_id=str(source_id) if source_id else None,
-                transaction_group=transaction_group,
+                source_id=source_id_str,
+                transaction_group=transaction_group_str,
                 created_at=datetime.now(timezone.utc)
             )
 

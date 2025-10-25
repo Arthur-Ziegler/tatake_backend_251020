@@ -4,7 +4,7 @@ API响应格式统一测试
 验证所有API都返回标准格式：{"code":200,"message":"...","data":{...}}。
 """
 
-from ..conftest import (
+from tests.system.conftest import (
     print_test_header, print_success, print_error,
     verify_standard_response_format, authenticated_client
 )

@@ -23,7 +23,7 @@ from unittest.mock import Mock, patch, MagicMock
 from uuid import uuid4
 
 # 导入测试基础设施
-from .test_chat_tools_infrastructure import (
+from tests.domains.chat.test_chat_tools_infrastructure import (
     ToolCallLogger,
     MockToolServiceContext,
     ToolResponseValidator,
