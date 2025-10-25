@@ -84,38 +84,34 @@ class TestChatService:
         title = "测试会话"
 
         # 模拟数据库操作
-        with patch.object(service_with_mock_db, '_create_session_with_langgraph') as mock_create:
-            with patch('src.domains.chat.service.format_welcome_message') as mock_welcome:
-                mock_create.return_value = None
-                mock_welcome.return_value = "欢迎来到测试会话！"
+        with patch.object(service_with_mock_db, '_create_session_record_directly') as mock_create:
+            mock_create.return_value = None
 
-                result = service_with_mock_db.create_session(user_id, title)
+            result = service_with_mock_db.create_session(user_id, title)
 
-                assert result["session_id"] is not None
-                assert result["title"] == title
-                assert result["status"] == "created"
-                assert "welcome_message" in result
-                assert "created_at" in result
-                mock_create.assert_called_once()
+            assert result["session_id"] is not None
+            assert result["title"] == title
+            assert result["status"] == "created"
+            assert "welcome_message" in result
+            assert "created_at" in result
+            mock_create.assert_called_once_with(user_id, result["session_id"], title)
 
     def test_create_session_with_default_title(self, service_with_mock_db):
         """测试使用默认标题创建会话"""
         user_id = str(uuid4())
 
-        with patch.object(service_with_mock_db, '_create_session_with_langgraph') as mock_create:
-            with patch('src.domains.chat.service.format_welcome_message') as mock_welcome:
-                mock_create.return_value = None
-                mock_welcome.return_value = "欢迎来到新会话！"
+        with patch.object(service_with_mock_db, '_create_session_record_directly') as mock_create:
+            mock_create.return_value = None
 
-                result = service_with_mock_db.create_session(user_id)
+            result = service_with_mock_db.create_session(user_id)
 
-                assert result["title"] == "新会话"
+            assert result["title"] == "新会话"
 
     def test_create_session_failure(self, service_with_mock_db):
         """测试创建会话失败"""
         user_id = str(uuid4())
 
-        with patch.object(service_with_mock_db, '_create_session_with_langgraph') as mock_create:
+        with patch.object(service_with_mock_db, '_create_session_record_directly') as mock_create:
             mock_create.side_effect = Exception("数据库连接失败")
 
             with pytest.raises(Exception) as exc_info:
@@ -534,18 +530,27 @@ class TestChatService:
                     mock_conn.commit.assert_called()
                     mock_conn.close.assert_called()
 
-    def test_create_session_with_langgraph_fallback(self, service_with_mock_db):
-        """测试使用LangGraph创建会话作为回退"""
+    def test_create_session_record_directly(self, service_with_mock_db):
+        """测试直接创建会话记录"""
         user_id = str(uuid4())
         session_id = str(uuid4())
-        title = "LangGraph创建的会话"
+        title = "直接创建的会话"
 
-        with patch.object(service_with_mock_db, '_with_checkpointer') as mock_with_checkpointer:
-            mock_with_checkpointer.return_value = {"messages": []}
+        with patch.object(service_with_mock_db, '_ensure_database_initialized') as mock_ensure:
+            with patch('src.domains.chat.service.get_chat_database_path') as mock_db_path:
+                with patch('sqlite3.connect') as mock_connect:
+                    # 模拟数据库连接和操作
+                    mock_conn = Mock()
+                    mock_cursor = Mock()
+                    mock_connect.return_value = mock_conn
+                    mock_conn.cursor.return_value = mock_cursor
+                    mock_db_path.return_value = "/test/path"
 
-            service_with_mock_db._create_session_with_langgraph(user_id, session_id, title)
+                    service_with_mock_db._create_session_record_directly(user_id, session_id, title)
 
-            mock_with_checkpointer.assert_called_once()
+                    mock_ensure.assert_called_once()
+                    mock_connect.assert_called_once_with("/test/path")
+                    mock_cursor.execute.assert_called_once()
 
     def test_ensure_database_initialized(self, service_with_mock_db):
         """测试确保数据库初始化"""

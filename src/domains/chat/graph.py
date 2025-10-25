@@ -257,24 +257,18 @@ class ChatGraph:
                 max_tokens=1000
             )
 
-            # 绑定工具 - 只对支持工具调用的模型绑定
-            if "gpt" in model_name.lower() or "openai" in model_name.lower():
-                try:
-                    # 绑定所有8个工具
-                    all_tools = [
-                        sesame_opener,  # 基础工具
-                        query_tasks, get_task_detail,  # 任务查询工具
-                        create_task, update_task, delete_task,  # 任务CRUD工具
-                        search_tasks,  # 任务搜索工具
-                        batch_create_subtasks  # 批量操作工具
-                    ]
-                    model = model.bind_tools(all_tools)
-                    logger.info(f"✅ 模型创建成功（带8个工具）: {model_name} @ {base_url}")
-                except Exception as tool_error:
-                    logger.warning(f"⚠️ 工具绑定失败，使用不带工具的模型: {tool_error}")
-                    logger.info(f"📝 模型创建成功（不带工具）: {model_name} @ {base_url}")
-            else:
-                logger.info(f"📝 模型 {model_name} 可能不支持工具调用，使用基础模型")
+            # 简化工具绑定策略 - 总是执行bind_tools，失败抛异常
+            all_tools = [
+                sesame_opener,  # 基础工具
+                query_tasks, get_task_detail,  # 任务查询工具
+                create_task, update_task, delete_task,  # 任务CRUD工具
+                search_tasks,  # 任务搜索工具
+                batch_create_subtasks  # 批量操作工具
+            ]
+
+            # 总是绑定工具，失败直接抛异常
+            model = model.bind_tools(all_tools)
+            logger.info(f"✅ 模型创建成功（绑定{len(all_tools)}个工具）: {model_name} @ {base_url}")
 
             return model
 

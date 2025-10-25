@@ -93,12 +93,13 @@ class ChatState(MessagesState):
     注意：保持简单，只添加必要字段，避免过度复杂化。
     """
 
-    # 用户和会话信息
-    user_id: Optional[str] = Field(default=None, description="当前用户ID")
-    session_id: Optional[str] = Field(default=None, description="当前会话ID")
+    # 用户和会话信息 - 改为必填字段
+    user_id: str = Field(..., description="当前用户ID")
+    session_id: str = Field(..., description="当前会话ID")
 
-    # 会话元数据
-    session_title: Optional[str] = Field(default=None, description="会话标题")
+    # 会话元数据 - 增加必填字段和创建时间
+    session_title: str = Field(default="新会话", description="会话标题")
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="创建时间（UTC ISO格式）")
 
     def add_human_message(self, content: str) -> None:
         """
@@ -195,14 +196,14 @@ class ToolCallResult(BaseModel):
 
 
 # 便捷函数
-def create_chat_state(user_id: str, session_id: str, title: Optional[str] = None) -> ChatState:
+def create_chat_state(user_id: str, session_id: str, title: str = "新会话") -> ChatState:
     """
     创建新的聊天状态
 
     Args:
         user_id: 用户ID
         session_id: 会话ID
-        title: 会话标题（可选）
+        title: 会话标题（默认"新会话"）
 
     Returns:
         新的ChatState实例
@@ -211,7 +212,8 @@ def create_chat_state(user_id: str, session_id: str, title: Optional[str] = None
         messages=[],
         user_id=user_id,
         session_id=session_id,
-        session_title=title
+        session_title=title,
+        created_at=datetime.now(timezone.utc).isoformat()
     )
 
 

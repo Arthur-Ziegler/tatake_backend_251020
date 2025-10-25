@@ -54,11 +54,27 @@ class ChatService:
         """初始化聊天服务"""
         self.db_manager = chat_db_manager
         self._store = self.db_manager.get_store()
+        self._graph = None  # Graph缓存实例
+
+    def _get_or_create_graph(self):
+        """
+        获取或创建聊天图实例（每次都创建新的）
+
+        由于checkpointer需要正确使用上下文管理器，每次都创建新的graph实例
+        以避免checkpointer生命周期管理问题。
+
+        Returns:
+            ChatGraph: 聊天图实例
+        """
+        logger.debug("创建新的Graph实例")
+        # 每次都创建新的graph实例，确保checkpointer正确管理
+        from src.domains.chat.database import create_chat_checkpointer
+        checkpointer = create_chat_checkpointer()
+        return create_chat_graph(checkpointer, self._store)
 
     def _create_graph(self):
-        """创建聊天图实例"""
-        checkpointer = self.db_manager.create_checkpointer()
-        return create_chat_graph(checkpointer, self._store)
+        """创建聊天图实例（保留用于向后兼容）"""
+        return self._get_or_create_graph()
 
     def _with_checkpointer(self, func):
         """
@@ -122,13 +138,13 @@ class ChatService:
                 updated_at=datetime.now(timezone.utc)
             )
 
-            # 使用LangGraph创建会话记录，确保数据格式正确
-            self._create_session_with_langgraph(user_id, session_id, session.title)
+            # 直接创建会话记录，避免LangGraph的复杂初始化
+            self._create_session_record_directly(user_id, session_id, session.title)
 
             logger.info(f"聊天会话创建成功: user_id={user_id}, session_id={session_id}")
 
-            # 生成欢迎消息
-            welcome_msg = format_welcome_message(user_id, session_id, title)
+            # 返回固定欢迎消息（不调用LLM）
+            welcome_msg = f"你好！我是你的AI助手，会话'{session.title}'已创建。有什么可以帮助你的吗？"
 
             return {
                 "session_id": session_id,
@@ -183,11 +199,11 @@ class ChatService:
             }
 
             def _send_with_checkpointer(checkpointer):
-                # 创建临时图用于处理消息
+                # 为每个操作创建新的图实例，使用正确的checkpointer
                 temp_graph = create_chat_graph(checkpointer, self._store)
 
-                # 运行图处理消息
-                result = temp_graph.invoke(current_state, config)
+                # 运行图处理消息 - 使用临时图实例内部的编译后的图
+                result = temp_graph.graph.invoke(current_state, config)
                 return result
 
             # 使用辅助方法执行检查点操作
@@ -249,6 +265,8 @@ class ChatService:
         """
         获取聊天历史记录
 
+        使用graph.get_state获取最新状态，避免历史重复问题。
+
         Args:
             user_id: 用户ID
             session_id: 会话ID
@@ -265,48 +283,60 @@ class ChatService:
             config = self._create_runnable_config(user_id, session_id)
 
             def _get_history_with_checkpointer(checkpointer):
-                # 获取检查点历史
-                checkpoints = list(checkpointer.list(config, limit=limit))
+                # 使用临时图获取最新状态（确保正确的checkpointer）
+                temp_graph = create_chat_graph(checkpointer, self._store)
 
-                # 构建消息历史
+                # 使用ChatGraph实例内部的编译后的图的get_state方法
+                snapshot = temp_graph.graph.get_state(config)
+
+                # 提取messages字段
+                state_messages = snapshot.values.get("messages", [])
+
+                # 序列化LangChain messages为API格式
                 messages = []
-                for checkpoint in checkpoints:
-                    checkpoint_data = checkpoint.checkpoint or {}
-                    channel_values = checkpoint_data.get("channel_values", {})
-                    state_messages = channel_values.get("messages", [])
-                    for msg in state_messages:
-                        # 处理不同类型的消息格式
-                        if isinstance(msg, dict):
-                            # 字典格式的消息
-                            msg_type = msg.get("type", "unknown")
-                            if msg_type in ["human", "ai", "tool"]:
-                                messages.append({
-                                    "type": msg_type,
-                                    "content": msg.get("content", ""),
-                                    "timestamp": msg.get("timestamp", datetime.now(timezone.utc).isoformat())
-                                })
-                        elif hasattr(msg, 'content'):  # LangChain消息对象
-                            if isinstance(msg, HumanMessage):
-                                messages.append({
-                                    "type": "human",
-                                    "content": msg.content,
-                                    "timestamp": datetime.now(timezone.utc).isoformat()
-                                })
-                            elif isinstance(msg, AIMessage):
-                                messages.append({
-                                    "type": "ai",
-                                    "content": msg.content,
-                                    "timestamp": datetime.now(timezone.utc).isoformat()
-                                })
-                            elif isinstance(msg, ToolMessage):
-                                messages.append({
-                                    "type": "tool",
-                                    "content": msg.content,
-                                    "timestamp": datetime.now(timezone.utc).isoformat()
-                                })
+                for msg in state_messages:
+                    if isinstance(msg, HumanMessage):
+                        message_item = {
+                            "type": "human",
+                            "content": msg.content,
+                            "timestamp": datetime.now(timezone.utc).isoformat()
+                        }
+                        # 增加id字段（如果有）
+                        if hasattr(msg, 'id') and msg.id:
+                            message_item["id"] = str(msg.id)
+                        messages.append(message_item)
 
-                # 按时间排序并限制数量
-                messages = messages[-limit:] if len(messages) > limit else messages
+                    elif isinstance(msg, AIMessage):
+                        message_item = {
+                            "type": "ai",
+                            "content": msg.content,
+                            "timestamp": datetime.now(timezone.utc).isoformat()
+                        }
+                        # 增加id字段（如果有）
+                        if hasattr(msg, 'id') and msg.id:
+                            message_item["id"] = str(msg.id)
+                        # 增加tool_calls字段（如果有）
+                        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                            message_item["tool_calls"] = [dict(call) for call in msg.tool_calls]
+                        # 增加additional_kwargs字段（如果有）
+                        if hasattr(msg, 'additional_kwargs') and msg.additional_kwargs:
+                            message_item["additional_kwargs"] = msg.additional_kwargs
+                        messages.append(message_item)
+
+                    elif isinstance(msg, ToolMessage):
+                        message_item = {
+                            "type": "tool",
+                            "content": msg.content,
+                            "timestamp": datetime.now(timezone.utc).isoformat()
+                        }
+                        # 增加tool_call_id字段
+                        if hasattr(msg, 'tool_call_id') and msg.tool_call_id:
+                            message_item["tool_call_id"] = msg.tool_call_id
+                        messages.append(message_item)
+
+                # 应用limit截断（取最新N条）
+                if len(messages) > limit:
+                    messages = messages[-limit:]
 
                 return messages
 
@@ -740,7 +770,7 @@ class ChatService:
 
     def _create_session_record_directly(self, user_id: str, session_id: str, title: str):
         """
-        直接在数据库中创建会话记录，避免LangGraph的复杂初始化
+        使用LangGraph API创建会话记录，确保类型一致性
 
         Args:
             user_id: 用户ID
@@ -748,116 +778,87 @@ class ChatService:
             title: 会话标题
         """
         try:
-            db_path = get_chat_database_path()
-            import sqlite3
-            import json
+            # 使用checkpointer创建会话记录，确保类型正确
+            with self.db_manager.create_checkpointer() as checkpointer:
+                # 创建LangGraph标准的配置
+                config = {
+                    "configurable": {
+                        "thread_id": session_id,
+                        "checkpoint_ns": ""
+                    }
+                }
 
-            # 确保数据库和表已初始化
-            self._ensure_database_initialized()
+                # 创建符合LangGraph格式的checkpoint
+                current_time = datetime.now(timezone.utc)
+                checkpoint_data = {
+                    "v": 1,
+                    "ts": current_time.timestamp(),
+                    "id": str(uuid.uuid4()),
+                    "channel_values": {
+                        "user_id": user_id,
+                        "session_id": session_id,
+                        "session_title": title,
+                        "created_at": current_time.isoformat(),
+                        "messages": []
+                    },
+                    "channel_versions": {
+                        "messages": 1  # 确保是整数类型
+                    },
+                    "versions_seen": {},
+                    "pending_sends": []
+                }
 
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-
-            # 创建符合LangGraph SqliteSaver格式的检查点记录
-            checkpoint_data = {
-                "v": 1,
-                "id": str(uuid.uuid4()),
-                "ts": datetime.now(timezone.utc).timestamp(),
-                "channel_values": {
+                metadata = {
                     "user_id": user_id,
-                    "session_id": session_id,
-                    "session_title": title,
-                    "messages": []
-                },
-                "channel_versions": {
-                    "messages": 1
-                },
-                "versions_seen": {},
-                "pending_sends": []
-            }
+                    "title": title,
+                    "source": "create",
+                    "step": -1,
+                    "parents": {},
+                    "created_at": current_time.isoformat()
+                }
 
-            metadata = {
-                "user_id": user_id,
-                "title": title,
-                "source": "create",
-                "step": -1,  # LangGraph需要的step字段
-                "parents": {},  # LangGraph需要的parents字段
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
+                # 使用checkpointer.put，这会正确处理类型
+                checkpointer.put(config, checkpoint_data, metadata, {})
 
-            # 插入检查点记录，使用正确的type字段
-            cursor.execute("""
-                INSERT INTO checkpoints (thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                session_id,
-                "",  # checkpoint_ns
-                1,  # checkpoint_id
-                "json",  # type - 使用json类型，因为checkpoint_data是JSON字符串
-                json.dumps(checkpoint_data),
-                json.dumps(metadata)
-            ))
-
-            conn.commit()
-            conn.close()
-
-            logger.debug(f"会话记录已直接创建: session_id={session_id}, user_id={user_id}")
+            logger.debug(f"会话记录已创建: session_id={session_id}, user_id={user_id}")
 
         except Exception as e:
-            logger.error(f"直接创建会话记录失败: {e}")
-            # 如果直接数据库操作失败，回退到原始的LangGraph方法
-            logger.warning("回退到LangGraph原始方法")
-            self._create_session_with_langgraph(user_id, session_id, title)
+            logger.error(f"创建会话记录失败: {e}")
+            raise Exception(f"创建会话记录失败: {str(e)}")
 
-    def _create_session_with_langgraph(self, user_id: str, session_id: str, title: str):
-        """
-        使用LangGraph原始方法创建会话（作为回退方案）
-
-        Args:
-            user_id: 用户ID
-            session_id: 会话ID
-            title: 会话标题
-        """
-        config = self._create_runnable_config(user_id, session_id)
-
-        def _create_with_checkpointer(checkpointer):
-            # 创建临时图用于初始化会话
-            temp_graph = create_chat_graph(checkpointer, self._store)
-
-            # 创建初始状态（使用字典格式）
-            initial_state = {
-                "user_id": user_id,
-                "session_id": session_id,
-                "session_title": title,
-                "messages": []
-            }
-
-            # 创建包含标题的元数据
-            metadata = {
-                "user_id": user_id,
-                "title": title,
-                "source": "create",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-
-            # 运行图以初始化会话状态，并传入元数据
-            result = temp_graph.invoke(initial_state, config)
-            return result
-
-        # 使用辅助方法执行检查点操作
-        self._with_checkpointer(_create_with_checkpointer)
-
+  
     def _ensure_database_initialized(self):
         """
         确保数据库表已初始化
+
+        通过实际使用checkpointer.put()来触发LangGraph的数据库表创建。
+        使用正确的LangGraph格式，确保类型一致性。
         """
         try:
             # 使用数据库管理器初始化数据库
             with self.db_manager.create_checkpointer() as checkpointer:
-                # 数据库会通过checkpointer自动初始化
-                pass
+                # 创建符合LangGraph标准的配置
+                dummy_config = {"configurable": {"thread_id": "__db_init__", "checkpoint_ns": ""}}
+
+                # 创建符合LangGraph格式的虚拟checkpoint
+                dummy_checkpoint = {
+                    "v": 1,
+                    "ts": 0,
+                    "id": "init-checkpoint",
+                    "channel_values": {"messages": []},
+                    "channel_versions": {"messages": 1},  # 确保是整数类型
+                    "versions_seen": {},
+                    "pending_sends": []
+                }
+
+                # put操作会自动创建checkpoints表结构，并保持正确的类型
+                checkpointer.put(dummy_config, dummy_checkpoint, {}, {})
+
+                logger.debug("数据库表结构初始化完成")
+
         except Exception as e:
-            logger.warning(f"数据库初始化警告: {e}")
+            logger.error(f"数据库初始化失败: {e}")
+            raise Exception(f"无法初始化聊天数据库: {str(e)}")
 
 
 # 创建全局聊天服务实例
