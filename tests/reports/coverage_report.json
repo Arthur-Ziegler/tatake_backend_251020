@@ -1,0 +1,606 @@
+{
+  "total": 42,
+  "tested": 21,
+  "coverage_rate": 0.5,
+  "untested_endpoints": [
+    "GET /info",
+    "POST /auth/guest/upgrade",
+    "GET /tasks/{task_id}",
+    "PUT /tasks/{task_id}",
+    "DELETE /tasks/{task_id}",
+    "POST /tasks/{task_id}/complete",
+    "POST /tasks/{task_id}/uncomplete",
+    "POST /rewards/exchange/{reward_id}",
+    "POST /rewards/recipes/{recipe_id}/redeem",
+    "GET /tasks/special/top3/{target_date}",
+    "POST /chat/sessions",
+    "POST /chat/sessions/{session_id}/send",
+    "GET /chat/sessions/{session_id}/messages",
+    "GET /chat/sessions/{session_id}",
+    "GET /chat/sessions",
+    "DELETE /chat/sessions/{session_id}",
+    "GET /chat/health",
+    "PUT /user/profile",
+    "POST /focus/sessions/{session_id}/pause",
+    "POST /focus/sessions/{session_id}/resume",
+    "POST /focus/sessions/{session_id}/complete"
+  ],
+  "by_domain": {
+    "system": {
+      "total": 3,
+      "tested": 3,
+      "endpoints": [
+        {
+          "endpoint": "GET /",
+          "name": "root",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /health",
+          "name": "health_check",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /test-cors",
+          "name": "test_cors",
+          "tested": true
+        }
+      ],
+      "coverage_rate": 1.0
+    },
+    "unknown": {
+      "total": 1,
+      "tested": 0,
+      "endpoints": [
+        {
+          "endpoint": "GET /info",
+          "name": "api_info",
+          "tested": false
+        }
+      ],
+      "coverage_rate": 0.0
+    },
+    "auth": {
+      "total": 5,
+      "tested": 4,
+      "endpoints": [
+        {
+          "endpoint": "POST /auth/guest/init",
+          "name": "guest_init",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /auth/register",
+          "name": "wechat_register",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /auth/login",
+          "name": "wechat_login",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /auth/guest/upgrade",
+          "name": "upgrade_guest",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /auth/refresh",
+          "name": "refresh_token",
+          "tested": true
+        }
+      ],
+      "coverage_rate": 0.8
+    },
+    "tasks": {
+      "total": 7,
+      "tested": 2,
+      "endpoints": [
+        {
+          "endpoint": "POST /tasks/",
+          "name": "create_task",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /tasks/{task_id}",
+          "name": "get_task",
+          "tested": false
+        },
+        {
+          "endpoint": "PUT /tasks/{task_id}",
+          "name": "update_task",
+          "tested": false
+        },
+        {
+          "endpoint": "DELETE /tasks/{task_id}",
+          "name": "delete_task",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /tasks/",
+          "name": "get_task_list",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /tasks/{task_id}/complete",
+          "name": "complete_task",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /tasks/{task_id}/uncomplete",
+          "name": "uncomplete_task",
+          "tested": false
+        }
+      ],
+      "coverage_rate": 0.2857142857142857
+    },
+    "reward": {
+      "total": 6,
+      "tested": 4,
+      "endpoints": [
+        {
+          "endpoint": "GET /rewards/catalog",
+          "name": "get_reward_catalog",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /rewards/my-rewards",
+          "name": "get_my_rewards",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /rewards/exchange/{reward_id}",
+          "name": "exchange_reward_with_points",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /rewards/materials",
+          "name": "get_user_materials",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /rewards/recipes",
+          "name": "get_available_recipes",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /rewards/recipes/{recipe_id}/redeem",
+          "name": "redeem_recipe",
+          "tested": false
+        }
+      ],
+      "coverage_rate": 0.6666666666666666
+    },
+    "points": {
+      "total": 2,
+      "tested": 2,
+      "endpoints": [
+        {
+          "endpoint": "GET /points/my-points",
+          "name": "get_points_balance_my_points",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /points/transactions",
+          "name": "get_points_transactions",
+          "tested": true
+        }
+      ],
+      "coverage_rate": 1.0
+    },
+    "top3": {
+      "total": 2,
+      "tested": 1,
+      "endpoints": [
+        {
+          "endpoint": "POST /tasks/special/top3",
+          "name": "set_top3",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /tasks/special/top3/{target_date}",
+          "name": "get_top3",
+          "tested": false
+        }
+      ],
+      "coverage_rate": 0.5
+    },
+    "chat": {
+      "total": 7,
+      "tested": 0,
+      "endpoints": [
+        {
+          "endpoint": "POST /chat/sessions",
+          "name": "create_chat_session",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /chat/sessions/{session_id}/send",
+          "name": "send_chat_message",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /chat/sessions/{session_id}/messages",
+          "name": "get_chat_history",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /chat/sessions/{session_id}",
+          "name": "get_chat_session_info",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /chat/sessions",
+          "name": "list_chat_sessions",
+          "tested": false
+        },
+        {
+          "endpoint": "DELETE /chat/sessions/{session_id}",
+          "name": "delete_chat_session",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /chat/health",
+          "name": "chat_health_check",
+          "tested": false
+        }
+      ],
+      "coverage_rate": 0.0
+    },
+    "user": {
+      "total": 4,
+      "tested": 3,
+      "endpoints": [
+        {
+          "endpoint": "GET /user/profile",
+          "name": "get_user_profile",
+          "tested": true
+        },
+        {
+          "endpoint": "PUT /user/profile",
+          "name": "update_user_profile",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /user/welcome-gift/claim",
+          "name": "claim_welcome_gift",
+          "tested": true
+        },
+        {
+          "endpoint": "GET /user/welcome-gift/history",
+          "name": "get_welcome_gift_history",
+          "tested": true
+        }
+      ],
+      "coverage_rate": 0.75
+    },
+    "focus": {
+      "total": 5,
+      "tested": 2,
+      "endpoints": [
+        {
+          "endpoint": "POST /focus/sessions",
+          "name": "start_focus",
+          "tested": true
+        },
+        {
+          "endpoint": "POST /focus/sessions/{session_id}/pause",
+          "name": "pause_focus",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /focus/sessions/{session_id}/resume",
+          "name": "resume_focus",
+          "tested": false
+        },
+        {
+          "endpoint": "POST /focus/sessions/{session_id}/complete",
+          "name": "complete_focus",
+          "tested": false
+        },
+        {
+          "endpoint": "GET /focus/sessions",
+          "name": "get_focus_sessions",
+          "tested": true
+        }
+      ],
+      "coverage_rate": 0.4
+    }
+  },
+  "all_endpoints": [
+    {
+      "method": "GET",
+      "path": "/",
+      "name": "root",
+      "domain": "system",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "name": "health_check",
+      "domain": "system",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/info",
+      "name": "api_info",
+      "domain": "unknown",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/guest/init",
+      "name": "guest_init",
+      "domain": "auth",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "name": "wechat_register",
+      "domain": "auth",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "name": "wechat_login",
+      "domain": "auth",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/auth/guest/upgrade",
+      "name": "upgrade_guest",
+      "domain": "auth",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/auth/refresh",
+      "name": "refresh_token",
+      "domain": "auth",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/tasks/",
+      "name": "create_task",
+      "domain": "tasks",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/{task_id}",
+      "name": "get_task",
+      "domain": "tasks",
+      "tested": false
+    },
+    {
+      "method": "PUT",
+      "path": "/tasks/{task_id}",
+      "name": "update_task",
+      "domain": "tasks",
+      "tested": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/{task_id}",
+      "name": "delete_task",
+      "domain": "tasks",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/",
+      "name": "get_task_list",
+      "domain": "tasks",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/tasks/{task_id}/complete",
+      "name": "complete_task",
+      "domain": "tasks",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/tasks/{task_id}/uncomplete",
+      "name": "uncomplete_task",
+      "domain": "tasks",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/rewards/catalog",
+      "name": "get_reward_catalog",
+      "domain": "reward",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/rewards/my-rewards",
+      "name": "get_my_rewards",
+      "domain": "reward",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/rewards/exchange/{reward_id}",
+      "name": "exchange_reward_with_points",
+      "domain": "reward",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/rewards/materials",
+      "name": "get_user_materials",
+      "domain": "reward",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/rewards/recipes",
+      "name": "get_available_recipes",
+      "domain": "reward",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/rewards/recipes/{recipe_id}/redeem",
+      "name": "redeem_recipe",
+      "domain": "reward",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/points/my-points",
+      "name": "get_points_balance_my_points",
+      "domain": "points",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/points/transactions",
+      "name": "get_points_transactions",
+      "domain": "points",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/tasks/special/top3",
+      "name": "set_top3",
+      "domain": "top3",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/special/top3/{target_date}",
+      "name": "get_top3",
+      "domain": "top3",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/chat/sessions",
+      "name": "create_chat_session",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/chat/sessions/{session_id}/send",
+      "name": "send_chat_message",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/chat/sessions/{session_id}/messages",
+      "name": "get_chat_history",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/chat/sessions/{session_id}",
+      "name": "get_chat_session_info",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/chat/sessions",
+      "name": "list_chat_sessions",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/chat/sessions/{session_id}",
+      "name": "delete_chat_session",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/chat/health",
+      "name": "chat_health_check",
+      "domain": "chat",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/user/profile",
+      "name": "get_user_profile",
+      "domain": "user",
+      "tested": true
+    },
+    {
+      "method": "PUT",
+      "path": "/user/profile",
+      "name": "update_user_profile",
+      "domain": "user",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/user/welcome-gift/claim",
+      "name": "claim_welcome_gift",
+      "domain": "user",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/user/welcome-gift/history",
+      "name": "get_welcome_gift_history",
+      "domain": "user",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/focus/sessions",
+      "name": "start_focus",
+      "domain": "focus",
+      "tested": true
+    },
+    {
+      "method": "POST",
+      "path": "/focus/sessions/{session_id}/pause",
+      "name": "pause_focus",
+      "domain": "focus",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/focus/sessions/{session_id}/resume",
+      "name": "resume_focus",
+      "domain": "focus",
+      "tested": false
+    },
+    {
+      "method": "POST",
+      "path": "/focus/sessions/{session_id}/complete",
+      "name": "complete_focus",
+      "domain": "focus",
+      "tested": false
+    },
+    {
+      "method": "GET",
+      "path": "/focus/sessions",
+      "name": "get_focus_sessions",
+      "domain": "focus",
+      "tested": true
+    },
+    {
+      "method": "GET",
+      "path": "/test-cors",
+      "name": "test_cors",
+      "domain": "system",
+      "tested": true
+    }
+  ]
+}

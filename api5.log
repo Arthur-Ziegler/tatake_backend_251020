@@ -1,3 +1,0 @@
-INFO:     Will watch for changes in these directories: ['/Users/zalelee/Code/tatake_backend']
-ERROR:    [Errno 48] Address already in use
-✅ 使用FastAPI默认的OpenAPI自动注册机制
