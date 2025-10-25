@@ -56,20 +56,21 @@ class ChatService:
         self._store = self.db_manager.get_store()
         self._graph = None  # Graph缓存实例
 
-    def _get_or_create_graph(self):
+    def _create_graph_with_checkpointer(self, checkpointer):
         """
-        获取或创建聊天图实例（每次都创建新的）
+        使用提供的checkpointer创建图实例
 
-        由于checkpointer需要正确使用上下文管理器，每次都创建新的graph实例
-        以避免checkpointer生命周期管理问题。
+        这个方法用于在checkpointer上下文管理器中创建图实例，
+        确保checkpointer正确初始化和使用。
+
+        Args:
+            checkpointer: 已初始化的checkpointer实例
 
         Returns:
             ChatGraph: 聊天图实例
         """
-        logger.debug("创建新的Graph实例")
-        # 每次都创建新的graph实例，确保checkpointer正确管理
-        from src.domains.chat.database import create_chat_checkpointer
-        checkpointer = create_chat_checkpointer()
+        logger.debug("使用checkpointer创建Graph实例")
+        from src.domains.chat.graph import create_chat_graph
         return create_chat_graph(checkpointer, self._store)
 
     def _create_graph(self):
@@ -80,14 +81,229 @@ class ChatService:
         """
         使用检查点器上下文管理器执行函数
 
+        设计动机：
+        ChatService 中的 send_message 操作需要使用 LangGraph 的 checkpointer 进行状态持久化。
+        但是我们发现了一个关键的类型安全问题：LangGraph 内部在处理 checkpoint 时，
+        某些 channel（特别是 __start__）的版本号会被转换为复杂字符串格式，如：
+        '__start__': '00000000000000000000000000000002.0.243798848838515'
+
+        这会导致类型比较错误：'>' not supported between instances of 'str' and 'int'
+
+        解决方案：
+        我们创建一个类型安全的 checkpointer 包装器，在每次 checkpoint 操作时
+        自动检测和修复类型不匹配问题，确保所有版本号都是整数类型。
+
         Args:
-            func: 要执行的函数，接受 checkpointer 参数
+            func: 要执行的函数，接受类型安全的 checkpointer 参数
 
         Returns:
             函数执行结果
+
+        Examples:
+            >>> def some_operation(checkpointer):
+            ...     # 使用类型安全的 checkpointer
+            ...     checkpointer.put(config, checkpoint, metadata, {})
+            >>> result = self._with_checkpointer(some_operation)
         """
         with self.db_manager.create_checkpointer() as checkpointer:
-            return func(checkpointer)
+            # 创建类型安全的checkpointer包装器
+            # 这个包装器会自动修复 checkpoint 中的类型问题
+            safe_checkpointer = self._create_type_safe_checkpointer(checkpointer)
+            return func(safe_checkpointer)
+
+    def _create_type_safe_checkpointer(self, base_checkpointer):
+        """
+        创建类型安全的checkpointer包装器
+
+        设计背景：
+        LangGraph 在内部处理 checkpoint 时，会出现版本号类型不一致的问题。
+        具体表现为：
+        1. 某些内部 channel（如 __start__）的版本号被转换为复杂的UUID字符串
+        2. 当 LangGraph 尝试比较这些字符串版本号与整数版本号时，会抛出类型错误
+        3. 这导致 ChatService.send_message() 完全失败
+
+        解决策略：
+        我们使用装饰器模式创建一个包装器，在所有 checkpoint 操作前后
+        进行类型检查和修复，确保所有 channel_versions 的值都是整数类型。
+
+        技术细节：
+        - 对于简单数字字符串：直接转换为 int
+        - 对于浮点数字符串：取整数部分
+        - 对于复杂UUID字符串：使用哈希生成稳定的整数
+        - 对于无法转换的情况：使用默认值 1
+
+        Args:
+            base_checkpointer: 原始的 LangGraph checkpointer 实例
+
+        Returns:
+            TypeSafeCheckpointer: 类型安全的 checkpointer 包装器实例
+
+        Raises:
+            无异常抛出，所有类型问题都会被自动修复
+        """
+
+        class TypeSafeCheckpointer:
+            """
+            类型安全的 checkpointer 包装器
+
+            这个类包装了原始的 LangGraph checkpointer，在每次操作前后
+            进行类型安全检查，确保 channel_versions 字段中的所有值都是整数类型。
+            """
+
+            def __init__(self, base_checkpointer):
+                """
+                初始化类型安全的 checkpointer
+
+                Args:
+                    base_checkpointer: 原始的 checkpointer 实例
+                """
+                self.base_checkpointer = base_checkpointer
+
+            def put(self, config, checkpoint, metadata, new_versions):
+                """
+                安全地存储 checkpoint，确保类型一致性
+
+                这是关键的修复点：在存储 checkpoint 之前，检查并修复
+                channel_versions 中的所有类型问题。
+
+                问题现象：
+                LangGraph 内部会产生如下 checkpoint：
+                {
+                    "channel_versions": {
+                        "__start__": "00000000000000000000000000000002.0.243798848838515",  # 字符串！
+                        "messages": 1  # 整数
+                    }
+                }
+
+                修复策略：
+                1. 浮点数字符串 -> 取整数部分
+                2. UUID字符串 -> 生成稳定的哈希整数
+                3. 简单数字字符串 -> 直接转换
+                4. 无法转换 -> 使用默认值
+
+                Args:
+                    config: LangGraph 配置
+                    checkpoint: 要存储的 checkpoint 数据
+                    metadata: checkpoint 元数据
+                    new_versions: 新版本信息
+
+                Returns:
+                    原始 checkpointer.put() 的返回值
+                """
+                # 类型修复逻辑
+                if isinstance(checkpoint, dict) and "channel_versions" in checkpoint:
+                    channel_versions = checkpoint["channel_versions"]
+                    if isinstance(channel_versions, dict):
+                        for key, value in channel_versions.items():
+                            if isinstance(value, str):
+                                self._fix_string_version_number(key, value, channel_versions)
+                            elif not isinstance(value, int):
+                                self._fix_non_integer_version(key, value, channel_versions)
+
+                # 委托给原始 checkpointer
+                return self.base_checkpointer.put(config, checkpoint, metadata, new_versions)
+
+            def _fix_string_version_number(self, key, value, channel_versions):
+                """
+                修复字符串类型的版本号
+
+                处理不同类型的字符串版本号：
+
+                示例1 - 浮点数字符串：
+                '2.0' -> 2
+
+                示例2 - UUID字符串（这是问题的根源）：
+                '00000000000000000000000000000002.0.243798848838515' -> 稳定的哈希整数
+
+                Args:
+                    key: channel 名称
+                    value: 字符串类型的版本号
+                    channel_versions: channel_versions 字典引用
+                """
+                try:
+                    # 情况1: 看起来像浮点数的字符串（如 "2.0"）
+                    if '.' in value and value.replace('.', '').isdigit():
+                        channel_versions[key] = int(float(value))
+                        logger.debug(f"修复浮点版本: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                    else:
+                        # 情况2: 尝试直接转换为整数（如 "2"）
+                        channel_versions[key] = int(value)
+                        logger.debug(f"修复整数字符串: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                except ValueError:
+                    # 情况3: 复杂的 UUID 字符串，无法直接转换
+                    # 使用哈希生成稳定的整数（确保相同的字符串总是生成相同的整数）
+                    stable_int = abs(hash(value)) % (10**9)
+                    channel_versions[key] = stable_int
+                    logger.debug(f"修复UUID版本: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+
+            def _fix_non_integer_version(self, key, value, channel_versions):
+                """
+                修复非整数类型的版本号
+
+                处理浮点数、布尔值等其他类型的版本号
+
+                Args:
+                    key: channel 名称
+                    value: 非整数类型的版本号
+                    channel_versions: channel_versions 字典引用
+                """
+                try:
+                    channel_versions[key] = int(value)
+                    logger.debug(f"强制转换: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                except (ValueError, TypeError):
+                    # 如果完全无法转换，使用默认值
+                    channel_versions[key] = 1
+                    logger.warning(f"使用默认值: {key} 从 {value} ({type(value)}) 重置为 1 (int)")
+
+            def get(self, config):
+                """
+                安全地检索 checkpoint，确保类型一致性
+
+                即使在存储时已经修复了类型，在检索时也要再次检查，
+                因为可能存在直接访问数据库或其他绕过包装器的情况。
+
+                Args:
+                    config: LangGraph 配置
+
+                Returns:
+                    类型安全的 checkpoint 数据
+                """
+                result = self.base_checkpointer.get(config)
+
+                # 检索时的类型修复（防御性编程）
+                if result and isinstance(result, dict) and "channel_versions" in result:
+                    channel_versions = result["channel_versions"]
+                    if isinstance(channel_versions, dict):
+                        for key, value in channel_versions.items():
+                            if isinstance(value, str):
+                                try:
+                                    channel_versions[key] = int(value)
+                                    logger.debug(f"检索时修复类型: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                                except ValueError:
+                                    channel_versions[key] = 1
+                                    logger.debug(f"检索时重置类型: {key} 无法转换，设置为默认值 1")
+                            elif not isinstance(value, int):
+                                channel_versions[key] = int(value)
+                                logger.debug(f"检索时强制转换: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+
+                return result
+
+            def __getattr__(self, name):
+                """
+                代理其他方法到基础 checkpointer
+
+                所有未被重写的方法都直接委托给原始 checkpointer，
+                确保包装器对原有功能的影响最小。
+
+                Args:
+                    name: 方法名
+
+                Returns:
+                    原始 checkpointer 的对应方法
+                """
+                return getattr(self.base_checkpointer, name)
+
+        return TypeSafeCheckpointer(base_checkpointer)
 
     def _create_thread_id(self) -> str:
         """创建新的线程ID"""
@@ -199,8 +415,8 @@ class ChatService:
             }
 
             def _send_with_checkpointer(checkpointer):
-                # 为每个操作创建新的图实例，使用正确的checkpointer
-                temp_graph = create_chat_graph(checkpointer, self._store)
+                # 使用新的方法创建图实例
+                temp_graph = self._create_graph_with_checkpointer(checkpointer)
 
                 # 运行图处理消息 - 使用临时图实例内部的编译后的图
                 result = temp_graph.graph.invoke(current_state, config)
