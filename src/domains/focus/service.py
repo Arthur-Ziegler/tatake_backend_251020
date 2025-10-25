@@ -27,11 +27,12 @@ Service职责：
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from uuid import UUID
 
 from sqlmodel import Session
 
+from src.core.uuid_converter import UUIDConverter
 from .models import FocusSession, SessionTypeConst
 from .schemas import StartFocusRequest, FocusSessionResponse, FocusSessionListResponse
 from .repository import FocusRepository
@@ -82,7 +83,7 @@ class FocusService:
         self.session = session
         self.repository = FocusRepository(session)
 
-    def start_focus(self, user_id: UUID, request: StartFocusRequest) -> Dict[str, Any]:
+    def start_focus(self, user_id: Union[UUID, str], request: StartFocusRequest) -> Dict[str, Any]:
         """
         开始专注会话
 
@@ -105,14 +106,17 @@ class FocusService:
             # 验证任务是否存在（导入TaskRepository）
             from ..task.repository import TaskRepository
             task_repo = TaskRepository(self.session)
-            task = task_repo.get_by_id(str(request.task_id), str(user_id))
+            task = task_repo.get_by_id(
+                task_id=UUIDConverter.ensure_string(request.task_id),
+                user_id=UUIDConverter.ensure_string(user_id)
+            )
             if not task:
                 raise FocusException(f"任务不存在或无权限: {request.task_id}", status_code=404)
 
-            # 创建新会话 - Repository层会自动处理UUID转换
+            # 创建新会话
             focus_session = FocusSession(
-                user_id=user_id,  # 传入UUID对象
-                task_id=request.task_id,
+                user_id=UUIDConverter.ensure_string(user_id),
+                task_id=UUIDConverter.ensure_string(request.task_id),
                 session_type=request.session_type,
                 start_time=datetime.now(timezone.utc)
             )
@@ -127,7 +131,7 @@ class FocusService:
             logger.error(f"开始会话失败: {e}")
             raise FocusException("开始会话失败", status_code=500)
 
-    def pause_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
+    def pause_focus(self, session_id: Union[UUID, str], user_id: Union[UUID, str]) -> Dict[str, Any]:
         """
         暂停专注会话
 
@@ -147,22 +151,26 @@ class FocusService:
             FocusException: 会话不存在或操作失败
         """
         try:
+            # 转换UUID为字符串用于数据库查询
+            session_id_str = UUIDConverter.ensure_string(session_id)
+            user_id_str = UUIDConverter.ensure_string(user_id)
+
             # 获取并验证原会话
-            original_session = self.repository.get_by_id(session_id)
-            if not original_session or original_session.user_id != user_id:
+            original_session = self.repository.get_by_id(session_id_str)
+            if not original_session or original_session.user_id != user_id_str:
                 raise FocusException("会话不存在或无权限", status_code=404)
 
             if not original_session.is_active:
                 raise FocusException("只能暂停进行中的会话", status_code=400)
 
             # 完成原会话
-            completed_session = self.repository.complete_session(session_id, user_id)
+            completed_session = self.repository.complete_session(session_id_str, user_id_str)
             if not completed_session:
                 raise FocusException("完成原会话失败", status_code=500)
 
             # 创建暂停会话
             pause_session = FocusSession(
-                user_id=str(user_id),
+                user_id=user_id_str,
                 task_id=original_session.task_id,
                 session_type="pause",
                 start_time=datetime.now(timezone.utc)
@@ -178,7 +186,7 @@ class FocusService:
             logger.error(f"暂停会话失败: {e}")
             raise FocusException("暂停会话失败", status_code=500)
 
-    def resume_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
+    def resume_focus(self, session_id: Union[UUID, str], user_id: Union[UUID, str]) -> Dict[str, Any]:
         """
         恢复专注会话
 
@@ -198,9 +206,13 @@ class FocusService:
             FocusException: 会话不存在或操作失败
         """
         try:
+            # 转换UUID为字符串用于数据库查询
+            session_id_str = UUIDConverter.ensure_string(session_id)
+            user_id_str = UUIDConverter.ensure_string(user_id)
+
             # 获取并验证暂停会话
-            pause_session = self.repository.get_by_id(session_id)
-            if not pause_session or pause_session.user_id != user_id:
+            pause_session = self.repository.get_by_id(session_id_str)
+            if not pause_session or pause_session.user_id != user_id_str:
                 raise FocusException("暂停会话不存在或无权限", status_code=404)
 
             if not pause_session.is_active:
@@ -210,13 +222,13 @@ class FocusService:
                 raise FocusException("只能从暂停会话恢复", status_code=400)
 
             # 完成暂停会话
-            completed_pause = self.repository.complete_session(session_id, user_id)
+            completed_pause = self.repository.complete_session(session_id_str, user_id_str)
             if not completed_pause:
                 raise FocusException("完成暂停会话失败", status_code=500)
 
             # 创建新的专注会话
             focus_session = FocusSession(
-                user_id=str(user_id),
+                user_id=user_id_str,
                 task_id=pause_session.task_id,
                 session_type="focus",
                 start_time=datetime.now(timezone.utc)
@@ -232,7 +244,7 @@ class FocusService:
             logger.error(f"恢复会话失败: {e}")
             raise FocusException("恢复会话失败", status_code=500)
 
-    def complete_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
+    def complete_focus(self, session_id: Union[UUID, str], user_id: Union[UUID, str]) -> Dict[str, Any]:
         """
         完成专注会话
 
@@ -251,13 +263,17 @@ class FocusService:
             FocusException: 会话不存在或操作失败
         """
         try:
+            # 转换UUID为字符串用于数据库查询
+            session_id_str = UUIDConverter.ensure_string(session_id)
+            user_id_str = UUIDConverter.ensure_string(user_id)
+
             # 验证会话存在
-            session = self.repository.get_by_id(session_id)
-            if not session or session.user_id != user_id:
+            session = self.repository.get_by_id(session_id_str)
+            if not session or session.user_id != user_id_str:
                 raise FocusException("会话不存在或无权限", status_code=404)
 
             # 完成会话
-            completed_session = self.repository.complete_session(session_id, user_id)
+            completed_session = self.repository.complete_session(session_id_str, user_id_str)
             if not completed_session:
                 raise FocusException("完成会话失败", status_code=500)
 
@@ -272,7 +288,7 @@ class FocusService:
 
     def get_user_sessions(
         self,
-        user_id: str,
+        user_id: Union[UUID, str],
         page: int = 1,
         page_size: int = 50
     ) -> Dict[str, Any]:
@@ -288,7 +304,8 @@ class FocusService:
             会话列表响应
         """
         try:
-            sessions, total = self.repository.get_user_sessions(user_id, page, page_size)
+            user_id_str = UUIDConverter.ensure_string(user_id)
+            sessions, total = self.repository.get_user_sessions(user_id_str, page, page_size)
             session_responses = [_build_session_response(session) for session in sessions]
 
             has_more = page * page_size < total

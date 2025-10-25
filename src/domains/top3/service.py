@@ -9,6 +9,7 @@ from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
+from src.core.uuid_converter import UUIDConverter
 from .repository import Top3Repository
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from .exceptions import Top3AlreadyExistsException, Top3NotFoundException
@@ -43,27 +44,27 @@ class Top3Service:
         target_date = date.fromisoformat(request.date)
 
         # 检查是否已设置
-        existing = self.top3_repo.get_by_user_and_date(str(user_id), target_date)
+        existing = self.top3_repo.get_by_user_and_date(user_id, target_date)
         if existing:
             raise Top3AlreadyExistsException(request.date)
 
         # 检查积分（使用PointsService获取实时余额）
-        current_balance = self.points_service.get_balance(str(user_id))  # 显式转换UUID->str
+        current_balance = self.points_service.get_balance(user_id)
         if current_balance < 300:
             raise InsufficientPointsException(300, current_balance)
 
         # 检查所有任务是否存在且属于用户
         for task_id_str in request.task_ids:
-            task_id = UUID(task_id_str)
-            task = self.task_repo.get_by_id(str(task_id), str(user_id))
+            task = self.task_repo.get_by_id(
+                task_id=UUIDConverter.ensure_string(task_id_str),
+                user_id=UUIDConverter.ensure_string(user_id)
+            )
             if not task:
-                raise TaskNotFoundException(task_id_str)
-            if task.user_id != str(user_id):
                 raise TaskNotFoundException(task_id_str)
 
         # 扣除积分（使用PointsService）
         self.points_service.add_points(
-            user_id=str(user_id),  # 显式转换UUID->str，TODO(Phase 2): 统一UUID类型系统
+            user_id=user_id,
             amount=-300,  # 负数表示扣除
             source_type="top3_cost"
         )
@@ -95,12 +96,12 @@ class Top3Service:
 
     def get_user_top3(self, user_id: UUID, target_date: date) -> Optional[Dict[str, Any]]:
         """获取用户指定日期的Top3记录"""
-        return self.top3_repo.get_by_user_and_date(str(user_id), target_date)  # 显式转换UUID->str
+        return self.top3_repo.get_by_user_and_date(user_id, target_date)
 
     def get_top3(self, user_id: UUID, target_date_str: str) -> Dict[str, Any]:
         """获取指定日期的Top3"""
         target_date = date.fromisoformat(target_date_str)
-        top3 = self.top3_repo.get_by_user_and_date(str(user_id), target_date)  # 显式转换UUID->str
+        top3 = self.top3_repo.get_by_user_and_date(user_id, target_date)
 
         if not top3:
             # 返回空的Top3响应，而不是抛出异常
@@ -150,7 +151,7 @@ class Top3Service:
         today = date.today()
 
         # 获取用户今日的Top3记录
-        today_top3 = self.top3_repo.get_by_user_and_date(str(user_id), today)
+        today_top3 = self.top3_repo.get_by_user_and_date(user_id, today)
 
         # 如果今日没有设置Top3，返回False
         if not today_top3:

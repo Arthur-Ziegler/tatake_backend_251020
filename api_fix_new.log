@@ -1,0 +1,1319 @@
+/Users/zalelee/Code/tatake_backend/src/api/main.py:320: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Will watch for changes in these directories: ['/Users/zalelee/Code/tatake_backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [69063] using WatchFiles
+INFO:     Started server process [69068]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ()
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:17:23,903 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:17:23,904 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:23,907 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:17:23,907 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 23:17:23,907 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:17:23,907 INFO sqlalchemy.engine.Engine [cached since 0.000399s ago] ('钻石',)
+2025-10-25 23:17:23,908 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:17:23,908 INFO sqlalchemy.engine.Engine [generated in 0.00006s] ('小金币合成钻石',)
+2025-10-25 23:17:23,908 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:23,909 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/auth/repository.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69068]
+INFO:     Started server process [69188]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:17:35,705 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,706 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:17:35,706 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:35,708 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:17:35,708 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 23:17:35,709 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:17:35,709 INFO sqlalchemy.engine.Engine [cached since 0.0003502s ago] ('钻石',)
+2025-10-25 23:17:35,709 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:17:35,709 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:17:35,709 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:17:35,710 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:17:35,711 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+✅ Focus数据库初始化完成
+✅ API服务启动完成
+🔧 开始注册59个Schema到OpenAPI...
+📋 当前已有82个Schema: ['AuthTokenData', 'AvailableRecipe', 'AvailableRecipesResponse-Input', 'AvailableRecipesResponse-Output', 'ChatHealthResponse', 'ChatHistoryResponse', 'ChatMessageItem', 'ChatSessionItem', 'ChatSessionResponse', 'CompleteTaskRequest', 'CompleteTaskResponse', 'CreateSessionRequest', 'CreateTaskRequest', 'DeleteSessionResponse', 'FocusOperationResponse', 'FocusSessionListResponse', 'FocusSessionResponse', 'GetTop3Response', 'GuestUpgradeRequest', 'HTTPValidationError', 'MessageResponse', 'MyRewardsResponse', 'PaginationInfo', 'RecipeMaterial', 'RecipeReward', 'RedeemRecipeRequest', 'RedeemRecipeResponse', 'RewardCatalogResponse', 'RewardRedeemResponse', 'RewardResponse', 'SendMessageRequest', 'SessionInfoResponse', 'SessionListResponse', 'SetTop3Request', 'StartFocusRequest', 'TaskDeleteResponse', 'TaskListResponse', 'TaskResponse', 'TokenRefreshRequest', 'Top3Response', 'UncompleteTaskRequest', 'UncompleteTaskResponse', 'UnifiedResponse_AuthTokenData_', 'UnifiedResponse_AvailableRecipesResponse_', 'UnifiedResponse_ChatHealthResponse_', 'UnifiedResponse_ChatHistoryResponse_', 'UnifiedResponse_ChatSessionResponse_', 'UnifiedResponse_CompleteTaskResponse_', 'UnifiedResponse_DeleteSessionResponse_', 'UnifiedResponse_FocusOperationResponse_', 'UnifiedResponse_FocusSessionListResponse_', 'UnifiedResponse_GetTop3Response_', 'UnifiedResponse_MessageResponse_', 'UnifiedResponse_MyRewardsResponse_', 'UnifiedResponse_RedeemRecipeResponse_', 'UnifiedResponse_RewardCatalogResponse_', 'UnifiedResponse_RewardRedeemResponse_', 'UnifiedResponse_SessionInfoResponse_', 'UnifiedResponse_SessionListResponse_', 'UnifiedResponse_TaskDeleteResponse_', 'UnifiedResponse_TaskListResponse_', 'UnifiedResponse_TaskResponse_', 'UnifiedResponse_Top3Response_', 'UnifiedResponse_UncompleteTaskResponse_', 'UnifiedResponse_UpdateProfileResponse_', 'UnifiedResponse_UserMaterialsResponse_', 'UnifiedResponse_UserProfileResponse_', 'UnifiedResponse_WelcomeGiftHistoryResponse_', 'UnifiedResponse_WelcomeGiftResponse_', 'UpdateProfileRequest', 'UpdateProfileResponse', 'UpdateTaskRequest', 'UserMaterial', 'UserMaterialsResponse', 'UserProfileResponse', 'ValidationError', 'WeChatLoginRequest', 'WeChatRegisterRequest', 'WelcomeGiftHistoryItem', 'WelcomeGiftHistoryResponse', 'WelcomeGiftResponse', 'WelcomeGiftRewardItem']
+✅ Schema已存在: AuthTokenData
+✅ Schema已存在: WeChatRegisterRequest
+✅ Schema已存在: WeChatLoginRequest
+✅ Schema已存在: GuestUpgradeRequest
+✅ Schema已存在: TokenRefreshRequest
+✅ Schema已存在: CreateTaskRequest
+✅ Schema已存在: UpdateTaskRequest
+✅ Schema已存在: TaskResponse
+✅ Schema已存在: TaskListResponse
+✅ Schema已存在: TaskDeleteResponse
+✅ Schema已存在: CompleteTaskRequest
+✅ Schema已存在: CompleteTaskResponse
+✅ Schema已存在: UncompleteTaskRequest
+✅ Schema已存在: UncompleteTaskResponse
+⚠️ Schema注册失败: TaskStatus - type object 'str' has no attribute 'model_json_schema'
+⚠️ Schema注册失败: TaskPriority - type object 'str' has no attribute 'model_json_schema'
+✅ Schema已存在: SendMessageRequest
+✅ Schema已存在: MessageResponse
+✅ Schema已存在: ChatHistoryResponse
+✅ Schema已存在: CreateSessionRequest
+✅ Schema已存在: ChatSessionResponse
+✅ Schema已存在: SessionListResponse
+✅ Schema已存在: SessionInfoResponse
+✅ Schema已存在: DeleteSessionResponse
+✅ Schema已存在: ChatHealthResponse
+✅ Schema已存在: ChatMessageItem
+✅ Schema已存在: ChatSessionItem
+✅ Schema已存在: StartFocusRequest
+✅ Schema已存在: FocusSessionResponse
+✅ Schema已存在: FocusSessionListResponse
+✅ Schema已存在: FocusOperationResponse
+⚠️ Schema注册失败: SessionType - SessionType.model_json_schema() got an unexpected keyword argument 'ref_template'
+✅ Schema已存在: RewardResponse
+✅ Schema已存在: RewardCatalogResponse
+✅ Schema已存在: RewardRedeemResponse
+✅ Schema已存在: UserMaterialsResponse
+✅ Schema已存在: RedeemRecipeRequest
+✅ Schema已存在: RedeemRecipeResponse
+✅ Schema已存在: MyRewardsResponse
+✅ Schema已存在: RecipeMaterial
+✅ Schema已存在: RecipeReward
+✅ Schema已存在: UserMaterial
+✅ Schema已存在: AvailableRecipe
+✅ Schema已存在: SetTop3Request
+✅ Schema已存在: GetTop3Response
+✅ Schema已存在: Top3Response
+✅ Schema已存在: UserProfileResponse
+✅ Schema已存在: UpdateProfileRequest
+🎉 成功注册11个新Schema，总计93个Schema
+INFO:     127.0.0.1:64821 - "GET /openapi.json HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/api/schema_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69188]
+INFO:     Started server process [69290]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:18:07,433 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:07,433 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [generated in 0.00012s] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,434 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:18:07,435 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:07,437 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:07,437 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 23:18:07,437 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:07,437 INFO sqlalchemy.engine.Engine [cached since 0.000357s ago] ('钻石',)
+2025-10-25 23:18:07,438 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:18:07,438 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:18:07,438 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,439 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:07,440 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,440 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:07,440 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:07,440 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/api/schema_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69290]
+INFO:     Started server process [69312]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:18:11,177 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,178 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:18:11,179 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:11,181 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:11,181 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ('小金币',)
+2025-10-25 23:18:11,181 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:11,181 INFO sqlalchemy.engine.Engine [cached since 0.0003844s ago] ('钻石',)
+2025-10-25 23:18:11,182 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:18:11,182 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:18:11,182 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:11,183 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/task/schemas.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69312]
+INFO:     Started server process [69425]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:39,081 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,082 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:18:39,082 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:39,084 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine [generated in 0.00006s] ('小金币',)
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine [cached since 0.0003952s ago] ('钻石',)
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:18:39,085 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:18:39,086 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:39,086 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:39,086 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,086 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:39,086 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:39,087 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/task/schemas.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69425]
+INFO:     Started server process [69440]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:18:42,008 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:42,008 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:18:42,008 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:18:42,009 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币',)
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine [cached since 0.000323s ago] ('钻石',)
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:18:42,012 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:18:42,013 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:18:42,014 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/task/schemas.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69440]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2206, in inner_handler
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1028, in _generate_schema_inner
+    return self.match_type(obj)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1148, in match_type
+    return self._unknown_type_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 659, in _unknown_type_schema
+    raise PydanticSchemaGenerationError(
+pydantic.errors.PydanticSchemaGenerationError: Unable to generate pydantic-core schema for <class 'src.core.types.TaskPriority'>. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
+
+If you got this error by calling handler(<some type>) within `__get_pydantic_core_schema__` then you likely need to call `handler.generate_schema(<some type>)` since we do not call `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.
+
+For further information visit https://errors.pydantic.dev/2.12/u/schema-for-unknown-type
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+TypeError: TaskStatus.__get_pydantic_core_schema__() takes 1 positional argument but 3 were given
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+TypeError: TaskStatus.__get_pydantic_core_schema__() takes 1 positional argument but 3 were given
+WARNING:  WatchFiles detected changes in 'src/domains/focus/models.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+TypeError: TaskStatus.__get_pydantic_core_schema__() takes 1 positional argument but 3 were given
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 153, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.PENDING),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 153, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.PENDING),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/domains/focus/models.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 153, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.PENDING),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 153, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.PENDING),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/domains/focus/models.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 153, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.PENDING),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 244, in prepare
+    _fixup_main_from_name(data['init_main_from_name'])
+  File "/Users/zalelee/.local/share/uv/python/cpython-3.12.11-macos-aarch64-none/lib/python3.12/multiprocessing/spawn.py", line 268, in _fixup_main_from_name
+    main_content = runpy.run_module(mod_name,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 226, in run_module
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/zalelee/Code/tatake_backend/src/api/main.py", line 273, in <module>
+    from src.domains.task.router import router as task_router
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/__init__.py", line 34, in <module>
+    from .schemas import (
+  File "/Users/zalelee/Code/tatake_backend/src/domains/task/schemas.py", line 46, in <module>
+    class CreateTaskRequest(BaseModel):
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 255, in __new__
+    complete_model_class(
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py", line 648, in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 729, in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1023, in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 856, in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1228, in _generate_md_field_schema
+    schema, metadata = self._common_field_schema(name, field_info, decorators)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 1282, in _common_field_schema
+    schema = self._apply_annotations(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2227, in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_schema_generation_shared.py", line 83, in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 2203, in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py", line 919, in _generate_schema_from_get_schema_method
+    schema = get_schema(
+             ^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/core/types.py", line 219, in __get_pydantic_core_schema__
+    core_schema.literal_str(cls.LOW),
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py", line 4429, in __getattr__
+    raise AttributeError(f"module 'pydantic_core' has no attribute '{attr_name}'")
+AttributeError: module 'pydantic_core' has no attribute 'literal_str'
+WARNING:  WatchFiles detected changes in 'src/core/types.py'. Reloading...
+INFO:     Started server process [69963]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [generated in 0.00009s] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:20:33,174 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,175 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:20:33,175 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,175 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:20:33,175 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:33,178 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:20:33,178 INFO sqlalchemy.engine.Engine [generated in 0.00009s] ('小金币',)
+2025-10-25 23:20:33,179 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:20:33,179 INFO sqlalchemy.engine.Engine [cached since 0.0007008s ago] ('钻石',)
+2025-10-25 23:20:33,179 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:20:33,179 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币合成钻石',)
+2025-10-25 23:20:33,179 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:20:33,180 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:33,180 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:20:33,180 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,180 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:33,181 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/focus/models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69963]
+INFO:     Started server process [69974]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:20:35,768 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,769 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:20:35,770 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:35,772 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:20:35,772 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ('小金币',)
+2025-10-25 23:20:35,773 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:20:35,773 INFO sqlalchemy.engine.Engine [cached since 0.0004417s ago] ('钻石',)
+2025-10-25 23:20:35,773 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:20:35,773 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:20:35,773 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:20:35,774 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:20:35,775 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/domains/auth/repository.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69974]
+INFO:     Started server process [70309]
+INFO:     Waiting for application startup.
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 23:21:11,954 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:21:11,954 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 23:21:11,954 INFO sqlalchemy.engine.Engine [generated in 0.00007s] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 23:21:11,955 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine [cached since 0.0003293s ago] ('钻石',)
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 23:21:11,958 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 23:21:11,959 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 23:21:11,960 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70309]
+INFO:     Stopping reloader process [69063]

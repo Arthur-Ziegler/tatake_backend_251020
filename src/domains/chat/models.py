@@ -85,21 +85,18 @@ class ChatSession(BaseModel):
 
 class ChatState(MessagesState):
     """
-    聊天状态模型
+    简化的聊天状态模型
 
-    继承LangGraph的MessagesState，添加聊天特有的字段。
-    用于在LangGraph图中传递和管理聊天状态。
+    只使用MessagesState的标准功能，不添加任何自定义字段。
+    用户和会话信息通过config传递，而不是在state中。
 
-    注意：保持简单，只添加必要字段，避免过度复杂化。
+    这是解决LangGraph版本号类型错误的根本方案：
+    - 移除所有自定义字段，避免干扰LangGraph的内部机制
+    - 保持MessagesState的纯粹性
+    - 通过config而不是state传递元数据
     """
 
-    # 用户和会话信息 - 改为必填字段
-    user_id: str = Field(..., description="当前用户ID")
-    session_id: str = Field(..., description="当前会话ID")
-
-    # 会话元数据 - 增加必填字段和创建时间
-    session_title: str = Field(default="新会话", description="会话标题")
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="创建时间（UTC ISO格式）")
+    # 不添加任何自定义字段！完全依赖MessagesState的messages字段
 
     def add_human_message(self, content: str) -> None:
         """
@@ -154,25 +151,6 @@ class ChatState(MessagesState):
         """
         return len(self.messages)
 
-    def to_session_info(self) -> Dict[str, Any]:
-        """
-        转换为会话信息字典
-
-        Returns:
-            会话信息字典
-        """
-        last_message = self.get_last_message()
-        last_time = last_message.additional_kwargs.get("timestamp") if last_message else None
-
-        return {
-            "session_id": self.session_id,
-            "user_id": self.user_id,
-            "title": self.session_title,
-            "message_count": self.get_message_count(),
-            "last_message_time": last_time,
-            "is_active": True
-        }
-
 
 class ToolCallResult(BaseModel):
     """
@@ -196,24 +174,18 @@ class ToolCallResult(BaseModel):
 
 
 # 便捷函数
-def create_chat_state(user_id: str, session_id: str, title: str = "新会话") -> ChatState:
+def create_chat_state() -> ChatState:
     """
     创建新的聊天状态
 
-    Args:
-        user_id: 用户ID
-        session_id: 会话ID
-        title: 会话标题（默认"新会话"）
+    简化版本：不包含任何自定义字段，只使用MessagesState的标准功能。
+    用户和会话信息通过config传递，而不是在state中。
 
     Returns:
         新的ChatState实例
     """
     return ChatState(
-        messages=[],
-        user_id=user_id,
-        session_id=session_id,
-        session_title=title,
-        created_at=datetime.now(timezone.utc).isoformat()
+        messages=[]  # 只包含messages字段，不添加任何自定义字段
     )
 
 

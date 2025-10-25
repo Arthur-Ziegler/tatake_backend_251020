@@ -376,7 +376,7 @@ class AuthService:
                 audit_repo = AuditRepository(session)
 
                 # 获取当前用户
-                current_user = auth_repo.get_by_id(Auth, current_user_id)
+                current_user = auth_repo.get_by_id(current_user_id)
                 if not current_user or not current_user.is_guest:
                     raise ValidationError("无效的游客账号")
 
@@ -450,7 +450,7 @@ class AuthService:
                 audit_repo = AuditRepository(session)
 
                 # 获取用户信息
-                user = auth_repo.get_by_id(Auth, user_id)
+                user = auth_repo.get_by_id(user_id)
                 if not user:
                     raise UserNotFoundException("用户不存在")
 

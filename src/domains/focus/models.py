@@ -15,7 +15,7 @@ Focus领域数据模型 - 简化番茄钟系统
 """
 
 from datetime import datetime, timezone
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, Final
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel, Column, DateTime, Index
@@ -23,9 +23,70 @@ from sqlalchemy import text
 
 
 # 定义会话类型
-SessionType = str
+class SessionType:
+    """会话类型枚举类"""
+    FOCUS = "focus"
+    BREAK = "break"
+    LONG_BREAK = "long_break"
+    PAUSE = "pause"
 
-# 会话类型常量
+    # 允许的值集合
+    _ALLOWED_VALUES: Final = frozenset([FOCUS, BREAK, LONG_BREAK, PAUSE])
+
+    def __init__(self, value: str):
+        if value not in self._ALLOWED_VALUES:
+            raise ValueError(f"无效的会话类型: {value}. 允许的值: {self._ALLOWED_VALUES}")
+        self._value = value
+
+    def __str__(self) -> str:
+        return self._value
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    @classmethod
+    def model_json_schema(cls) -> dict:
+        """Pydantic V2兼容的JSON Schema生成方法"""
+        return {
+            "title": "SessionType",
+            "type": "string",
+            "enum": [cls.FOCUS, cls.BREAK, cls.LONG_BREAK, cls.PAUSE],
+            "description": "会话类型枚举：focus(专注), break(休息), long_break(长休息), pause(暂停)"
+        }
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
+        """Pydantic V2核心Schema生成方法"""
+        from pydantic_core import core_schema
+
+        return core_schema.union_schema([
+            # 如果已经是SessionType实例，直接使用
+            core_schema.is_instance_schema(cls),
+            # 如果是字符串，进行验证和转换
+            core_schema.no_info_plain_validator_function(cls),
+        ])
+
+    def model_dump(self) -> str:
+        """Pydantic V2兼容的序列化方法"""
+        return self._value
+
+    def model_dump_json(self) -> str:
+        """Pydantic V2兼容的JSON序列化方法"""
+        import json
+        return json.dumps(self._value)
+
+    def __hash__(self) -> int:
+        return hash(self._value)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, SessionType):
+            return self._value == other._value
+        if isinstance(other, str):
+            return self._value == other
+        return False
+
+# 会话类型常量（保持向后兼容）
 class SessionTypeConst:
     FOCUS = "focus"
     BREAK = "break"

@@ -33,7 +33,7 @@ from .models import Reward, RewardTransaction, RewardRecipe
 from .exceptions import RewardNotFoundException, InsufficientPointsException
 from src.config.game_config import reward_config, TransactionSource
 from .repository import RewardRepository, RecipeRepository
-from src.utils.uuid_helpers import ensure_str
+from src.core.uuid_converter import UUIDConverter
 
 
 class RewardService:
@@ -160,7 +160,7 @@ class RewardService:
             InsufficientPointsException: 积分不足
             Exception: 其他错误
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
         self.logger.info(f"User {user_id_str} redeeming reward {reward_id}")
 
         try:
@@ -262,7 +262,7 @@ class RewardService:
         Returns:
             Dict[str, Any]: 抽奖结果
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
         self.logger.info(f"User {user_id_str} participating in Top3 lottery")
 
         try:
@@ -363,7 +363,7 @@ class RewardService:
         Returns:
             List[Dict[str, Any]]: 交易记录
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
         self.logger.info(f"Getting reward transactions for user {user_id_str}")
 
         try:
@@ -448,7 +448,7 @@ class RewardService:
         Raises:
             Exception: 配方不存在、材料不足、数据库错误等
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
         self.logger.info(f"User {user_id_str} composing recipe {recipe_id}")
 
         try:
@@ -509,7 +509,7 @@ class RewardService:
 
                     # 创建材料消耗记录
                     consume_record = RewardTransaction(
-                        user_id=user_id,
+                        user_id=user_id_str,
                         reward_id=material_id,
                         source_type="recipe_consume",
                         source_id=recipe_id,
@@ -521,7 +521,7 @@ class RewardService:
 
                 # 6. 发放结果奖品
                 result_record = RewardTransaction(
-                    user_id=user_id,
+                    user_id=user_id_str,
                     reward_id=result_reward["id"],
                     source_type="recipe_produce",
                     source_id=recipe_id,
@@ -579,7 +579,7 @@ class RewardService:
             List[Dict[str, Any]]: 用户材料列表
         """
         try:
-            user_id_str = ensure_str(user_id)
+            user_id_str = UUIDConverter.to_string(user_id)
             return self.reward_repository.get_user_materials(user_id_str)
         except Exception as e:
             self.logger.error(f"Error getting user materials for {user_id_str}: {e}")
@@ -644,6 +644,6 @@ class RewardService:
                 "total_types": len(rewards)
             }
         except Exception as e:
-            user_id_str = ensure_str(user_id)
+            user_id_str = UUIDConverter.to_string(user_id)
             self.logger.error(f"Error getting my rewards for user {user_id_str}: {e}")
             raise

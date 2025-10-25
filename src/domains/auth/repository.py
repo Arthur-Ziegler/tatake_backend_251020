@@ -1,32 +1,33 @@
 """
-简化认证领域Repository层
+认证领域Repository层 - 支持UUID类型转换
 
-根据设计文档，Repository层大幅简化：
-1. 只保留2个核心Repository：AuthRepository和AuditRepository
-2. 移除SMS、Session、Token等非核心Repository
-3. 简化方法签名，专注于核心功能
-4. 支持微信登录和游客管理的简化操作
+提供统一的数据库访问接口，在Repository层处理UUID类型转换。
+Service层只需要处理UUID对象，Repository层负责与数据库的交互。
 
 Repository职责:
-- AuthRepository: 管理Auth实体的基础CRUD操作
-- AuditRepository: 管理AuthLog实体的基础操作
+- AuthRepository: 管理Auth实体的基础CRUD操作，处理UUID转换
+- AuditRepository: 管理AuthLog实体的基础操作，处理UUID转换
 
 设计原则:
+- 类型隔离：Service层使用UUID，Repository层处理字符串转换
+- 统一接口：提供一致的数据库操作方法
+- 错误处理：封装数据库操作异常
 - 极简化：只保留认证核心功能
-- 单一职责：每个Repository只管理一种实体
-- 同步操作：删除异步操作，保持代码简洁
-- 基础功能：只保留最基本的数据库操作
 """
 
+import logging
 from datetime import datetime, timezone
 from typing import Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlmodel import select, update
 from sqlalchemy import and_, desc
 from sqlmodel import Session
 
 from .models import Auth, AuthLog
+from src.core.uuid_converter import UUIDConverter
+
+logger = logging.getLogger(__name__)
 
 
 class AuthRepository:
@@ -50,48 +51,94 @@ class AuthRepository:
 
     def create_user(
         self,
-        is_guest: bool,
-        wechat_openid: Optional[str]
+        user_id: Optional[UUID] = None,
+        wechat_openid: Optional[str] = None,
+        is_guest: bool = True
     ) -> Auth:
         """
         创建用户
 
+        支持两种调用方式：
+        1. 新方式：create_user(user_id=UUID, wechat_openid=..., is_guest=...)
+        2. 旧方式：create_user(is_guest=..., wechat_openid=...) - 向后兼容
+
         Args:
-            is_guest: 是否为游客账号
-            wechat_openid: 微信OpenID（游客为None，正式用户必填）
+            user_id: 用户ID（UUID对象，可选，旧方式调用时自动生成）
+            wechat_openid: 微信OpenID
+            is_guest: 是否为游客
 
         Returns:
             Auth: 创建的用户实体
         """
-        user = Auth(
-            is_guest=is_guest,
-            wechat_openid=wechat_openid
-        )
+        try:
+            # 向后兼容：如果未提供user_id，自动生成
+            if user_id is None:
+                user_id = uuid4()
+                logger.info(f"Auto-generated user_id: {user_id}")
 
-        self.session.add(user)
-        self.session.commit()
-        self.session.refresh(user)
+            # 转换UUID为字符串进行存储
+            user_id_str = UUIDConverter.to_string(user_id)
 
-        return user
+            user = Auth(
+                id=user_id_str,
+                wechat_openid=wechat_openid,
+                is_guest=is_guest
+            )
 
-    def get_by_id(self, model_class, user_id) -> Optional[Auth]:
+            self.session.add(user)
+            self.session.commit()
+            self.session.refresh(user)
+
+            logger.info(f"Created user: {user_id_str}, is_guest: {is_guest}")
+            return user
+
+        except Exception as e:
+            logger.error(f"Failed to create user {user_id}: {e}")
+            self.session.rollback()
+            raise
+
+    def get_by_id(self, user_id: UUID) -> Optional[Auth]:
         """
         通过ID查找用户
 
+        Service层传入UUID对象，Repository层转换为字符串进行查询。
+        增加了类型验证和详细的错误日志记录。
+
         Args:
-            model_class: 模型类（传入Auth）
-            user_id: 用户ID（UUID或字符串）
+            user_id: 用户ID（UUID对象）
 
         Returns:
             Optional[Auth]: 找到的用户实体，未找到时返回None
+
+        Raises:
+            TypeError: 当user_id不是UUID类型时
         """
-        # 将UUID转换为字符串以匹配数据库中的存储格式
-        user_id_str = str(user_id) if isinstance(user_id, UUID) else user_id
-        statement = select(model_class).where(model_class.id == user_id_str)
-        result = self.session.execute(statement).first()
-        if result:
-            return result[0]  # 获取实际的实体对象
-        return None
+        try:
+            # 增强类型检查
+            if not isinstance(user_id, UUID):
+                raise TypeError(f"user_id must be UUID object, got {type(user_id)}: {user_id}")
+
+            # 使用UUIDConverter进行类型转换
+            user_id_str = UUIDConverter.to_string(user_id)
+
+            # 记录查询日志（仅在DEBUG级别）
+            logger.debug(f"Querying user by ID: {user_id_str}")
+
+            statement = select(Auth).where(Auth.id == user_id_str)
+            result = self.session.exec(statement).first()
+
+            if result:
+                logger.debug(f"Found user: {result.id}")
+            else:
+                logger.debug(f"User not found: {user_id_str}")
+
+            return result
+        except TypeError as te:
+            logger.error(f"Type error in get_by_id: {te}")
+            raise  # 重新抛出类型错误
+        except Exception as e:
+            logger.error(f"Failed to get user by ID {user_id}: {e}")
+            return None
 
     def get_by_wechat_openid(self, wechat_openid: str) -> Optional[Auth]:
         """
@@ -103,64 +150,82 @@ class AuthRepository:
         Returns:
             Optional[Auth]: 找到的用户实体，未找到时返回None
         """
-        statement = select(Auth).where(Auth.wechat_openid == wechat_openid)
-        result = self.session.execute(statement).first()
-        if result:
-            return result[0]  # 获取实际的实体对象
-        return None
+        try:
+            statement = select(Auth).where(Auth.wechat_openid == wechat_openid)
+            result = self.session.exec(statement).first()
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get user by wechat_openid {wechat_openid}: {e}")
+            return None
 
     def upgrade_guest_account(
         self,
         user_id: UUID,
         wechat_openid: str
-    ) -> Auth:
+    ) -> Optional[Auth]:
         """
         升级游客账号为正式用户
 
         Args:
-            user_id: 游客用户ID
+            user_id: 游客用户ID（UUID对象）
             wechat_openid: 微信OpenID
 
         Returns:
-            Auth: 升级后的用户实体
+            Optional[Auth]: 升级后的用户实体，失败时返回None
         """
-        # 将UUID转换为字符串以匹配数据库中的存储格式
-        user_id_str = str(user_id)
-        statement = (
-            update(Auth)
-            .where(Auth.id == user_id_str)
-            .values(
-                is_guest=False,
-                wechat_openid=wechat_openid,
-                jwt_version=Auth.jwt_version + 1,
-                updated_at=datetime.now(timezone.utc)
+        try:
+            # 使用UUIDConverter进行类型转换
+            user_id_str = UUIDConverter.to_string(user_id)
+            statement = (
+                update(Auth)
+                .where(Auth.id == user_id_str)
+                .values(
+                    is_guest=False,
+                    wechat_openid=wechat_openid,
+                    jwt_version=Auth.jwt_version + 1,
+                    updated_at=datetime.now(timezone.utc)
+                )
             )
-        )
 
-        self.session.execute(statement)
-        self.session.commit()
+            self.session.exec(statement)
+            self.session.commit()
 
-        # 返回更新后的用户
-        return self.get_by_id(Auth, user_id)
+            # 返回更新后的用户
+            return self.get_by_id(user_id)
+        except Exception as e:
+            logger.error(f"Failed to upgrade guest account {user_id}: {e}")
+            self.session.rollback()
+            return None
 
-    def update_last_login(self, user_id: UUID) -> None:
+    def update_last_login(self, user_id: UUID) -> bool:
         """
         更新用户最后登录时间
 
         Args:
-            user_id: 用户ID
-        """
-        statement = (
-            update(Auth)
-            .where(Auth.id == user_id)
-            .values(
-                last_login_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
-            )
-        )
+            user_id: 用户ID（UUID对象）
 
-        self.session.execute(statement)
-        self.session.commit()
+        Returns:
+            bool: 更新是否成功
+        """
+        try:
+            # 使用UUIDConverter进行类型转换
+            user_id_str = UUIDConverter.to_string(user_id)
+            statement = (
+                update(Auth)
+                .where(Auth.id == user_id_str)
+                .values(
+                    last_login_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                )
+            )
+
+            self.session.exec(statement)
+            self.session.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update last login for user {user_id}: {e}")
+            self.session.rollback()
+            return False
 
 
 class AuditRepository:
@@ -189,7 +254,7 @@ class AuditRepository:
         user_agent: Optional[str] = None,
         device_id: Optional[str] = None,
         error_code: Optional[str] = None
-    ) -> AuthLog:
+    ) -> Optional[AuthLog]:
         """
         创建审计日志
 
@@ -204,24 +269,44 @@ class AuditRepository:
             error_code: 错误代码
 
         Returns:
-            AuthLog: 创建的审计日志实体
+            Optional[AuthLog]: 创建的审计日志实体，失败时返回None
         """
-        log = AuthLog(
-            user_id=user_id,
-            action=action,
-            result=result,
-            details=details,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            device_id=device_id,
-            error_code=error_code
-        )
+        try:
+            # 增强UUID类型检查和转换
+            user_id_str = None
+            if user_id is not None:
+                if not isinstance(user_id, UUID):
+                    logger.error(f"Invalid user_id type in audit log: {type(user_id)}, value: {user_id}")
+                    # 尝试转换，但不抛出异常（审计日志应该记录所有操作）
+                    try:
+                        user_id_str = str(UUID(user_id))
+                    except Exception:
+                        user_id_str = str(user_id)
+                        logger.warning(f"Using fallback string conversion for user_id: {user_id_str}")
+                else:
+                    user_id_str = UUIDConverter.to_string(user_id)
 
-        self.session.add(log)
-        self.session.commit()
-        self.session.refresh(log)
+            log = AuthLog(
+                user_id=user_id_str,
+                action=action,
+                result=result,
+                details=details,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                device_id=device_id,
+                error_code=error_code
+            )
 
-        return log
+            self.session.add(log)
+            self.session.commit()
+            self.session.refresh(log)
+
+            logger.info(f"Created audit log: {log.id}, user_id: {user_id_str}, action: {action}, result: {result}")
+            return log
+        except Exception as e:
+            logger.error(f"Failed to create auth log: {e}")
+            self.session.rollback()
+            return None
 
 
 # ===== 删除的Repository注释 =====

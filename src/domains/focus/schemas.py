@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
+from src.core.uuid_converter import UUIDConverter
 from .models import SessionType, SessionTypeConst
 
 
@@ -42,6 +43,11 @@ class StartFocusRequest(BaseModel):
         """验证任务ID格式"""
         if not v:
             raise ValueError('任务ID不能为空')
+
+        # 验证UUID格式
+        if not UUIDConverter.is_valid_uuid_string(v):
+            raise ValueError(f'任务ID格式无效: {v}')
+
         return v
 
 

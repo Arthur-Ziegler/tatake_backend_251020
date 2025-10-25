@@ -28,8 +28,8 @@ from contextlib import contextmanager
 from sqlmodel import Session, text, select
 from sqlalchemy.exc import SQLAlchemyError
 
-from .models import PointsTransaction
-from src.utils.uuid_helpers import ensure_str
+from src.core.uuid_converter import UUIDConverter
+from src.domains.points.models import PointsTransaction
 
 
 class PointsService:
@@ -65,7 +65,7 @@ class PointsService:
         Returns:
             int: 积分余额
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.ensure_string(user_id)
         self.logger.info(f"Calculating balance for user {user_id_str}")
 
         try:
@@ -119,9 +119,9 @@ class PointsService:
             PointsTransaction: 创建的积分记录
         """
         # 使用UUID工具确保类型安全
-        user_id_str = ensure_str(user_id)
-        source_id_str = ensure_str(source_id)
-        transaction_group_str = ensure_str(transaction_group)
+        user_id_str = UUIDConverter.ensure_string(user_id)
+        source_id_str = UUIDConverter.ensure_string(source_id)
+        transaction_group_str = UUIDConverter.ensure_string(transaction_group)
 
         self.logger.info(f"Adding {amount} points for user {user_id_str}, source_type: {source_type}")
         self.logger.info(f"source_id: {source_id_str}, transaction_group: {transaction_group_str}")
@@ -136,6 +136,7 @@ class PointsService:
                 created_at=datetime.now(timezone.utc)
             )
 
+  
             self.session.add(transaction)
             self.session.flush()  # 获取ID
             self.session.commit()  # 立即提交事务确保积分记录持久化
@@ -172,7 +173,7 @@ class PointsService:
         Returns:
             List[Dict[str, Any]]: 统计结果
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.ensure_string(user_id)
         self.logger.info(f"Getting points statistics for user {user_id_str}, from {start_date} to {end_date}")
 
         try:
@@ -233,7 +234,7 @@ class PointsService:
         Returns:
             List[Dict[str, Any]]: 积分交易记录字典列表
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.ensure_string(user_id)
         self.logger.info(f"Getting transactions for user {user_id_str}, limit: {limit}, offset: {offset}")
 
         try:

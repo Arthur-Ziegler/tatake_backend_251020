@@ -36,6 +36,8 @@ from .models import Task
 from .exceptions import TaskNotFoundException, TaskPermissionDeniedException
 from .repository import TaskRepository
 from src.config.game_config import reward_config
+from src.utils.uuid_helpers import uuid_converter, validate_uuid_string
+from src.utils.enum_helpers import enum_converter
 
 
 def parse_json_field(value: Any) -> list:
@@ -112,10 +114,19 @@ class TaskService:
         Raises:
             TaskNotFoundException: 任务不存在
             TaskPermissionDeniedException: 无权限访问任务
+            ValueError: UUID格式无效
         """
         try:
-            task_id_str = str(task_id)
-            user_id_str = str(user_id)
+            # UUID类型验证
+            if not isinstance(task_id, UUID):
+                raise ValueError(f"task_id必须是UUID对象，收到类型: {type(task_id)}")
+            if not isinstance(user_id, UUID):
+                raise ValueError(f"user_id必须是UUID对象，收到类型: {type(user_id)}")
+
+            # 转换为字符串格式传递给Repository
+            task_id_str = uuid_converter.to_db_format(task_id)
+            user_id_str = uuid_converter.to_db_format(user_id)
+
             self.logger.info(f"DEBUG: Getting task {task_id_str} for user {user_id_str}")
             self.logger.info(f"DEBUG: Task ID type: {type(task_id)}, User ID type: {type(user_id)}")
 
@@ -130,8 +141,8 @@ class TaskService:
                 self.logger.debug(f"Task {task_id} found for user {user_id}")
                 return self._build_task_response(task)
 
-        except (TaskNotFoundException, TaskPermissionDeniedException):
-            # 业务异常，重新抛出
+        except (TaskNotFoundException, TaskPermissionDeniedException, ValueError):
+            # 业务异常和验证异常，重新抛出
             raise
         except Exception as e:
             self.logger.error(f"Error getting task {task_id} for user {user_id}: {e}")
@@ -286,17 +297,17 @@ class TaskService:
             self.logger.error(f"Database error completing task {task_id} for user {user_id}: {e}")
             raise Exception(f"数据库错误: {e}")
 
-    def get_tasks(self, user_id: str, status: Optional[str] = None,
-                 parent_id: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_tasks(self, user_id: UUID, status: Optional[str] = None,
+                 parent_id: Optional[UUID] = None, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
         获取用户任务列表
 
         支持按状态、父任务筛选和分页查询。
 
         Args:
-            user_id (str): 用户ID
+            user_id (UUID): 用户ID
             status (Optional[str]): 任务状态筛选
-            parent_id (Optional[str]): 父任务ID筛选
+            parent_id (Optional[UUID]): 父任务ID筛选
             limit (int): 限制数量
             offset (int): 偏移数量
 
@@ -306,9 +317,9 @@ class TaskService:
         self.logger.info(f"Getting tasks for user {user_id}, status: {status}, parent_id: {parent_id}")
 
         try:
-            # 构建查询条件
+            # 构建查询条件，将UUID转换为字符串进行数据库查询
             conditions = ["user_id = :user_id"]
-            params = {"user_id": user_id}
+            params = {"user_id": str(user_id)}
 
             if status:
                 conditions.append("status = :status")
@@ -316,7 +327,7 @@ class TaskService:
 
             if parent_id:
                 conditions.append("parent_id = :parent_id")
-                params["parent_id"] = parent_id
+                params["parent_id"] = str(parent_id)
 
             # 构建SQL查询
             where_clause = " AND ".join(conditions)
@@ -534,14 +545,15 @@ class TaskService:
             from .models import Task
             from datetime import datetime, timezone
 
-            # 创建任务对象
+            # 创建任务对象，直接使用字符串值兼容SQLite
+            # 注意：request中的status和priority已经是字符串格式，不需要额外转换
             task = Task(
                 id=str(uuid4()),  # 确保ID生成
                 user_id=str(user_id),
                 title=request.title,
                 description=request.description,
-                status=request.status or TaskStatusConst.PENDING,
-                priority=request.priority or TaskPriorityConst.MEDIUM,
+                status=str(request.status) if request.status else TaskStatusConst.PENDING,  # 强制转换为字符串
+                priority=str(request.priority) if request.priority else TaskPriorityConst.MEDIUM,  # 强制转换为字符串
                 parent_id=str(request.parent_id) if request.parent_id else None,
                 tags=request.tags or [],  # 新增
                 service_ids=request.service_ids or [],  # 新增
@@ -611,14 +623,24 @@ class TaskService:
         self.logger.info(f"Updating task {task_id} for user {user_id}")
 
         try:
+            # UUID类型验证
+            if not isinstance(task_id, UUID):
+                raise ValueError(f"task_id必须是UUID对象，收到类型: {type(task_id)}")
+            if not isinstance(user_id, UUID):
+                raise ValueError(f"user_id必须是UUID对象，收到类型: {type(user_id)}")
+
+            # 转换为字符串格式传递给Repository
+            task_id_str = uuid_converter.to_db_format(task_id)
+            user_id_str = uuid_converter.to_db_format(user_id)
+
             # 1. 验证任务存在和权限
-            task = self.task_repository.get_by_id(str(task_id), str(user_id))
+            task = self.task_repository.get_by_id(task_id_str, user_id_str)
             if not task:
                 raise TaskNotFoundException(f"任务不存在: {task_id}")
 
             # 2. 构建更新数据（只包含非None字段）
             update_data = {}
-            for field, value in request.dict(exclude_unset=True).items():
+            for field, value in request.model_dump(exclude_unset=True).items():
                 if value is not None:
                     update_data[field] = value
 
@@ -626,7 +648,7 @@ class TaskService:
             update_data['updated_at'] = datetime.now(timezone.utc)
 
             # 4. 调用repository更新
-            updated_task = self.task_repository.update(task_id, user_id, update_data)
+            updated_task = self.task_repository.update(task_id_str, user_id_str, update_data)
             if not updated_task:
                 raise Exception("更新任务失败")
 
@@ -701,7 +723,7 @@ class TaskService:
 
             # 调用现有的get_tasks方法
             tasks = self.get_tasks(
-                user_id=str(user_id),
+                user_id=user_id,  # 直接使用UUID
                 status=None,  # 不过滤状态，获取所有任务
                 parent_id=None,
                 limit=query.page_size,
@@ -710,7 +732,7 @@ class TaskService:
 
             # 计算总数（简化版本，实际应该单独查询）
             # 这里我们获取所有任务来计算总数
-            all_tasks = self.get_tasks(user_id=str(user_id))
+            all_tasks = self.get_tasks(user_id=user_id)
             total_count = len(all_tasks)
 
             # 计算分页信息，符合Pydantic模型要求

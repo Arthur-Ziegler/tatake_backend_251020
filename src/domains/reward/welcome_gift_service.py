@@ -29,7 +29,7 @@ from .models import RewardTransaction
 from .repository import RewardRepository
 from src.domains.points.models import PointsTransaction
 from src.domains.points.service import PointsService
-from src.utils.uuid_helpers import ensure_str
+from src.core.uuid_converter import UUIDConverter
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class WelcomeGiftService:
             SQLAlchemyError: 数据库操作失败
         """
         # 使用UUID工具确保类型安全
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
 
         try:
             # 生成事务组ID，用于关联本次礼包发放的所有操作
@@ -234,7 +234,7 @@ class WelcomeGiftService:
         Returns:
             礼包领取历史列表
         """
-        user_id_str = ensure_str(user_id)
+        user_id_str = UUIDConverter.to_string(user_id)
         try:
             # 查询积分流水记录
             points_query = select(PointsTransaction).where(

@@ -30,7 +30,7 @@ Repository职责：
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 from sqlmodel import select, update, delete, func, and_, or_, desc, asc
@@ -39,39 +39,11 @@ from sqlmodel import Session
 
 from .models import Task, TaskStatusConst, TaskPriorityConst
 from .exceptions import TaskDatabaseException
+from src.utils.uuid_helpers import uuid_converter
+from src.utils.enum_helpers import enum_converter
 
 # 配置日志
 logger = logging.getLogger(__name__)
-
-
-def ensure_str_uuid(uuid_value: Union[UUID, str]) -> str:
-    """
-    确保UUID值转换为字符串格式
-
-    用于所有数据库操作，解决SQLite不支持UUID类型的问题。
-
-    Args:
-        uuid_value (Union[UUID, str]): UUID对象或字符串
-
-    Returns:
-        str: UUID的字符串表示
-    """
-    return str(uuid_value) if isinstance(uuid_value, UUID) else uuid_value
-
-
-def ensure_uuid(uuid_value: Union[UUID, str]) -> UUID:
-    """
-    确保字符串UUID转换为UUID对象
-
-    用于从数据库读取数据时，将字符串转换回UUID对象。
-
-    Args:
-        uuid_value (Union[UUID, str]): 字符串或UUID对象
-
-    Returns:
-        UUID: UUID对象
-    """
-    return UUID(uuid_value) if isinstance(uuid_value, str) else uuid_value
 
 
 class TaskRepository:
@@ -105,8 +77,23 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
+            # 使用UUID转换器处理UUID字段
+            processed_data = task_data.copy()
+
+            # 转换UUID字段为字符串格式（数据库存储）
+            if 'user_id' in processed_data:
+                processed_data['user_id'] = uuid_converter.to_db_format(processed_data['user_id'])
+            if 'parent_id' in processed_data and processed_data['parent_id']:
+                processed_data['parent_id'] = uuid_converter.to_db_format(processed_data['parent_id'])
+
+            # 转换枚举字段为字符串格式（数据库存储）
+            if 'status' in processed_data:
+                processed_data['status'] = enum_converter.to_db_format(processed_data['status'], TaskStatusConst)
+            if 'priority' in processed_data:
+                processed_data['priority'] = enum_converter.to_db_format(processed_data['priority'], TaskPriorityConst)
+
             # 创建任务实例
-            task = Task(**task_data)
+            task = Task(**processed_data)
 
             # 设置时间戳
             now = datetime.now(timezone.utc)
@@ -130,16 +117,18 @@ class TaskRepository:
 
     def get_by_id(
         self,
-        task_id: Union[UUID, str],
-        user_id: Union[UUID, str],
+        task_id: str,
+        user_id: str,
         include_deleted: bool = False
     ) -> Optional[Task]:
         """
         根据ID获取任务
 
+        注意：Repository层只处理字符串类型的UUID，Service层负责UUID转换。
+
         Args:
-            task_id (Union[UUID, str]): 任务ID
-            user_id (Union[UUID, str]): 用户ID（用于权限验证）
+            task_id (str): 任务ID（字符串格式的UUID）
+            user_id (str): 用户ID（字符串格式的UUID，用于权限验证）
             include_deleted (bool): 是否包含已删除的任务
 
         Returns:
@@ -149,9 +138,9 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
-            # 转换UUID为字符串进行数据库查询
-            task_id_str = ensure_str_uuid(task_id)
-            user_id_str = ensure_str_uuid(user_id)
+            # 确保UUID参数为字符串格式（虽然应该是，但为了安全）
+            task_id_str = uuid_converter.to_db_format(task_id)
+            user_id_str = uuid_converter.to_db_format(user_id)
 
             # 构建查询条件
             conditions = [Task.id == task_id_str, Task.user_id == user_id_str]
@@ -163,12 +152,7 @@ class TaskRepository:
             statement = select(Task).where(and_(*conditions))
             result = self.session.execute(statement).first()
 
-            if result:
-                task = result[0]  # 从Result对象中获取Task实体
-                # 保持字符串格式，不要转换为UUID，避免数据库写入问题
-                # Task对象的UUID字段保持为字符串，只有在需要时才在应用层转换
-            else:
-                task = None
+            task = result[0] if result else None
 
             logger.debug(f"查询任务: {task_id_str}, 结果: {task is not None}")
             return task
@@ -183,16 +167,18 @@ class TaskRepository:
 
     def get_children(
         self,
-        parent_id: UUID,
-        user_id: UUID,
+        parent_id: str,
+        user_id: str,
         include_deleted: bool = False
     ) -> List[Task]:
         """
         获取直接子任务列表
 
+        注意：Repository层只处理字符串类型的UUID，Service层负责UUID转换。
+
         Args:
-            parent_id (UUID): 父任务ID
-            user_id (UUID): 用户ID（用于权限验证）
+            parent_id (str): 父任务ID（字符串格式的UUID）
+            user_id (str): 用户ID（字符串格式的UUID，用于权限验证）
             include_deleted (bool): 是否包含已删除的子任务
 
         Returns:
@@ -232,8 +218,8 @@ class TaskRepository:
 
     def get_all_descendants(
         self,
-        parent_id: UUID,
-        user_id: UUID,
+        parent_id: str,
+        user_id: str,
         include_deleted: bool = False
     ) -> List[Task]:
         """
@@ -298,13 +284,13 @@ class TaskRepository:
             tasks = []
             for row in result:
                 task = Task(
-                    id=UUID(row.id),
-                    user_id=UUID(row.user_id),
+                    id=row.id,  # 保持字符串格式
+                    user_id=row.user_id,  # 保持字符串格式
                     title=row.title,
                     description=row.description,
                     status=row.status,
                     priority=row.priority,
-                    parent_id=UUID(row.parent_id) if row.parent_id else None,
+                    parent_id=row.parent_id,  # 保持字符串格式
                     tags=row.tags,
                     due_date=row.due_date,
                     planned_start_time=row.planned_start_time,
@@ -328,16 +314,18 @@ class TaskRepository:
 
     def update(
         self,
-        task_id: Union[UUID, str],
-        user_id: Union[UUID, str],
+        task_id: str,
+        user_id: str,
         update_data: Dict[str, Any]
     ) -> Optional[Task]:
         """
         更新任务
 
+        注意：Repository层只处理字符串类型的UUID，Service层负责UUID转换。
+
         Args:
-            task_id (Union[UUID, str]): 任务ID
-            user_id (Union[UUID, str]): 用户ID（用于权限验证）
+            task_id (str): 任务ID（字符串格式的UUID）
+            user_id (str): 用户ID（字符串格式的UUID，用于权限验证）
             update_data (Dict[str, Any]): 更新数据
 
         Returns:
@@ -347,19 +335,30 @@ class TaskRepository:
             TaskDatabaseException: 数据库操作失败
         """
         try:
-            # 转换UUID为字符串进行数据库查询
-            task_id_str = ensure_str_uuid(task_id)
-            user_id_str = ensure_str_uuid(user_id)
+            # 确保UUID参数为字符串格式
+            task_id_str = uuid_converter.to_db_format(task_id)
+            user_id_str = uuid_converter.to_db_format(user_id)
 
             # 首先检查任务是否存在
-            existing_task = self.get_by_id(task_id, user_id)
+            existing_task = self.get_by_id(task_id_str, user_id_str)
             if not existing_task:
                 return None
 
-            # 添加更新时间
-            update_data['updated_at'] = datetime.now(timezone.utc)
+            # 处理更新数据中的枚举字段
+            processed_update_data = update_data.copy()
+            if 'status' in processed_update_data:
+                processed_update_data['status'] = enum_converter.to_db_format(
+                    processed_update_data['status'], TaskStatusConst
+                )
+            if 'priority' in processed_update_data:
+                processed_update_data['priority'] = enum_converter.to_db_format(
+                    processed_update_data['priority'], TaskPriorityConst
+                )
 
-            # 执行更新 - 使用字符串UUID
+            # 添加更新时间
+            processed_update_data['updated_at'] = datetime.now(timezone.utc)
+
+            # 执行更新
             statement = (
                 update(Task)
                 .where(and_(
@@ -367,7 +366,7 @@ class TaskRepository:
                     Task.user_id == user_id_str,
                     Task.is_deleted == False
                 ))
-                .values(**update_data)
+                .values(**processed_update_data)
                 .returning(Task)
             )
 
@@ -375,17 +374,7 @@ class TaskRepository:
             self.session.flush()
             self.session.commit()  # 确保事务提交到数据库
 
-            if result:
-                task = result[0]  # 获取实际的实体对象
-                # 确保返回的Task对象中的UUID字段是UUID类型
-                if isinstance(task.id, str):
-                    task.id = ensure_uuid(task.id)
-                if isinstance(task.user_id, str):
-                    task.user_id = ensure_uuid(task.user_id)
-                if isinstance(task.parent_id, str) and task.parent_id:
-                    task.parent_id = ensure_uuid(task.parent_id)
-            else:
-                task = None
+            task = result[0] if result else None
 
             logger.debug(f"更新任务成功: {task_id_str}")
             return task
@@ -398,13 +387,15 @@ class TaskRepository:
                 original_error=e
             )
 
-    def soft_delete(self, task_id: UUID, user_id: UUID) -> bool:
+    def soft_delete(self, task_id: str, user_id: str) -> bool:
         """
         软删除任务
 
+        注意：Repository层只处理字符串类型的UUID，Service层负责UUID转换。
+
         Args:
-            task_id (UUID): 任务ID
-            user_id (UUID): 用户ID（用于权限验证）
+            task_id (str): 任务ID（字符串格式的UUID）
+            user_id (str): 用户ID（字符串格式的UUID，用于权限验证）
 
         Returns:
             bool: 删除成功返回True，任务不存在返回False
@@ -442,7 +433,7 @@ class TaskRepository:
                 original_error=e
             )
 
-    def soft_delete_cascade(self, task_id: Union[UUID, str], user_id: Union[UUID, str]) -> int:
+    def soft_delete_cascade(self, task_id: str, user_id: str) -> int:
         """
         级联软删除任务及其所有子任务
 
@@ -458,12 +449,12 @@ class TaskRepository:
         """
         try:
             # 转换UUID为字符串进行数据库查询
-            task_id_str = ensure_str_uuid(task_id)
-            user_id_str = ensure_str_uuid(user_id)
+            task_id_str = uuid_converter.to_db_format(task_id)
+            user_id_str = uuid_converter.to_db_format(user_id)
 
             # 获取所有后代任务ID
-            descendants = self.get_all_descendants(task_id, user_id, include_deleted=False)
-            descendant_ids = [ensure_str_uuid(desc.id) for desc in descendants]
+            descendants = self.get_all_descendants(task_id_str, user_id_str, include_deleted=False)
+            descendant_ids = [uuid_converter.to_db_format(desc.id) for desc in descendants]
 
             # 包含父任务本身 - 使用字符串UUID
             all_ids = [task_id_str] + descendant_ids
@@ -636,7 +627,7 @@ class TaskRepository:
                 original_error=e
             )
 
-    def count_by_status(self, user_id: UUID, include_deleted: bool = False) -> Dict[str, int]:
+    def count_by_status(self, user_id: str, include_deleted: bool = False) -> Dict[str, int]:
         """
         按状态统计任务数量
 

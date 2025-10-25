@@ -17,10 +17,11 @@ from src.domains.auth.schemas import (
 
 from src.domains.task.schemas import (
     CreateTaskRequest, UpdateTaskRequest, TaskResponse, TaskListResponse,
-    TaskDeleteResponse, TaskStatus, TaskPriority, CompleteTaskRequest,
+    TaskDeleteResponse, CompleteTaskRequest,
     CompleteTaskResponse, UncompleteTaskRequest, UncompleteTaskResponse,
     TaskListQuery
 )
+from src.core.types import TaskStatus, TaskPriority
 
 from src.domains.chat.schemas import (
     SendMessageRequest, MessageResponse, ChatHistoryResponse,
@@ -31,8 +32,9 @@ from src.domains.chat.schemas import (
 
 from src.domains.focus.schemas import (
     StartFocusRequest, FocusSessionResponse, FocusSessionListResponse,
-    FocusOperationResponse, SessionType
+    FocusOperationResponse
 )
+from src.domains.focus.models import SessionType
 
 from src.domains.reward.schemas import (
     RewardResponse, RewardCatalogResponse, RewardRedeemRequest,
@@ -75,9 +77,7 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "UncompleteTaskResponse": UncompleteTaskResponse,
     "TaskListQuery": TaskListQuery,
 
-    # 枚举类型
-    "TaskStatus": TaskStatus,
-    "TaskPriority": TaskPriority,
+    # 枚举类型已经集成在各自的Schema中，无需单独注册
 
     # 聊天系统
     "SendMessageRequest": SendMessageRequest,
@@ -165,9 +165,14 @@ def register_all_schemas_to_openapi(app) -> None:
         if schema_name not in schemas:
             try:
                 # 使用Pydantic模型的json_schema方法生成schema
-                schema_json = schema_model.model_json_schema(
-                    ref_template="#/components/schemas/{model}"
-                )
+                try:
+                    # 尝试使用ref_template参数（适用于Pydantic模型）
+                    schema_json = schema_model.model_json_schema(
+                        ref_template="#/components/schemas/{model}"
+                    )
+                except TypeError:
+                    # 如果不支持ref_template参数，使用默认方式（适用于自定义枚举类）
+                    schema_json = schema_model.model_json_schema()
 
                 # 将Pydantic生成的schema转换为OpenAPI格式
                 openapi_schema["components"]["schemas"][schema_name] = _convert_pydantic_schema_to_openapi(schema_json)
@@ -195,13 +200,16 @@ def _convert_pydantic_schema_to_openapi(pydantic_schema: Dict[str, Any]) -> Dict
     Returns:
         符合OpenAPI 3.0规范的schema定义
     """
-    # 移除Pydantic特有的字段，保留OpenAPI兼容的部分
+    # 基础字段
     openapi_schema = {
         "type": pydantic_schema.get("type", "object"),
         "description": pydantic_schema.get("description", ""),
-        "properties": pydantic_schema.get("properties", {}),
-        "required": pydantic_schema.get("required", []),
     }
+
+    # 保留重要的OpenAPI字段
+    for key in ["enum", "properties", "required", "items", "allOf", "anyOf", "oneOf"]:
+        if key in pydantic_schema:
+            openapi_schema[key] = pydantic_schema[key]
 
     # 如果有$defs，移动到components/schemas（这通常在调用时处理）
     if "$defs" in pydantic_schema:

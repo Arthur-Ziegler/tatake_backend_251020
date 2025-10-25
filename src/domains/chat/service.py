@@ -37,6 +37,8 @@ from .database import chat_db_manager, get_chat_database_path
 from .graph import create_chat_graph
 from .models import ChatState, ChatSession, ChatMessage
 from .prompts.system import format_welcome_message, format_session_summary
+from src.core.uuid_converter import UUIDConverter
+
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -207,13 +209,7 @@ class ChatService:
                 """
                 修复字符串类型的版本号
 
-                处理不同类型的字符串版本号：
-
-                示例1 - 浮点数字符串：
-                '2.0' -> 2
-
-                示例2 - UUID字符串（这是问题的根源）：
-                '00000000000000000000000000000002.0.243798848838515' -> 稳定的哈希整数
+                使用增强的UUIDConverter处理LangGraph特殊格式
 
                 Args:
                     key: channel 名称
@@ -221,20 +217,38 @@ class ChatService:
                     channel_versions: channel_versions 字典引用
                 """
                 try:
-                    # 情况1: 看起来像浮点数的字符串（如 "2.0"）
+                    # 使用UUIDConverter的LangGraph格式处理
+                    if UUIDConverter.is_valid_uuid_format(value):
+                        # 如果是LangGraph特殊格式，提取版本号
+                        version_num = UUIDConverter._extract_version_from_langgraph_format(value)
+                        channel_versions[key] = version_num
+                        logger.debug(f"修复LangGraph特殊格式: {key} 从 {value} 提取版本 {version_num}")
+                        return
+
+                    # 情况1: 处理LangGraph特有的版本号格式 "xxx.xxx.xxx"
+                    if '.' in value:
+                        parts = value.split('.')
+                        if len(parts) >= 2 and parts[0].isdigit():
+                            # 提取第一部分作为版本号 (如从 "00000000000000000000000000000002.0.243798848838515" 提取 "2")
+                            version_num = int(parts[0]) if len(parts[0]) > 0 and parts[0].strip() else 1
+                            channel_versions[key] = version_num
+                            logger.debug(f"修复LangGraph版本: {key} 从 {value} 提取版本 {version_num}")
+                            return
+
+                    # 情况2: 看起来像浮点数的字符串（如 "2.0"）
                     if '.' in value and value.replace('.', '').isdigit():
                         channel_versions[key] = int(float(value))
                         logger.debug(f"修复浮点版本: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
                     else:
-                        # 情况2: 尝试直接转换为整数（如 "2"）
+                        # 情况3: 尝试直接转换为整数（如 "2"）
                         channel_versions[key] = int(value)
                         logger.debug(f"修复整数字符串: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
-                except ValueError:
-                    # 情况3: 复杂的 UUID 字符串，无法直接转换
+                except (ValueError, TypeError) as e:
+                    # 情况4: 复杂的 UUID 字符串，无法直接转换
                     # 使用哈希生成稳定的整数（确保相同的字符串总是生成相同的整数）
                     stable_int = abs(hash(value)) % (10**9)
                     channel_versions[key] = stable_int
-                    logger.debug(f"修复UUID版本: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                    logger.debug(f"修复UUID版本: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int), 原因: {e}")
 
             def _fix_non_integer_version(self, key, value, channel_versions):
                 """
@@ -276,15 +290,28 @@ class ChatService:
                     if isinstance(channel_versions, dict):
                         for key, value in channel_versions.items():
                             if isinstance(value, str):
+                                # 使用与put方法相同的修复逻辑
+                                if '.' in value:
+                                    parts = value.split('.')
+                                    if len(parts) >= 2 and parts[0].isdigit():
+                                        version_num = int(parts[0]) if len(parts[0]) > 0 else 1
+                                        channel_versions[key] = version_num
+                                        logger.debug(f"检索时修复LangGraph版本: {key} 从 {value} 提取版本 {version_num}")
+                                        continue
+
                                 try:
                                     channel_versions[key] = int(value)
                                     logger.debug(f"检索时修复类型: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
-                                except ValueError:
+                                except (ValueError, TypeError):
                                     channel_versions[key] = 1
                                     logger.debug(f"检索时重置类型: {key} 无法转换，设置为默认值 1")
                             elif not isinstance(value, int):
-                                channel_versions[key] = int(value)
-                                logger.debug(f"检索时强制转换: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                                try:
+                                    channel_versions[key] = int(value)
+                                    logger.debug(f"检索时强制转换: {key} 从 {value} ({type(value)}) 转换为 {channel_versions[key]} (int)")
+                                except (ValueError, TypeError):
+                                    channel_versions[key] = 1
+                                    logger.debug(f"检索时强制转换失败: {key} 从 {value} ({type(value)}) 重置为 1 (int)")
 
                 return result
 
@@ -319,11 +346,22 @@ class ChatService:
 
         Returns:
             RunnableConfig: LangGraph运行配置
+
+        Raises:
+            ValueError: 当UUID格式无效时
         """
+        # 验证和标准化UUID格式
+        try:
+            validated_user_id = UUIDConverter.validate_and_normalize_uuid(user_id, "user_id")
+            validated_thread_id = UUIDConverter.validate_and_normalize_uuid(thread_id, "thread_id")
+        except (ValueError, TypeError) as e:
+            logger.error(f"UUID格式验证失败: {e}")
+            raise ValueError(f"UUID格式错误: {e}")
+
         return {
             "configurable": {
-                "thread_id": thread_id,
-                "user_id": user_id
+                "thread_id": validated_thread_id,
+                "user_id": validated_user_id
             }
         }
 
@@ -406,12 +444,10 @@ class ChatService:
             from langchain_core.messages import HumanMessage
             user_message = HumanMessage(content=message.strip())
 
-            # 创建当前状态 - 基于最佳实践的简洁状态
+            # 创建当前状态 - 简化版本，只包含messages字段
+            # 用户和会话信息通过config传递，避免在state中添加自定义字段
             current_state = {
-                "user_id": user_id,
-                "session_id": session_id,
-                "session_title": "聊天会话",  # 可从数据库获取
-                "messages": [user_message]
+                "messages": [user_message]  # 只包含messages，移除所有自定义字段
             }
 
             def _send_with_checkpointer(checkpointer):

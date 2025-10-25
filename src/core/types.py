@@ -12,7 +12,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import NewType, Optional, Literal, Final, Union
+from typing import NewType, Optional, Literal, Final, Union, Any
 from enum import Enum
 import re
 import uuid
@@ -100,9 +100,8 @@ class EmailAddress(ValidatedString):
 # 严格枚举类型
 # =============================================================================
 
-@dataclass(frozen=True)
-class TaskStatus:
-    """任务状态 - 不可变的状态枚举"""
+class TaskStatus(str):
+    """任务状态 - 继承自str的枚举，确保FastAPI序列化兼容性"""
     PENDING: Final = "pending"
     IN_PROGRESS: Final = "in_progress"
     COMPLETED: Final = "completed"
@@ -110,13 +109,19 @@ class TaskStatus:
     # 允许的值集合
     _ALLOWED_VALUES: Final = frozenset([PENDING, IN_PROGRESS, COMPLETED])
 
+    def __new__(cls, value: str):
+        if value not in cls._ALLOWED_VALUES:
+            raise ValueError(f"无效的任务状态: {value}. 允许的值: {cls._ALLOWED_VALUES}")
+        # 返回str实例，但保持TaskStatus类型
+        instance = super().__new__(cls, value)
+        return instance
+
     def __init__(self, value: str):
-        if value not in self._ALLOWED_VALUES:
-            raise ValueError(f"无效的任务状态: {value}. 允许的值: {self._ALLOWED_VALUES}")
-        object.__setattr__(self, 'value', value)
+        # str.__new__已经设置了值，这里不需要额外操作
+        pass
 
     def __str__(self) -> str:
-        return self.value
+        return self
 
     @classmethod
     def from_string(cls, value: str) -> 'TaskStatus':
@@ -130,10 +135,36 @@ class TaskStatus:
             self.IN_PROGRESS: {self.COMPLETED, self.PENDING},
             self.COMPLETED: {self.PENDING}  # 可以重新开启
         }
-        return target_status.value in valid_transitions.get(self.value, set())
+        return target_status in valid_transitions.get(self, set())
 
-class TaskPriority:
-    """任务优先级 - 不可变的优先级枚举"""
+    @property
+    def value(self) -> str:
+        """获取字符串值"""
+        return str(self)
+
+    # 确保JSON序列化时返回字符串
+    def __repr__(self) -> str:
+        return f"TaskStatus('{self}')"
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
+        """Pydantic V2核心Schema生成方法"""
+        from pydantic_core import core_schema
+
+        return core_schema.no_info_plain_validator_function(cls)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        """Pydantic V2 JSON Schema生成方法"""
+        return {
+            "title": "TaskStatus",
+            "type": "string",
+            "enum": [cls.PENDING, cls.IN_PROGRESS, cls.COMPLETED],
+            "description": "任务状态枚举：pending(待处理), in_progress(进行中), completed(已完成)"
+        }
+
+class TaskPriority(str):
+    """任务优先级 - 继承自str的枚举，确保FastAPI序列化兼容性"""
     LOW: Final = "low"
     MEDIUM: Final = "medium"
     HIGH: Final = "high"
@@ -145,34 +176,59 @@ class TaskPriority:
         HIGH: 3
     }
 
+    def __new__(cls, value: str):
+        if value not in cls._ALLOWED_VALUES:
+            raise ValueError(f"无效的任务优先级: {value}. 允许的值: {cls._ALLOWED_VALUES}")
+        # 返回str实例，但保持TaskPriority类型
+        instance = super().__new__(cls, value)
+        return instance
+
     def __init__(self, value: str):
-        if value not in self._ALLOWED_VALUES:
-            raise ValueError(f"无效的任务优先级: {value}. 允许的值: {self._ALLOWED_VALUES}")
-        self._value = value
+        # str.__new__已经设置了值，这里不需要额外操作
+        pass
 
     def __str__(self) -> str:
-        return self._value
+        return self
 
-    @property
-    def value(self) -> str:
-        return self._value
+    @classmethod
+    def from_string(cls, value: str) -> 'TaskPriority':
+        """从字符串创建优先级"""
+        return cls(value)
 
     @property
     def level(self) -> int:
         """获取优先级数值"""
-        return self._LEVEL_MAP[self._value]
+        return self._LEVEL_MAP[self]
 
     def is_higher_than(self, other: 'TaskPriority') -> bool:
         """检查是否比其他优先级更高"""
         return self.level > other.level
 
-    def __hash__(self) -> int:
-        return hash(self._value)
+    @property
+    def value(self) -> str:
+        """获取字符串值"""
+        return str(self)
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, TaskPriority):
-            return self._value == other._value
-        return False
+    # 确保JSON序列化时返回字符串
+    def __repr__(self) -> str:
+        return f"TaskPriority('{self}')"
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
+        """Pydantic V2核心Schema生成方法"""
+        from pydantic_core import core_schema
+
+        return core_schema.no_info_plain_validator_function(cls)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema, handler):
+        """Pydantic V2 JSON Schema生成方法"""
+        return {
+            "title": "TaskPriority",
+            "type": "string",
+            "enum": [cls.LOW, cls.MEDIUM, cls.HIGH],
+            "description": "任务优先级枚举：low(低), medium(中), high(高)"
+        }
 
 # =============================================================================
 # 严格数值类型

@@ -29,6 +29,7 @@
 import logging
 from typing import Dict, Any, Optional
 from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
 
 # 导入辅助函数
 from .utils import (
@@ -56,7 +57,8 @@ def create_task(
     tags: Optional[str] = None,
     due_date: Optional[str] = None,
     planned_start_time: Optional[str] = None,
-    planned_end_time: Optional[str] = None
+    planned_end_time: Optional[str] = None,
+    config: RunnableConfig = None
 ) -> str:
     """
     创建新任务工具
@@ -74,6 +76,7 @@ def create_task(
         due_date (str, optional): 截止日期，ISO 8601格式，如："2024-12-31T23:59:59Z"
         planned_start_time (str, optional): 计划开始时间，ISO 8601格式
         planned_end_time (str, optional): 计划结束时间，ISO 8601格式
+        config (RunnableConfig, optional): LangGraph运行配置，用于获取用户ID
 
     Returns:
         str: JSON格式的创建结果，包含任务ID和详细信息
@@ -118,8 +121,12 @@ def create_task(
                 planned_end_time=parsed_end_time
             )
 
-            # 暂时使用固定的用户ID（后续可以从上下文获取）
-            user_id = safe_uuid_convert("550e8400-e29b-41d4-a716-446655440000")
+            # 从配置中获取真实的用户ID
+            user_id_str = config.get("configurable", {}).get("user_id") if config else None
+            if not user_id_str:
+                raise ValueError("无法获取用户ID，请确保聊天系统正确传递用户信息")
+
+            user_id = safe_uuid_convert(user_id_str)
 
             # 调用任务服务创建任务
             result = task_service.create_task(create_request, user_id)
@@ -154,7 +161,8 @@ def update_task(
     priority: Optional[str] = None,
     parent_id: Optional[str] = None,
     tags: Optional[str] = None,
-    due_date: Optional[str] = None
+    due_date: Optional[str] = None,
+    config: RunnableConfig = None
 ) -> str:
     """
     更新任务工具
@@ -171,6 +179,7 @@ def update_task(
         parent_id (str, optional): 新的父任务ID，设置为None表示移至根级别
         tags (str, optional): 新的任务标签，逗号分隔，会完全替换现有标签
         due_date (str, optional): 新的截止日期，ISO 8601格式
+        config (RunnableConfig, optional): LangGraph运行配置，用于获取用户ID
 
     Returns:
         str: JSON格式的更新结果，包含更新后的任务信息
@@ -224,8 +233,12 @@ def update_task(
 
             update_request = UpdateTaskRequest(**update_data)
 
-            # 暂时使用固定的用户ID（后续可以从上下文获取）
-            user_id = safe_uuid_convert("550e8400-e29b-41d4-a716-446655440000")
+            # 从配置中获取真实的用户ID
+            user_id_str = config.get("configurable", {}).get("user_id") if config else None
+            if not user_id_str:
+                raise ValueError("无法获取用户ID，请确保聊天系统正确传递用户信息")
+
+            user_id = safe_uuid_convert(user_id_str)
 
             # 调用任务服务更新任务
             result = task_service.update_task_with_tree_structure(task_uuid, update_request, user_id)
@@ -252,7 +265,7 @@ def update_task(
 
 
 @tool
-def delete_task(task_id: str) -> str:
+def delete_task(task_id: str, config: RunnableConfig = None) -> str:
     """
     删除任务工具
 
@@ -261,6 +274,7 @@ def delete_task(task_id: str) -> str:
 
     Args:
         task_id (str): 要删除的任务ID，必填
+        config (RunnableConfig, optional): LangGraph运行配置，用于获取用户ID
 
     Returns:
         str: JSON格式的删除结果，包含删除确认信息
@@ -284,8 +298,12 @@ def delete_task(task_id: str) -> str:
             if task_uuid is None:
                 raise ValueError("任务ID不能为空")
 
-            # 暂时使用固定的用户ID（后续可以从上下文获取）
-            user_id = safe_uuid_convert("550e8400-e29b-41d4-a716-446655440000")
+            # 从配置中获取真实的用户ID
+            user_id_str = config.get("configurable", {}).get("user_id") if config else None
+            if not user_id_str:
+                raise ValueError("无法获取用户ID，请确保聊天系统正确传递用户信息")
+
+            user_id = safe_uuid_convert(user_id_str)
 
             # 调用任务服务删除任务
             result = task_service.delete_task(task_uuid, user_id)

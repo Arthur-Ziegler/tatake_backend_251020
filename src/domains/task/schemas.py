@@ -35,11 +35,10 @@ from pydantic_core import ValidationError
 
 # 导入相关模型
 from .models import TaskStatusConst, TaskPriorityConst
+from src.core.types import TaskStatus, TaskPriority
 from src.domains.auth.schemas import UnifiedResponse
 
-# 定义类型别名以保持兼容性
-TaskStatus = str
-TaskPriority = str
+# TaskStatus和TaskPriority现在从src.core.types导入
 
 
 # ===== 请求Schema =====

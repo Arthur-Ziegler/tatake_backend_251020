@@ -6,6 +6,7 @@ from uuid import UUID
 from datetime import datetime, timezone
 
 from sqlmodel import Session, select, func
+from src.core.uuid_converter import UUIDConverter
 
 from .models import Reward, RewardRecipe, RewardTransaction, PointsTransaction
 from .exceptions import (
@@ -39,7 +40,7 @@ class RewardRepository:
     def get_user_rewards(self, user_id: UUID) -> List[RewardTransaction]:
         """获取用户所有奖励流水记录"""
         statement = select(RewardTransaction).where(
-            RewardTransaction.user_id == str(user_id),
+            RewardTransaction.user_id == UUIDConverter.to_string(user_id),
             RewardTransaction.quantity > 0  # 只获取获得的奖励
         ).order_by(RewardTransaction.created_at.desc())
         return list(self.session.execute(statement).scalars().all())
@@ -54,7 +55,7 @@ class RewardRepository:
                 FROM reward_transactions
                 WHERE user_id = :user_id AND reward_id = :reward_id
             """),
-            {"user_id": str(user_id), "reward_id": reward_id}
+            {"user_id": UUIDConverter.to_string(user_id), "reward_id": reward_id}
         ).scalar()
 
         return result or 0
@@ -263,7 +264,7 @@ class PointsRepository:
     def get_balance(self, user_id: UUID) -> int:
         """获取用户积分余额"""
         statement = select(func.sum(PointsTransaction.amount)).where(
-            PointsTransaction.user_id == str(user_id)
+            PointsTransaction.user_id == UUIDConverter.to_string(user_id)
         )
         result = self.session.execute(statement).scalar()
         return result or 0
@@ -271,7 +272,7 @@ class PointsRepository:
     def get_total_earned(self, user_id: UUID) -> int:
         """获取用户总收入积分"""
         statement = select(func.sum(PointsTransaction.amount)).where(
-            PointsTransaction.user_id == str(user_id),
+            PointsTransaction.user_id == UUIDConverter.to_string(user_id),
             PointsTransaction.amount > 0
         )
         result = self.session.execute(statement).scalar()
@@ -280,7 +281,7 @@ class PointsRepository:
     def get_total_spent(self, user_id: UUID) -> int:
         """获取用户总支出积分（绝对值）"""
         statement = select(func.sum(PointsTransaction.amount)).where(
-            PointsTransaction.user_id == str(user_id),
+            PointsTransaction.user_id == UUIDConverter.to_string(user_id),
             PointsTransaction.amount < 0
         )
         result = self.session.execute(statement).scalar()
@@ -324,14 +325,14 @@ class PointsRepository:
     def count_transactions(self, user_id: UUID) -> int:
         """统计用户积分流水数量"""
         statement = select(func.count(PointsTransaction.id)).where(
-            PointsTransaction.user_id == str(user_id)
+            PointsTransaction.user_id == UUIDConverter.to_string(user_id)
         )
         return self.session.execute(statement).scalar() or 0
 
     def add_user_reward(self, user_id: UUID, reward_id: UUID, quantity: int) -> None:
         """添加用户奖励流水记录（用于抽奖）"""
         transaction = RewardTransaction(
-            user_id=str(user_id),
+            user_id=UUIDConverter.to_string(user_id),
             reward_id=str(reward_id),
             source_type="lottery",
             quantity=quantity,

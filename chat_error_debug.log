@@ -1,0 +1,145 @@
+2025-10-26 02:09:52,712 - src.domains.chat.context_manager - INFO - 上下文管理器初始化: max_messages=20, max_tokens=None
+2025-10-26 02:09:52,712 - src.domains.chat.database - INFO - 聊天内存存储创建成功
+2025-10-26 02:09:52,712 - __main__ - INFO - 🔧 ChatService猴子补丁已应用
+2025-10-26 02:09:52,793 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-10-26 02:09:52,793 - sqlalchemy.engine.Engine - INFO - SELECT 1
+2025-10-26 02:09:52,793 - sqlalchemy.engine.Engine - INFO - [generated in 0.00013s] ()
+2025-10-26 02:09:52,813 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("auth")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("auth_audit_logs")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("tasks")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("points_transactions")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("rewards")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("reward_recipes")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("reward_transactions")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_top3")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("focus_sessions")
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,814 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-10-26 02:09:52,814 - src.domains.task.database - INFO - Task领域数据库表创建成功
+2025-10-26 02:09:52,814 - src.domains.task.database - INFO - Task领域数据库初始化完成
+2025-10-26 02:09:52,815 - src.domains.reward.database - INFO - 开始初始化奖励系统数据库
+2025-10-26 02:09:52,815 - src.domains.reward.database - INFO - 开始初始化奖品数据
+2025-10-26 02:09:52,815 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-10-26 02:09:52,817 - sqlalchemy.engine.Engine - INFO - SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-26 02:09:52,817 - sqlalchemy.engine.Engine - INFO - [generated in 0.00007s] ('小金币',)
+2025-10-26 02:09:52,817 - src.domains.reward.database - DEBUG - 奖品已存在，跳过: 小金币
+2025-10-26 02:09:52,818 - sqlalchemy.engine.Engine - INFO - SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-26 02:09:52,818 - sqlalchemy.engine.Engine - INFO - [cached since 0.0004713s ago] ('钻石',)
+2025-10-26 02:09:52,818 - src.domains.reward.database - DEBUG - 奖品已存在，跳过: 钻石
+2025-10-26 02:09:52,818 - src.domains.reward.database - INFO - 奖品初始化完成，新创建 0 个奖品
+2025-10-26 02:09:52,818 - src.domains.reward.database - INFO - 开始初始化配方数据
+2025-10-26 02:09:52,818 - sqlalchemy.engine.Engine - INFO - SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-26 02:09:52,818 - sqlalchemy.engine.Engine - INFO - [generated in 0.00005s] ('小金币合成钻石',)
+2025-10-26 02:09:52,818 - src.domains.reward.database - DEBUG - 配方已存在，跳过: 小金币合成钻石
+2025-10-26 02:09:52,818 - src.domains.reward.database - INFO - 配方初始化完成，新创建 0 个配方
+2025-10-26 02:09:52,818 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-10-26 02:09:52,818 - src.domains.reward.database - INFO - 奖励系统数据库初始化完成
+2025-10-26 02:09:52,819 - src.domains.chat.database - INFO - 聊天数据库连接正常
+2025-10-26 02:09:52,819 - src.domains.chat.database - INFO - 聊天检查点器创建成功: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:09:52,819 - src.domains.chat.database - INFO - 检查点器验证通过: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:09:52,819 - src.domains.chat.database - INFO - 聊天数据库连接正常
+2025-10-26 02:09:52,819 - src.domains.chat.database - INFO - 聊天数据库表创建成功
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("auth")
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("auth_audit_logs")
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("tasks")
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("points_transactions")
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,819 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("rewards")
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("reward_recipes")
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("reward_transactions")
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("task_top3")
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - PRAGMA main.table_info("focus_sessions")
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2025-10-26 02:09:52,820 - sqlalchemy.engine.Engine - INFO - COMMIT
+2025-10-26 02:09:52,820 - src.domains.focus.database - INFO - Focus领域数据库表创建成功
+2025-10-26 02:10:00,506 - src.domains.auth.repository - INFO - Auto-generated user_id: e589b4d6-8ee2-4bff-b82d-630b65f451d5
+2025-10-26 02:10:00,510 - src.domains.auth.repository - INFO - Created user: e589b4d6-8ee2-4bff-b82d-630b65f451d5, is_guest: True
+2025-10-26 02:10:00,512 - src.domains.auth.repository - ERROR - Invalid user_id type in audit log: <class 'str'>, value: e589b4d6-8ee2-4bff-b82d-630b65f451d5
+2025-10-26 02:10:00,514 - src.domains.auth.repository - INFO - Created audit log: a5aac74c-0072-4025-9d1c-cc00e2a73d5e, user_id: e589b4d6-8ee2-4bff-b82d-630b65f451d5, action: guest_init, result: success
+2025-10-26 02:10:00,522 - src.domains.chat.router - INFO - 创建聊天会话请求: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, title=调试测试会话
+2025-10-26 02:10:00,522 - src.domains.chat.database - INFO - 聊天检查点器创建成功: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:10:00,522 - src.domains.chat.database - INFO - 检查点器验证通过: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:10:00,523 - src.domains.chat.service - DEBUG - 会话记录已创建: session_id=9335feba-cf24-46b4-96b5-aa1a0f185197, user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5
+2025-10-26 02:10:00,523 - src.domains.chat.service - INFO - 聊天会话创建成功: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197
+2025-10-26 02:10:00,524 - src.domains.chat.router - INFO - 聊天会话创建成功: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197
+2025-10-26 02:10:00,532 - src.utils.api_validators - DEBUG - session_id验证通过: 9335feba-cf24-46b4-96b5-aa1a0f185197
+2025-10-26 02:10:00,532 - src.domains.chat.router - INFO - 发送聊天消息请求: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197
+2025-10-26 02:10:00,532 - __main__ - INFO - 🚀 开始发送消息: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197, message='调试测试消息'
+2025-10-26 02:10:00,532 - src.domains.chat.database - INFO - 聊天检查点器创建成功: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:10:00,532 - src.domains.chat.database - INFO - 检查点器验证通过: /Users/zalelee/Code/tatake_backend/data/chat.db
+2025-10-26 02:10:00,533 - __main__ - DEBUG - 🔧 创建TypeSafeCheckpointer包装器
+2025-10-26 02:10:00,533 - __main__ - DEBUG - 📋 Base checkpointer类型: <class 'langgraph.checkpoint.sqlite.SqliteSaver'>
+2025-10-26 02:10:00,533 - __main__ - DEBUG - ✅ TypeSafeCheckpointer创建成功: <class 'src.domains.chat.service.ChatService._create_type_safe_checkpointer.<locals>.TypeSafeCheckpointer'>
+2025-10-26 02:10:00,533 - src.domains.chat.service - DEBUG - 使用checkpointer创建Graph实例
+2025-10-26 02:10:00,536 - src.domains.chat.graph - INFO - ✅ 聊天图构建成功（基于最佳实践）
+2025-10-26 02:10:00,536 - src.domains.chat.graph - INFO - 聊天图实例创建成功
+2025-10-26 02:10:00,536 - src.domains.chat.service - ERROR - ❌ 消息发送失败: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197, error='>' not supported between instances of 'str' and 'int'
+2025-10-26 02:10:00,536 - __main__ - ERROR - ❌ 消息发送失败: 发送消息失败: '>' not supported between instances of 'str' and 'int'
+2025-10-26 02:10:00,539 - __main__ - ERROR - 🔍 完整错误堆栈:
+Traceback (most recent call last):
+  File "/Users/zalelee/Code/tatake_backend/src/domains/chat/service.py", line 449, in send_message
+    result = self._with_checkpointer(_send_with_checkpointer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/domains/chat/service.py", line 112, in _with_checkpointer
+    return func(safe_checkpointer)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/domains/chat/service.py", line 445, in _send_with_checkpointer
+    result = temp_graph.graph.invoke(current_state, config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/main.py", line 3094, in invoke
+    for chunk in self.stream(
+                 ^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2615, in stream
+    with SyncPregelLoop(
+         ^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/_loop.py", line 1084, in __enter__
+    self.updated_channels = self._first(
+                            ^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/_loop.py", line 704, in _first
+    self._put_checkpoint({"source": "input"})
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/_loop.py", line 757, in _put_checkpoint
+    new_versions = get_new_channel_versions(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/.venv/lib/python3.12/site-packages/langgraph/pregel/_utils.py", line 28, in get_new_channel_versions
+    if v > previous_versions.get(k, null_version)  # type: ignore[operator]
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '>' not supported between instances of 'str' and 'int'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/zalelee/Code/tatake_backend/debug_real_time_error.py", line 41, in debug_send_message
+    result = original_send_message(self, user_id, session_id, message)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zalelee/Code/tatake_backend/src/domains/chat/service.py", line 469, in send_message
+    raise Exception(f"发送消息失败: {str(e)}")
+Exception: 发送消息失败: '>' not supported between instances of 'str' and 'int'
+
+2025-10-26 02:10:00,539 - __main__ - ERROR - 🚨 确认是类型比较错误！
+2025-10-26 02:10:00,539 - __main__ - ERROR - 🔧 检查checkpointer状态...
+2025-10-26 02:10:00,539 - __main__ - INFO - ✅ db_manager存在
+2025-10-26 02:10:00,539 - src.domains.chat.router - ERROR - 发送聊天消息失败: user_id=e589b4d6-8ee2-4bff-b82d-630b65f451d5, session_id=9335feba-cf24-46b4-96b5-aa1a0f185197, error=发送消息失败: '>' not supported between instances of 'str' and 'int'
