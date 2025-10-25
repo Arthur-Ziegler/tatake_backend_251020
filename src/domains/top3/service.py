@@ -1,7 +1,7 @@
 """Top3领域Service层"""
 
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from sqlmodel import Session
@@ -27,7 +27,7 @@ class Top3Service:
         self.points_service = points_service or PointsService(session)  # 注入PointsService，提供默认值
         self.task_repo = TaskRepository(session)
 
-    def set_top3(self, user_id: UUID, request: SetTop3Request) -> Top3Response:
+    def set_top3(self, user_id: UUID, request: SetTop3Request) -> Dict[str, Any]:
         """
         设置Top3任务
 
@@ -81,32 +81,32 @@ class Top3Service:
                 # 旧格式：直接是task_id字符串
                 task_id_strings.append(item)
 
-        return Top3Response(
-            date=top3.top_date.isoformat(),
-            task_ids=task_id_strings,
-            points_consumed=top3.points_consumed,
-            remaining_balance=remaining_balance  # 新增字段
-        )
+        return {
+            "date": top3.top_date.isoformat(),
+            "task_ids": task_id_strings,
+            "points_consumed": top3.points_consumed,
+            "remaining_balance": remaining_balance  # 新增字段
+        }
 
-    def get_user_top3(self, user_id: UUID, target_date: date) -> Optional[TaskTop3]:
+    def get_user_top3(self, user_id: UUID, target_date: date) -> Optional[Dict[str, Any]]:
         """获取用户指定日期的Top3记录"""
         return self.top3_repo.get_by_user_and_date(user_id, target_date)
 
-    def get_top3(self, user_id: UUID, target_date_str: str) -> GetTop3Response:
+    def get_top3(self, user_id: UUID, target_date_str: str) -> Dict[str, Any]:
         """获取指定日期的Top3"""
         target_date = date.fromisoformat(target_date_str)
         top3 = self.top3_repo.get_by_user_and_date(user_id, target_date)
 
         if not top3:
             # 返回空的Top3响应，而不是抛出异常
-            return GetTop3Response(
-                date=target_date_str,
-                task_ids=[],
-                points_consumed=0,
-                created_at=None
-            )
+            return {
+                "date": target_date_str,
+                "task_ids": [],
+                "points_consumed": 0,
+                "created_at": None
+            }
 
-    # 提取task_id字符串列表，处理两种数据格式
+        # 提取task_id字符串列表，处理两种数据格式
         task_id_strings = []
         for item in top3.task_ids:
             if isinstance(item, dict):
@@ -116,12 +116,12 @@ class Top3Service:
                 # 旧格式：直接是task_id字符串
                 task_id_strings.append(item)
 
-        return GetTop3Response(
-            date=top3.top_date.isoformat(),
-            task_ids=task_id_strings,
-            points_consumed=top3.points_consumed,
-            created_at=top3.created_at.isoformat()
-        )
+        return {
+            "date": top3.top_date.isoformat(),
+            "task_ids": task_id_strings,
+            "points_consumed": top3.points_consumed,
+            "created_at": top3.created_at.isoformat()
+        }
 
     def is_task_in_today_top3(self, user_id: str, task_id: str) -> bool:
         """

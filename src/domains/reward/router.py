@@ -18,16 +18,14 @@ from .schemas import (
     PointsTransactionsResponse,
     RedeemRecipeRequest,
     RedeemRecipeResponse,
-    RedeemRecipeResponseWrapper,
     UserMaterial,
     UserMaterialsResponse,
-    UserMaterialsResponseWrapper,
     AvailableRecipe,
     AvailableRecipesResponse,
-    AvailableRecipesResponseWrapper,
     RecipeMaterial,
     RecipeReward
 )
+from src.domains.auth.schemas import UnifiedResponse
 from .exceptions import RewardException
 from src.api.dependencies import get_current_user_id
 from src.database import SessionDep
@@ -40,51 +38,77 @@ points_router = APIRouter(prefix="/points", tags=["积分系统"])
 
 # ===== 奖品API =====
 
-@router.get("/catalog", response_model=RewardCatalogResponse, summary="获取奖品目录", description="获取系统中所有可用奖品的完整目录，包括奖品名称、描述、价值和兑换条件。")
+@router.get("/catalog", response_model=UnifiedResponse[RewardCatalogResponse], summary="获取奖品目录", description="获取系统中所有可用奖品的完整目录，包括奖品名称、描述、价值和兑换条件。")
 async def get_reward_catalog(
     session: SessionDep
-):
+) -> UnifiedResponse[RewardCatalogResponse]:
     """获取所有可用奖品目录"""
     try:
         points_service = PointsService(session)
         service = RewardService(session, points_service)
-        return service.get_reward_catalog()
+        catalog_data = service.get_reward_catalog()
+
+        # 构建响应数据模型
+        response_data = RewardCatalogResponse(
+            rewards=catalog_data["rewards"],
+            total_count=catalog_data["total_count"]
+        )
+
+        return UnifiedResponse(code=200, data=response_data, message="success")
     except Exception as e:
         logger.error(f"获取奖品目录失败: {e}")
-        raise HTTPException(status_code=500, detail="获取奖品目录失败")
+        return UnifiedResponse(code=500, data=None, message="获取奖品目录失败")
 
 
-@router.get("/my-rewards", response_model=MyRewardsResponse, summary="获取我的奖品", description="获取当前用户拥有的所有奖品及数量，包括通过任务完成和兑换获得的奖品。")
+@router.get("/my-rewards", response_model=UnifiedResponse[MyRewardsResponse], summary="获取我的奖品", description="获取当前用户拥有的所有奖品及数量，包括通过任务完成和兑换获得的奖品。")
 async def get_my_rewards(
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[MyRewardsResponse]:
     """获取当前用户拥有的所有奖品"""
     try:
         points_service = PointsService(session)
         service = RewardService(session, points_service)
-        return service.get_my_rewards(user_id)
+        rewards_data = service.get_my_rewards(user_id)
+
+        # 构建响应数据模型
+        response_data = MyRewardsResponse(
+            rewards=rewards_data["rewards"],
+            total_types=rewards_data["total_types"]
+        )
+
+        return UnifiedResponse(code=200, data=response_data, message="success")
     except Exception as e:
         logger.error(f"获取我的奖品失败: {e}")
-        raise HTTPException(status_code=500, detail="获取我的奖品失败")
+        return UnifiedResponse(code=500, data=None, message="获取我的奖品失败")
 
 
-@router.post("/exchange/{reward_id}", response_model=RewardRedeemResponse, summary="积分兑换奖品")
+@router.post("/exchange/{reward_id}", response_model=UnifiedResponse[RewardRedeemResponse], summary="积分兑换奖品")
 async def exchange_reward_with_points(
     reward_id: str,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[RewardRedeemResponse]:
     """使用积分兑换奖品"""
     try:
         points_service = PointsService(session)
         service = RewardService(session, points_service)
-        return service.redeem_reward(str(user_id), reward_id)
+        redeem_data = service.redeem_reward(str(user_id), reward_id)
+
+        # 构建响应数据模型
+        response_data = RewardRedeemResponse(
+            success=redeem_data["success"],
+            result_reward=redeem_data["result_reward"],
+            consumed_rewards=redeem_data["consumed_rewards"],
+            message=redeem_data["message"]
+        )
+
+        return UnifiedResponse(code=200, data=response_data, message="success")
     except RewardException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        return UnifiedResponse(code=e.status_code, data=None, message=e.detail)
     except Exception as e:
         logger.error(f"积分兑换奖品失败: {e}")
-        raise HTTPException(status_code=500, detail="积分兑换奖品失败")
+        return UnifiedResponse(code=500, data=None, message="积分兑换奖品失败")
 
 
 # ===== 积分API =====
@@ -197,11 +221,11 @@ async def get_points_transactions(
 
 # ===== 配方合成API =====
 
-@router.get("/materials", response_model=UserMaterialsResponseWrapper, summary="获取我的材料")
+@router.get("/materials", response_model=UnifiedResponse[UserMaterialsResponse], summary="获取我的材料")
 async def get_user_materials(
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> UserMaterialsResponseWrapper:
+) -> UnifiedResponse[UserMaterialsResponse]:
     """
     获取用户拥有的所有材料（奖品）
 
@@ -212,7 +236,7 @@ async def get_user_materials(
         session (Session): 数据库会话
 
     Returns:
-        UserMaterialsResponseWrapper: 用户材料列表响应
+        UnifiedResponse[UserMaterialsResponse]: 用户材料列表响应
     """
     try:
         logger.info(f"获取用户材料: user_id={user_id}")
@@ -241,7 +265,7 @@ async def get_user_materials(
         )
 
         # 返回成功响应
-        return UserMaterialsResponseWrapper(
+        return UnifiedResponse(
             code=200,
             data=response_data,
             message="获取用户材料成功"
@@ -249,16 +273,17 @@ async def get_user_materials(
 
     except Exception as e:
         logger.error(f"获取用户材料失败: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="获取用户材料失败"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="获取用户材料失败"
         )
 
 
-@router.get("/recipes", response_model=AvailableRecipesResponseWrapper, summary="获取可用配方")
+@router.get("/recipes", response_model=UnifiedResponse[AvailableRecipesResponse], summary="获取可用配方")
 async def get_available_recipes(
     session: SessionDep
-) -> AvailableRecipesResponseWrapper:
+) -> UnifiedResponse[AvailableRecipesResponse]:
     """
     获取所有可用的配方列表
 
@@ -268,7 +293,7 @@ async def get_available_recipes(
         session (Session): 数据库会话
 
     Returns:
-        AvailableRecipesResponseWrapper: 可用配方列表响应
+        UnifiedResponse[AvailableRecipesResponse]: 可用配方列表响应
     """
     try:
         logger.info("获取可用配方列表")
@@ -321,7 +346,7 @@ async def get_available_recipes(
         )
 
         # 返回成功响应
-        return AvailableRecipesResponseWrapper(
+        return UnifiedResponse(
             code=200,
             data=response_data,
             message="获取可用配方成功"
@@ -329,21 +354,22 @@ async def get_available_recipes(
 
     except Exception as e:
         logger.error(f"获取可用配方失败: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="获取可用配方失败"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="获取可用配方失败"
         )
 
 
 @router.post("/recipes/{recipe_id}/redeem",
-              response_model=RedeemRecipeResponseWrapper,
+              response_model=UnifiedResponse[RedeemRecipeResponse],
               summary="配方合成奖品")
 async def redeem_recipe(
     recipe_id: str,
     request: RedeemRecipeRequest,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> RedeemRecipeResponseWrapper:
+) -> UnifiedResponse[RedeemRecipeResponse]:
     """
     使用配方合成奖品
 
@@ -366,10 +392,7 @@ async def redeem_recipe(
         session (Session): 数据库会话
 
     Returns:
-        RedeemRecipeResponseWrapper: 配方合成结果响应
-
-    Raises:
-        HTTPException: 配方不存在、材料不足或业务逻辑异常
+        UnifiedResponse[RedeemRecipeResponse]: 配方合成结果响应
     """
     try:
         logger.info(f"配方合成API调用: recipe_id={recipe_id}, user_id={user_id}")
@@ -406,7 +429,7 @@ async def redeem_recipe(
         )
 
         # 返回成功响应
-        return RedeemRecipeResponseWrapper(
+        return UnifiedResponse(
             code=200,
             data=response_data,
             message=result["message"]
@@ -414,7 +437,8 @@ async def redeem_recipe(
 
     except Exception as e:
         logger.error(f"配方合成失败: {e}")
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
+        return UnifiedResponse(
+            code=400,
+            data=None,
+            message=str(e)
         )

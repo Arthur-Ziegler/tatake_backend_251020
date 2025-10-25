@@ -14,7 +14,7 @@ Schema设计原则：
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from .models import SessionType, SessionTypeConst
 
@@ -32,16 +32,12 @@ class StartFocusRequest(BaseModel):
     - 不包含备注等非必要字段
     - 所有会话（包括暂停）都使用同一个请求模型
     """
-    task_id: str = Field(
-        ...,
-        description="关联的任务ID，必须是有效的任务"
-    )
-    session_type: str = Field(
-        default=SessionTypeConst.FOCUS,
-        description="会话类型：focus(专注)/break(短休息)/long_break(长休息)/pause(暂停)"
-    )
+    task_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="任务ID")
+    session_type: str = Field(default=SessionTypeConst.FOCUS,
+        example="focus", description="会话类型: focus(专注)/break(短休息)/long_break(长休息)/pause(暂停)")
 
-    @validator('task_id')
+    @field_validator('task_id')
     def validate_task_id(cls, v):
         """验证任务ID格式"""
         if not v:
@@ -64,12 +60,18 @@ class FocusSessionResponse(BaseModel):
     - 不包含created_at字段，只保留6个核心字段
     - 保持数据简洁，便于前端处理
     """
-    id: str = Field(..., description="会话ID")
-    user_id: str = Field(..., description="用户ID")
-    task_id: str = Field(..., description="关联任务ID")
-    session_type: str = Field(..., description="会话类型")
-    start_time: datetime = Field(..., description="开始时间")
-    end_time: Optional[datetime] = Field(None, description="结束时间")
+    id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
+    user_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440001", description="用户ID")
+    task_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440002", description="任务ID")
+    session_type: str = Field(...,
+        example="focus", description="会话类型")
+    start_time: datetime = Field(...,
+        example="2025-01-15T10:30:00Z", description="开始时间")
+    end_time: Optional[datetime] = Field(None,
+        example="2025-01-15T11:00:00Z", description="结束时间")
 
     @property
     def is_active(self) -> bool:
@@ -96,7 +98,8 @@ class FocusOperationResponse(BaseModel):
     - 去掉current_time字段，用户明确要求不包含
     - 简洁的数据结构，便于前端处理
     """
-    session: FocusSessionResponse = Field(..., description="专注会话信息")
+    session: FocusSessionResponse = Field(...,
+        description="专注会话信息")
 
     class Config:
         """Pydantic配置"""
@@ -119,14 +122,16 @@ class FocusSessionListResponse(BaseModel):
     - 提供基本的分页信息
     - 保持结构简单
     """
-    sessions: List[FocusSessionResponse] = Field(
-        default=[],
-        description="专注会话列表"
-    )
-    total: int = Field(..., description="总记录数")
-    page: int = Field(..., description="当前页码")
-    page_size: int = Field(..., description="每页大小")
-    has_more: bool = Field(..., description="是否有更多数据")
+    sessions: List[FocusSessionResponse] = Field(default=[],
+        description="专注会话列表")
+    total: int = Field(...,
+        example=50, description="总会话数")
+    page: int = Field(...,
+        example=1, description="当前页码")
+    page_size: int = Field(...,
+        example=20, description="每页大小")
+    has_more: bool = Field(...,
+        example=True, description="是否有更多页")
 
     class Config:
         """Pydantic配置"""

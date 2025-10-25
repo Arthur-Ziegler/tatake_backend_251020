@@ -214,7 +214,7 @@ class PointsService:
             self.logger.error(f"Database error getting statistics for user {user_id}: {e}")
             raise
 
-    def get_transactions(self, user_id, limit: int = 100, offset: int = 0) -> List[PointsTransaction]:
+    def get_transactions(self, user_id, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
         获取用户积分流水记录
 
@@ -224,7 +224,7 @@ class PointsService:
             offset (int): 偏移数量
 
         Returns:
-            List[PointsTransaction]: 积分交易记录
+            List[Dict[str, Any]]: 积分交易记录字典列表
         """
         self.logger.info(f"Getting transactions for user {user_id}, limit: {limit}, offset: {offset}")
 
@@ -239,9 +239,21 @@ class PointsService:
 
             result = list(self.session.execute(statement).scalars().all())
 
-            self.logger.info(f"Retrieved {len(result)} transactions for user {user_id}")
+            # 转换为字典列表
+            transactions = []
+            for transaction in result:
+                transactions.append({
+                    "id": str(transaction.id),
+                    "user_id": str(transaction.user_id),
+                    "amount": transaction.amount,
+                    "source_type": transaction.source_type,
+                    "source_id": transaction.source_id,
+                    "created_at": transaction.created_at
+                })
 
-            return result
+            self.logger.info(f"Retrieved {len(transactions)} transactions for user {user_id}")
+
+            return transactions
 
         except SQLAlchemyError as e:
             self.logger.error(f"Database error getting transactions for user {user_id}: {e}")

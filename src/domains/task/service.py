@@ -96,7 +96,7 @@ class TaskService:
         finally:
             self.logger.debug("Transaction scope ended")
 
-    def get_task(self, task_id: UUID, user_id: UUID) -> Task:
+    def get_task(self, task_id: UUID, user_id: UUID) -> Dict[str, Any]:
         """
         获取任务详情
 
@@ -107,7 +107,7 @@ class TaskService:
             user_id (UUID): 用户ID
 
         Returns:
-            Task: 任务详情
+            Dict[str, Any]: 任务详情
 
         Raises:
             TaskNotFoundException: 任务不存在

@@ -53,18 +53,15 @@ from .schemas import (
     CreateTaskRequest,
     UpdateTaskRequest,
     TaskListQuery,
-    TaskCreateResponse,
-    TaskGetResponse,
-    TaskUpdateResponse,
-    TaskDeleteResponseWrapper,
-    TaskListResponseWrapper,
+    TaskResponse,
+    TaskListResponse,
+    TaskDeleteResponse,
     CompleteTaskRequest,
     CompleteTaskResponse,
     UncompleteTaskRequest,
-    UncompleteTaskResponse,
-    TaskCompleteResponseWrapper,
-    TaskUncompleteResponseWrapper
+    UncompleteTaskResponse
 )
+from src.domains.auth.schemas import UnifiedResponse
 from .exceptions import (
     TaskException,
     TaskNotFoundException,
@@ -111,12 +108,12 @@ def create_error_response(exception: TaskException) -> JSONResponse:
     )
 
 
-@router.post("/", response_model=TaskCreateResponse, summary="创建新任务", description="创建一个新的任务，支持设置标题、描述、状态、优先级、父任务等完整信息。")
+@router.post("/", response_model=UnifiedResponse[TaskResponse], summary="创建新任务", description="创建一个新的任务，支持设置标题、描述、状态、优先级、父任务等完整信息。")
 async def create_task(
     request: CreateTaskRequest,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> TaskCreateResponse:
+) -> UnifiedResponse[TaskResponse]:
     """
     创建新任务
 
@@ -128,7 +125,7 @@ async def create_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskCreateResponse: 创建成功的任务响应
+        UnifiedResponse[TaskResponse]: 创建成功的任务响应
 
     Raises:
         HTTPException: 请求参数错误或业务规则验证失败
@@ -141,35 +138,40 @@ async def create_task(
         task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
-        task_response = task_service.create_task(request, user_id)
+        task_result = task_service.create_task(request, user_id)
+
+        # 构造TaskResponse
+        task_data = TaskResponse(**task_result)
 
         # 返回成功响应
-        return TaskCreateResponse(
+        return UnifiedResponse(
             code=201,
-            data=task_response,
+            data=task_data,
             message="任务创建成功"
         )
 
     except TaskException as e:
         logger.error(f"创建任务失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"创建任务异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
-@router.get("/{task_id}", response_model=TaskGetResponse, summary="获取任务详情")
+@router.get("/{task_id}", response_model=UnifiedResponse[TaskResponse], summary="获取任务详情")
 async def get_task(
     task_id: UUID,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> TaskGetResponse:
+) -> UnifiedResponse[TaskResponse]:
     """
     获取任务详情
 
@@ -181,7 +183,7 @@ async def get_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskGetResponse: 任务详情响应
+        UnifiedResponse[TaskResponse]: 任务详情响应
 
     Raises:
         HTTPException: 任务不存在或无权限访问
@@ -194,36 +196,41 @@ async def get_task(
         task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
-        task_response = task_service.get_task(task_id, user_id)
+        task_result = task_service.get_task(task_id, user_id)
+
+        # 构造TaskResponse
+        task_data = TaskResponse(**task_result)
 
         # 返回成功响应
-        return TaskGetResponse(
+        return UnifiedResponse(
             code=200,
-            data=task_response,
+            data=task_data,
             message="获取任务成功"
         )
 
     except TaskException as e:
         logger.error(f"获取任务失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"获取任务异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
-@router.put("/{task_id}", response_model=TaskUpdateResponse, summary="更新任务信息", description="更新现有任务的信息，包括标题、描述、状态、优先级等，支持部分更新。")
+@router.put("/{task_id}", response_model=UnifiedResponse[TaskResponse], summary="更新任务信息", description="更新现有任务的信息，包括标题、描述、状态、优先级等，支持部分更新。")
 async def update_task(
     task_id: UUID,
     request: UpdateTaskRequest,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> TaskUpdateResponse:
+) -> UnifiedResponse[TaskResponse]:
     """
     更新任务
 
@@ -236,7 +243,7 @@ async def update_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskUpdateResponse: 更新后的任务响应
+        UnifiedResponse[TaskResponse]: 更新后的任务响应
 
     Raises:
         HTTPException: 任务不存在、无权限访问或业务规则验证失败
@@ -249,35 +256,40 @@ async def update_task(
         task_service = TaskService(session, points_service)
 
         # 执行业务逻辑（使用支持树结构的方法）
-        task_response = task_service.update_task_with_tree_structure(task_id, request, user_id)
+        task_result = task_service.update_task_with_tree_structure(task_id, request, user_id)
+
+        # 构造TaskResponse
+        task_data = TaskResponse(**task_result)
 
         # 返回成功响应
-        return TaskUpdateResponse(
+        return UnifiedResponse(
             code=200,
-            data=task_response,
+            data=task_data,
             message="任务更新成功"
         )
 
     except TaskException as e:
         logger.error(f"更新任务失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"更新任务异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
-@router.delete("/{task_id}", response_model=TaskDeleteResponseWrapper, summary="删除任务", description="软删除指定任务，任务会被标记为已删除但不会物理删除，支持恢复操作。")
+@router.delete("/{task_id}", response_model=UnifiedResponse[TaskDeleteResponse], summary="删除任务", description="软删除指定任务，任务会被标记为已删除但不会物理删除，支持恢复操作。")
 async def delete_task(
     task_id: UUID,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> TaskDeleteResponseWrapper:
+) -> UnifiedResponse[TaskDeleteResponse]:
     """
     删除任务
 
@@ -289,7 +301,7 @@ async def delete_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskDeleteResponseWrapper: 删除操作结果响应
+        UnifiedResponse[TaskDeleteResponse]: 删除操作结果响应
 
     Raises:
         HTTPException: 任务不存在或无权限访问
@@ -304,36 +316,45 @@ async def delete_task(
         # 执行业务逻辑
         delete_result = task_service.delete_task(task_id, user_id)
 
-        # 返回成功响应
+        # 构造TaskDeleteResponse
         deleted_count = delete_result.get("deleted_count", 0)
-        return TaskDeleteResponseWrapper(
+        delete_data = TaskDeleteResponse(
+            deleted_task_id=str(task_id),
+            deleted_count=deleted_count,
+            cascade_deleted=deleted_count > 1
+        )
+
+        # 返回成功响应
+        return UnifiedResponse(
             code=200,
-            data=delete_result,
+            data=delete_data,
             message=f"任务删除成功，共删除{deleted_count}个任务"
         )
 
     except TaskException as e:
         logger.error(f"删除任务失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"删除任务异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
-@router.get("/", response_model=TaskListResponseWrapper, summary="获取任务列表")
+@router.get("/", response_model=UnifiedResponse[TaskListResponse], summary="获取任务列表")
 async def get_task_list(
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id),
     page: int = Query(1, ge=1, description="页码，从1开始"),
     page_size: int = Query(20, ge=1, le=100, description="每页大小，1-100"),
     include_deleted: bool = Query(False, description="是否包含已删除的任务")
-) -> TaskListResponseWrapper:
+) -> UnifiedResponse[TaskListResponse]:
     """
     获取任务列表 - 简化版本，只支持基本分页
 
@@ -347,7 +368,7 @@ async def get_task_list(
         session (Session): 数据库会话
 
     Returns:
-        TaskListResponseWrapper: 任务列表和分页信息响应
+        UnifiedResponse[TaskListResponse]: 任务列表和分页信息响应
 
     Raises:
         HTTPException: 查询参数错误或业务逻辑异常
@@ -369,31 +390,53 @@ async def get_task_list(
         task_service = TaskService(session, points_service)
 
         # 执行业务逻辑
-        list_response = task_service.get_task_list(query, user_id)
+        list_result = task_service.get_task_list(query, user_id)
+
+        # 构造TaskListResponse
+        # 转换任务列表
+        tasks = [TaskResponse(**task_data) for task_data in list_result.get("tasks", [])]
+
+        # 构造分页信息
+        pagination_info = PaginationInfo(
+            current_page=list_result.get("current_page", page),
+            page_size=list_result.get("page_size", page_size),
+            total_count=list_result.get("total_count", 0),
+            total_pages=list_result.get("total_pages", 0),
+            has_next=list_result.get("has_next", False),
+            has_prev=list_result.get("has_prev", False)
+        )
+
+        # 构造TaskListResponse
+        list_data = TaskListResponse(
+            tasks=tasks,
+            pagination=pagination_info
+        )
 
         # 返回成功响应
-        return TaskListResponseWrapper(
+        return UnifiedResponse(
             code=200,
-            data=list_response,
+            data=list_data,
             message="获取任务列表成功"
         )
 
     except TaskException as e:
         logger.error(f"获取任务列表失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"获取任务列表异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
 @router.post("/{task_id}/complete",
-              response_model=TaskCompleteResponseWrapper,
+              response_model=UnifiedResponse[CompleteTaskResponse],
               summary="完成任务",
               description="完成任务并触发奖励分发。支持普通任务和Top3任务，奖励机制不同。"
           )
@@ -433,7 +476,7 @@ async def complete_task(
             }
         }
     })
-) -> TaskCompleteResponseWrapper:
+) -> UnifiedResponse[CompleteTaskResponse]:
     """
     完成任务并触发奖励分发
 
@@ -459,7 +502,7 @@ async def complete_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskCompleteResponseWrapper: 任务完成结果响应
+        UnifiedResponse[CompleteTaskResponse]: 任务完成结果响应
 
     Raises:
         HTTPException: 任务不存在、无权限访问或业务逻辑异常
@@ -483,7 +526,7 @@ async def complete_task(
         )
 
         # 返回成功响应
-        return TaskCompleteResponseWrapper(
+        return UnifiedResponse(
             code=result["code"],
             data=response_data,
             message=result["message"]
@@ -491,27 +534,29 @@ async def complete_task(
 
     except TaskException as e:
         logger.error(f"完成任务失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"完成任务异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 
 @router.post("/{task_id}/uncomplete",
-              response_model=TaskUncompleteResponseWrapper,
+              response_model=UnifiedResponse[UncompleteTaskResponse],
               summary="取消任务完成")
 async def uncomplete_task(
     task_id: UUID,
     request: UncompleteTaskRequest,
     session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
-) -> TaskUncompleteResponseWrapper:
+) -> UnifiedResponse[UncompleteTaskResponse]:
     """
     取消任务完成状态
 
@@ -535,7 +580,7 @@ async def uncomplete_task(
         session (Session): 数据库会话
 
     Returns:
-        TaskUncompleteResponseWrapper: 取消完成操作结果响应
+        UnifiedResponse[UncompleteTaskResponse]: 取消完成操作结果响应
 
     Raises:
         HTTPException: 任务不存在、无权限访问或业务逻辑异常
@@ -557,7 +602,7 @@ async def uncomplete_task(
         )
 
         # 返回成功响应
-        return TaskUncompleteResponseWrapper(
+        return UnifiedResponse(
             code=result["code"],
             data=response_data,
             message=result["message"]
@@ -565,15 +610,17 @@ async def uncomplete_task(
 
     except TaskException as e:
         logger.error(f"取消任务完成失败: {e}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.detail
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"取消任务完成异常: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="内部服务器错误"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
         )
 
 

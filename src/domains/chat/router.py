@@ -46,10 +46,15 @@ from .schemas import (
     ChatSessionResponse,
     MessageResponse,
     SessionInfoResponse,
-    SessionListResponse
+    SessionListResponse,
+    ChatHistoryResponse,
+    ChatMessageItem,
+    ChatSessionItem,
+    DeleteSessionResponse,
+    ChatHealthResponse,
+    UnifiedResponse
 )
 
-from src.api.responses import create_success_response, create_error_response
 from src.api.dependencies import get_current_user_id
 
 # 配置日志
@@ -59,11 +64,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["智能聊天"])
 
 
-@router.post("/sessions", response_model=dict, summary="创建聊天会话")
+@router.post("/sessions", response_model=UnifiedResponse[ChatSessionResponse], summary="创建聊天会话")
 async def create_chat_session(
     request: CreateSessionRequest,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[ChatSessionResponse]:
     """
     创建新的聊天会话
 
@@ -72,7 +77,7 @@ async def create_chat_session(
         user_id: 当前用户ID
 
     Returns:
-        dict: 会话创建结果
+        UnifiedResponse[ChatSessionResponse]: 会话创建结果
 
     Raises:
         HTTPException: 创建失败时抛出
@@ -88,26 +93,36 @@ async def create_chat_session(
 
         logger.info(f"聊天会话创建成功: user_id={user_id}, session_id={result['session_id']}")
 
-        # 返回统一格式响应
-        return create_success_response(
-            data=result,
+        # 构造响应数据模型
+        session_response = ChatSessionResponse(
+            session_id=result["session_id"],
+            title=result["title"],
+            created_at=result["created_at"],
+            welcome_message=result.get("welcome_message", ""),
+            status=result.get("status", "created")
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=session_response,
             message="聊天会话创建成功"
         )
 
     except Exception as e:
         logger.error(f"创建聊天会话失败: user_id={user_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"创建会话失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"创建会话失败: {str(e)}"
         )
 
 
-@router.post("/sessions/{session_id}/send", response_model=dict, summary="发送消息")
+@router.post("/sessions/{session_id}/send", response_model=UnifiedResponse[MessageResponse], summary="发送消息")
 async def send_chat_message(
     session_id: str,
     request: SendMessageRequest,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[MessageResponse]:
     """
     发送消息到聊天会话
 
@@ -117,7 +132,7 @@ async def send_chat_message(
         user_id: 当前用户ID
 
     Returns:
-        dict: 消息处理结果
+        UnifiedResponse[MessageResponse]: 消息处理结果
 
     Raises:
         HTTPException: 发送失败时抛出
@@ -134,32 +149,43 @@ async def send_chat_message(
 
         logger.info(f"聊天消息发送成功: user_id={user_id}, session_id={session_id}")
 
-        # 返回统一格式响应
-        return create_success_response(
-            data=result,
+        # 构造响应数据模型
+        message_response = MessageResponse(
+            session_id=result["session_id"],
+            user_message=result["user_message"],
+            ai_response=result["ai_response"],
+            timestamp=result["timestamp"],
+            status=result.get("status", "success")
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=message_response,
             message="消息发送成功"
         )
 
     except ValueError as e:
         logger.warning(f"消息验证失败: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        return UnifiedResponse(
+            code=400,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"发送聊天消息失败: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"发送消息失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"发送消息失败: {str(e)}"
         )
 
 
-@router.get("/sessions/{session_id}/messages", response_model=list)
+@router.get("/sessions/{session_id}/messages", response_model=UnifiedResponse[ChatHistoryResponse], summary="获取聊天历史记录")
 async def get_chat_history(
     session_id: str,
     limit: int = Query(default=50, ge=1, le=1000, description="返回消息数量限制"),
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[ChatHistoryResponse]:
     """
     获取聊天历史记录
 
@@ -169,7 +195,7 @@ async def get_chat_history(
         user_id: 当前用户ID
 
     Returns:
-        list: 消息历史记录
+        UnifiedResponse[ChatHistoryResponse]: 消息历史记录
 
     Raises:
         HTTPException: 获取失败时抛出
@@ -186,21 +212,45 @@ async def get_chat_history(
 
         logger.info(f"聊天历史获取成功: user_id={user_id}, session_id={session_id}, count={result['total_count']}")
 
-        return result["messages"]
+        # 构造消息列表
+        messages = []
+        for msg in result["messages"]:
+            messages.append(ChatMessageItem(
+                type=msg["type"],
+                content=msg["content"],
+                timestamp=msg["timestamp"]
+            ))
+
+        # 构造响应数据模型
+        history_response = ChatHistoryResponse(
+            session_id=result["session_id"],
+            messages=messages,
+            total_count=result["total_count"],
+            limit=result.get("limit", limit),
+            timestamp=result["timestamp"],
+            status=result.get("status", "success")
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=history_response,
+            message="聊天历史获取成功"
+        )
 
     except Exception as e:
         logger.error(f"获取聊天历史失败: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取聊天历史失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"获取聊天历史失败: {str(e)}"
         )
 
 
-@router.get("/sessions/{session_id}", response_model=SessionInfoResponse)
+@router.get("/sessions/{session_id}", response_model=UnifiedResponse[SessionInfoResponse], summary="获取聊天会话信息")
 async def get_chat_session_info(
     session_id: str,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[SessionInfoResponse]:
     """
     获取聊天会话信息
 
@@ -209,7 +259,7 @@ async def get_chat_session_info(
         user_id: 当前用户ID
 
     Returns:
-        SessionInfoResponse: 会话信息
+        UnifiedResponse[SessionInfoResponse]: 会话信息
 
     Raises:
         HTTPException: 获取失败时抛出
@@ -225,7 +275,8 @@ async def get_chat_session_info(
 
         logger.info(f"会话信息获取成功: user_id={user_id}, session_id={session_id}")
 
-        return SessionInfoResponse(
+        # 构造响应数据模型
+        session_info = SessionInfoResponse(
             session_id=result["session_id"],
             title=result["title"],
             message_count=result["message_count"],
@@ -234,25 +285,33 @@ async def get_chat_session_info(
             status=result["status"]
         )
 
+        return UnifiedResponse(
+            code=200,
+            data=session_info,
+            message="会话信息获取成功"
+        )
+
     except ValueError as e:
         logger.warning(f"会话不存在: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+        return UnifiedResponse(
+            code=404,
+            data=None,
+            message=str(e)
         )
     except Exception as e:
         logger.error(f"获取会话信息失败: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取会话信息失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"获取会话信息失败: {str(e)}"
         )
 
 
-@router.get("/sessions", response_model=SessionListResponse)
+@router.get("/sessions", response_model=UnifiedResponse[SessionListResponse], summary="获取用户的聊天会话列表")
 async def list_chat_sessions(
     limit: int = Query(default=20, ge=1, le=100, description="返回会话数量限制"),
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[SessionListResponse]:
     """
     获取用户的聊天会话列表
 
@@ -261,7 +320,7 @@ async def list_chat_sessions(
         user_id: 当前用户ID
 
     Returns:
-        SessionListResponse: 会话列表
+        UnifiedResponse[SessionListResponse]: 会话列表
 
     Raises:
         HTTPException: 获取失败时抛出
@@ -277,9 +336,21 @@ async def list_chat_sessions(
 
         logger.info(f"会话列表获取成功: user_id={user_id}, count={result['total_count']}")
 
-        return SessionListResponse(
+        # 构造会话列表
+        sessions = []
+        for session in result["sessions"]:
+            sessions.append(ChatSessionItem(
+                session_id=session["session_id"],
+                title=session["title"],
+                message_count=session["message_count"],
+                created_at=session["created_at"],
+                updated_at=session["updated_at"]
+            ))
+
+        # 构造响应数据模型
+        session_list = SessionListResponse(
             user_id=result["user_id"],
-            sessions=result["sessions"],
+            sessions=sessions,
             total_count=result["total_count"],
             limit=result["limit"],
             timestamp=result["timestamp"],
@@ -287,19 +358,26 @@ async def list_chat_sessions(
             note=result.get("note", "")
         )
 
+        return UnifiedResponse(
+            code=200,
+            data=session_list,
+            message="会话列表获取成功"
+        )
+
     except Exception as e:
         logger.error(f"获取会话列表失败: user_id={user_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"获取会话列表失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"获取会话列表失败: {str(e)}"
         )
 
 
-@router.delete("/sessions/{session_id}")
+@router.delete("/sessions/{session_id}", response_model=UnifiedResponse[DeleteSessionResponse], summary="删除聊天会话")
 async def delete_chat_session(
     session_id: str,
     user_id: UUID = Depends(get_current_user_id)
-):
+) -> UnifiedResponse[DeleteSessionResponse]:
     """
     删除聊天会话
 
@@ -308,7 +386,7 @@ async def delete_chat_session(
         user_id: 当前用户ID
 
     Returns:
-        dict: 删除结果
+        UnifiedResponse[DeleteSessionResponse]: 删除结果
 
     Raises:
         HTTPException: 删除失败时抛出
@@ -324,37 +402,58 @@ async def delete_chat_session(
 
         logger.info(f"会话删除成功: user_id={user_id}, session_id={session_id}")
 
-        return {
-            "session_id": result["session_id"],
-            "status": result["status"],
-            "timestamp": result["timestamp"],
-            "note": result.get("note", "")
-        }
+        # 构造响应数据模型
+        delete_response = DeleteSessionResponse(
+            session_id=result["session_id"],
+            status=result["status"],
+            timestamp=result["timestamp"],
+            note=result.get("note", "")
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=delete_response,
+            message="会话删除成功"
+        )
 
     except Exception as e:
         logger.error(f"删除会话失败: user_id={user_id}, session_id={session_id}, error={e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"删除会话失败: {str(e)}"
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"删除会话失败: {str(e)}"
         )
 
 
-@router.get("/health")
-async def chat_health_check():
+@router.get("/health", response_model=UnifiedResponse[ChatHealthResponse], summary="聊天服务健康检查")
+async def chat_health_check() -> UnifiedResponse[ChatHealthResponse]:
     """
     聊天服务健康检查
 
     Returns:
-        dict: 健康检查结果
+        UnifiedResponse[ChatHealthResponse]: 健康检查结果
     """
     try:
         result = chat_service.health_check()
-        return result
+
+        # 构造响应数据模型
+        health_response = ChatHealthResponse(
+            status=result["status"],
+            database=result["database"],
+            graph_initialized=result.get("graph_initialized", False),
+            timestamp=result["timestamp"]
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=health_response,
+            message="聊天服务健康检查成功"
+        )
 
     except Exception as e:
         logger.error(f"聊天服务健康检查失败: {e}")
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": "unknown"
-        }
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"聊天服务健康检查失败: {str(e)}"
+        )

@@ -27,7 +27,7 @@ Service职责：
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 from sqlmodel import Session
@@ -41,7 +41,7 @@ from .exceptions import FocusException
 logger = logging.getLogger(__name__)
 
 
-def _build_session_response(session: FocusSession) -> FocusSessionResponse:
+def _build_session_response(session: FocusSession) -> Dict[str, Any]:
     """
     构建FocusSession响应，只包含6个核心字段
 
@@ -49,7 +49,7 @@ def _build_session_response(session: FocusSession) -> FocusSessionResponse:
         session: FocusSession数据库模型实例
 
     Returns:
-        FocusSessionResponse: 响应对象
+        Dict[str, Any]: 响应数据字典
     """
     session_data = {
         'id': session.id,
@@ -59,7 +59,7 @@ def _build_session_response(session: FocusSession) -> FocusSessionResponse:
         'start_time': session.start_time,
         'end_time': session.end_time
     }
-    return FocusSessionResponse.model_validate(session_data)
+    return session_data
 
 
 class FocusService:
@@ -82,7 +82,7 @@ class FocusService:
         self.session = session
         self.repository = FocusRepository(session)
 
-    def start_focus(self, user_id: str, request: StartFocusRequest) -> FocusSessionResponse:
+    def start_focus(self, user_id: str, request: StartFocusRequest) -> Dict[str, Any]:
         """
         开始专注会话
 
@@ -127,7 +127,7 @@ class FocusService:
             logger.error(f"开始会话失败: {e}")
             raise FocusException("开始会话失败", status_code=500)
 
-    def pause_focus(self, session_id: str, user_id: str) -> FocusSessionResponse:
+    def pause_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """
         暂停专注会话
 
@@ -178,7 +178,7 @@ class FocusService:
             logger.error(f"暂停会话失败: {e}")
             raise FocusException("暂停会话失败", status_code=500)
 
-    def resume_focus(self, session_id: str, user_id: str) -> FocusSessionResponse:
+    def resume_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """
         恢复专注会话
 
@@ -232,7 +232,7 @@ class FocusService:
             logger.error(f"恢复会话失败: {e}")
             raise FocusException("恢复会话失败", status_code=500)
 
-    def complete_focus(self, session_id: str, user_id: str) -> FocusSessionResponse:
+    def complete_focus(self, session_id: str, user_id: str) -> Dict[str, Any]:
         """
         完成专注会话
 
@@ -275,7 +275,7 @@ class FocusService:
         user_id: UUID,
         page: int = 1,
         page_size: int = 50
-    ) -> FocusSessionListResponse:
+    ) -> Dict[str, Any]:
         """
         获取用户会话列表
 
@@ -292,20 +292,20 @@ class FocusService:
             session_responses = [_build_session_response(session) for session in sessions]
 
             has_more = page * page_size < total
-            return FocusSessionListResponse(
-                sessions=session_responses,
-                total=total,
-                page=page,
-                page_size=page_size,
-                has_more=has_more
-            )
+            return {
+                "sessions": session_responses,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "has_more": has_more
+            }
 
         except Exception as e:
             logger.error(f"获取会话列表失败: {e}")
-            return FocusSessionListResponse(
-                sessions=[],
-                total=0,
-                page=page,
-                page_size=page_size,
-                has_more=False
-            )
+            return {
+                "sessions": [],
+                "total": 0,
+                "page": page,
+                "page_size": page_size,
+                "has_more": False
+            }

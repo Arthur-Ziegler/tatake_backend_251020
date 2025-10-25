@@ -22,11 +22,15 @@ API端点对应的Schema:
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, Generic, TypeVar
 from enum import Enum
 
 from pydantic import BaseModel, Field, ConfigDict
 
+
+# ===== 类型变量 =====
+
+T = TypeVar('T')
 
 # ===== 枚举类型 =====
 
@@ -38,9 +42,9 @@ class UserTypeEnum(str, Enum):
 
 # ===== 核心响应格式 =====
 
-class UnifiedResponse(BaseModel):
+class UnifiedResponse(BaseModel, Generic[T]):
     """
-    统一响应格式
+    统一响应格式 - 泛型版本
 
     所有API端点都使用这个统一的响应格式：
     - code: HTTP状态码（200, 400, 401, 403, 404, 409等）
@@ -63,7 +67,7 @@ class UnifiedResponse(BaseModel):
         }
     """
     code: int = Field(..., description="HTTP状态码")
-    data: Optional[Dict[str, Any]] = Field(None, description="响应数据")
+    data: Optional[T] = Field(None, description="响应数据，成功时包含具体数据，失败时为null")
     message: str = Field(..., description="响应消息")
 
     model_config = ConfigDict(from_attributes=True)
@@ -96,7 +100,8 @@ class WeChatRegisterRequest(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        description="微信OpenID"
+        description="微信OpenID",
+        example="ox1234567890abcdef"
     )
 
     model_config = ConfigDict(
@@ -115,7 +120,8 @@ class WeChatLoginRequest(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        description="微信OpenID"
+        description="微信OpenID",
+        example="ox1234567890abcdef"
     )
 
     model_config = ConfigDict(
@@ -134,7 +140,8 @@ class GuestUpgradeRequest(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        description="微信OpenID"
+        description="微信OpenID",
+        example="ox1234567890abcdef"
     )
 
     model_config = ConfigDict(
@@ -152,7 +159,8 @@ class TokenRefreshRequest(BaseModel):
     refresh_token: str = Field(
         ...,
         min_length=1,
-        description="刷新令牌"
+        description="刷新令牌",
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     )
 
     model_config = ConfigDict(
@@ -161,26 +169,57 @@ class TokenRefreshRequest(BaseModel):
     )
 
 
+# ===== Auth业务数据Schema =====
+
+class AuthTokenData(BaseModel):
+    """
+    认证令牌数据承载模型
+
+    包含用户认证成功后返回的所有必要信息。
+    """
+    user_id: str = Field(
+        ...,
+        description="用户唯一标识符",
+        example="550e8400-e29b-41d4-a716-446655440000"
+    )
+    is_guest: bool = Field(
+        ...,
+        description="是否为游客账号",
+        example=False
+    )
+    access_token: str = Field(
+        ...,
+        description="JWT访问令牌",
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    )
+    refresh_token: str = Field(
+        ...,
+        description="JWT刷新令牌",
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    )
+    token_type: str = Field(
+        default="bearer",
+        description="令牌类型",
+        example="bearer"
+    )
+    expires_in: int = Field(
+        ...,
+        description="访问令牌过期时间（秒）",
+        example=3600
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ===== 响应Schema =====
 
-class AuthTokenResponse(UnifiedResponse):
+class AuthTokenResponse(UnifiedResponse[AuthTokenData]):
     """
     认证令牌响应
 
     所有认证相关的成功响应都使用这个Schema，
     返回统一的令牌数据结构。
     """
-    data: Dict[str, Any] = Field(
-        ...,
-        description="令牌数据，包含user_id, access_token, refresh_token"
-    )
-
-    # 令牌数据结构示例：
-    # {
-    #     "user_id": "uuid",
-    #     "access_token": "jwt_access_token",
-    #     "refresh_token": "jwt_refresh_token"
-    # }
 
 
 # ===== 删除的Schema注释 =====

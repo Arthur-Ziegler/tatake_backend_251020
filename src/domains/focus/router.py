@@ -1,11 +1,12 @@
 """
 Focus领域API路由
 
-提供番茄钟系统的4个核心API端点：
+提供番茄钟系统的5个核心API端点：
 1. POST /focus/sessions - 开始专注会话
 2. POST /focus/sessions/{id}/pause - 暂停会话
 3. POST /focus/sessions/{id}/resume - 恢复会话
 4. POST /focus/sessions/{id}/complete - 完成会话
+5. GET /focus/sessions - 获取会话列表
 
 API设计原则：
 1. RESTful风格：使用标准的HTTP方法和路径
@@ -20,7 +21,7 @@ API设计原则：
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from .service import FocusService
@@ -28,6 +29,7 @@ from .schemas import StartFocusRequest, FocusSessionResponse, FocusSessionListRe
 from .exceptions import FocusException
 from .database import get_focus_session
 from src.api.dependencies import get_current_user_id
+from src.domains.auth.schemas import UnifiedResponse
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -36,12 +38,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/focus", tags=["番茄钟系统"])
 
 
-@router.post("/sessions", summary="开始专注会话")
+@router.post("/sessions", response_model=UnifiedResponse[FocusOperationResponse], summary="开始专注会话")
 async def start_focus(
     request: StartFocusRequest,
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_focus_session)
-):
+) -> UnifiedResponse[FocusOperationResponse]:
     """
     开始专注会话
 
@@ -60,24 +62,33 @@ async def start_focus(
         service = FocusService(session)
         result = service.start_focus(user_id, request)
         response_data = FocusOperationResponse(session=result)
-        return {
-            "code": 200,
-            "data": response_data.model_dump(),
-            "message": "专注会话开始"
-        }
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="专注会话开始"
+        )
     except FocusException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        logger.error(f"开始专注失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
+        )
     except Exception as e:
         logger.error(f"开始专注失败: {e}")
-        raise HTTPException(status_code=500, detail="开始专注失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="开始专注失败"
+        )
 
 
-@router.post("/sessions/{session_id}/pause", summary="暂停专注会话")
+@router.post("/sessions/{session_id}/pause", response_model=UnifiedResponse[FocusOperationResponse], summary="暂停专注会话")
 async def pause_focus(
     session_id: str,
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_focus_session)
-):
+) -> UnifiedResponse[FocusOperationResponse]:
     """
     暂停专注会话
 
@@ -92,24 +103,33 @@ async def pause_focus(
         service = FocusService(session)
         result = service.pause_focus(UUID(session_id), user_id)
         response_data = FocusOperationResponse(session=result)
-        return {
-            "code": 200,
-            "data": response_data.model_dump(),
-            "message": "专注会话已暂停"
-        }
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="专注会话已暂停"
+        )
     except FocusException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        logger.error(f"暂停专注失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
+        )
     except Exception as e:
         logger.error(f"暂停专注失败: {e}")
-        raise HTTPException(status_code=500, detail="暂停专注失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="暂停专注失败"
+        )
 
 
-@router.post("/sessions/{session_id}/resume", summary="恢复专注会话")
+@router.post("/sessions/{session_id}/resume", response_model=UnifiedResponse[FocusOperationResponse], summary="恢复专注会话")
 async def resume_focus(
     session_id: str,
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_focus_session)
-):
+) -> UnifiedResponse[FocusOperationResponse]:
     """
     恢复专注会话
 
@@ -124,24 +144,33 @@ async def resume_focus(
         service = FocusService(session)
         result = service.resume_focus(UUID(session_id), user_id)
         response_data = FocusOperationResponse(session=result)
-        return {
-            "code": 200,
-            "data": response_data.model_dump(),
-            "message": "专注会话已恢复"
-        }
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="专注会话已恢复"
+        )
     except FocusException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        logger.error(f"恢复专注失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
+        )
     except Exception as e:
         logger.error(f"恢复专注失败: {e}")
-        raise HTTPException(status_code=500, detail="恢复专注失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="恢复专注失败"
+        )
 
 
-@router.post("/sessions/{session_id}/complete", summary="完成专注会话")
+@router.post("/sessions/{session_id}/complete", response_model=UnifiedResponse[FocusOperationResponse], summary="完成专注会话")
 async def complete_focus(
     session_id: str,
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_focus_session)
-):
+) -> UnifiedResponse[FocusOperationResponse]:
     """
     完成专注会话
 
@@ -155,25 +184,34 @@ async def complete_focus(
         service = FocusService(session)
         result = service.complete_focus(UUID(session_id), user_id)
         response_data = FocusOperationResponse(session=result)
-        return {
-            "code": 200,
-            "data": response_data.model_dump(),
-            "message": "专注会话已完成"
-        }
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="专注会话已完成"
+        )
     except FocusException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        logger.error(f"完成专注失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=str(e)
+        )
     except Exception as e:
         logger.error(f"完成专注失败: {e}")
-        raise HTTPException(status_code=500, detail="完成专注失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="完成专注失败"
+        )
 
 
-@router.get("/sessions", summary="获取专注会话列表")
+@router.get("/sessions", response_model=UnifiedResponse[FocusSessionListResponse], summary="获取专注会话列表")
 async def get_focus_sessions(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(50, ge=1, le=100, description="每页数量"),
     user_id: UUID = Depends(get_current_user_id),
     session: Session = Depends(get_focus_session)
-):
+) -> UnifiedResponse[FocusSessionListResponse]:
     """
     获取用户专注会话列表
 
@@ -185,11 +223,17 @@ async def get_focus_sessions(
     try:
         service = FocusService(session)
         result = service.get_user_sessions(user_id, page, page_size)
-        return {
-            "code": 200,
-            "data": result.model_dump(),
-            "message": "获取成功"
-        }
+        # service返回的是dict，构造对应的Pydantic数据模型
+        response_data = FocusSessionListResponse(**result)
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="获取成功"
+        )
     except Exception as e:
         logger.error(f"获取专注会话失败: {e}")
-        raise HTTPException(status_code=500, detail="获取专注会话失败")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="获取专注会话失败"
+        )

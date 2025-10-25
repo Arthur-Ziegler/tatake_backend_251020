@@ -34,7 +34,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status, Request, Depends, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import JSONResponse
+# from fastapi.responses import JSONResponse  # 不再使用JSONResponse
 
 from jose import JWTError, jwt
 
@@ -49,6 +49,7 @@ from .schemas import (
 
     # 响应模型
     AuthTokenResponse,
+    AuthTokenData,
     UnifiedResponse
 )
 from .exceptions import (
@@ -111,37 +112,19 @@ async def get_current_user_id(
         )
 
 
-def create_success_response(data: Dict[str, Any]) -> JSONResponse:
-    """创建统一成功响应"""
-    response = UnifiedResponse(
-        code=200,
-        data=data,
-        message="success"
-    )
-    return JSONResponse(content=response.model_dump(), status_code=200)
-
-
-def create_error_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
-    """创建统一错误响应"""
-    response = UnifiedResponse(
-        code=status_code,
-        data=data,
-        message=message
-    )
-    return JSONResponse(content=response.model_dump(), status_code=status_code)
 
 
 # ===== API端点实现 =====
 
 @router.post(
     "/guest/init",
-    response_model=UnifiedResponse,
+    response_model=UnifiedResponse[AuthTokenData],
     summary="游客账号初始化",
     description="创建一个新的游客账号，无需任何参数。每次请求都创建全新的随机游客身份。"
 )
 async def guest_init(
     request: Request
-) -> JSONResponse:
+) -> UnifiedResponse[AuthTokenData]:
     """
     游客账号初始化
 
@@ -161,22 +144,40 @@ async def guest_init(
             user_agent=user_agent
         )
 
-        return create_success_response(result)
+        # 构造AuthTokenData
+        token_data = AuthTokenData(
+            user_id=result["user_id"],
+            is_guest=result["is_guest"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type=result["token_type"],
+            expires_in=result["expires_in"]
+        )
+
+        return UnifiedResponse[AuthTokenData](
+            code=200,
+            data=token_data,
+            message="success"
+        )
 
     except AuthenticationException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
 
 
 @router.post(
     "/register",
-    response_model=UnifiedResponse,
+    response_model=UnifiedResponse[AuthTokenData],
     summary="微信用户注册",
     description="通过微信OpenID注册新用户。内部实现为创建游客账号并立即升级为正式用户，包含完整的用户初始化流程。"
 )
 async def wechat_register(
     request: WeChatRegisterRequest,
     http_request: Request
-) -> JSONResponse:
+) -> UnifiedResponse[AuthTokenData]:
     """
     微信注册
 
@@ -196,17 +197,39 @@ async def wechat_register(
             user_agent=user_agent
         )
 
-        return create_success_response(result)
+        # 构造AuthTokenData
+        token_data = AuthTokenData(
+            user_id=result["user_id"],
+            is_guest=result["is_guest"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type=result["token_type"],
+            expires_in=result["expires_in"]
+        )
+
+        return UnifiedResponse[AuthTokenData](
+            code=200,
+            data=token_data,
+            message="success"
+        )
 
     except ValidationError as e:
-        return create_error_response(400, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=400,
+            data=None,
+            message=str(e)
+        )
     except AuthenticationException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
 
 
 @router.post(
     "/login",
-    response_model=UnifiedResponse,
+    response_model=UnifiedResponse[AuthTokenData],
     summary="微信用户登录",
     description="通过微信OpenID登录已有用户账号。支持新用户自动注册和已有用户登录，返回JWT访问令牌。"
 )
@@ -228,7 +251,7 @@ async def wechat_login(
             }
         }
     })
-) -> JSONResponse:
+) -> UnifiedResponse[AuthTokenData]:
     """
     微信登录
 
@@ -247,19 +270,45 @@ async def wechat_login(
             user_agent=user_agent
         )
 
-        return create_success_response(result)
+        # 构造AuthTokenData
+        token_data = AuthTokenData(
+            user_id=result["user_id"],
+            is_guest=result["is_guest"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type=result["token_type"],
+            expires_in=result["expires_in"]
+        )
+
+        return UnifiedResponse[AuthTokenData](
+            code=200,
+            data=token_data,
+            message="success"
+        )
 
     except UserNotFoundException as e:
-        return create_error_response(404, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=404,
+            data=None,
+            message=str(e)
+        )
     except ValidationError as e:
-        return create_error_response(400, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=400,
+            data=None,
+            message=str(e)
+        )
     except AuthenticationException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
 
 
 @router.post(
     "/guest/upgrade",
-    response_model=UnifiedResponse,
+    response_model=UnifiedResponse[AuthTokenData],
     summary="游客账号升级",
     description="将当前游客账号升级为正式用户，需要提供微信OpenID。",
     dependencies=[Depends(get_current_user_id)]
@@ -268,7 +317,7 @@ async def upgrade_guest(
     request: GuestUpgradeRequest,
     current_user_id: UUID = Depends(get_current_user_id),
     http_request: Request = None
-) -> JSONResponse:
+) -> UnifiedResponse[AuthTokenData]:
     """
     游客账号升级
 
@@ -288,26 +337,52 @@ async def upgrade_guest(
             user_agent=user_agent
         )
 
-        return create_success_response(result)
+        # 构造AuthTokenData
+        token_data = AuthTokenData(
+            user_id=result["user_id"],
+            is_guest=result["is_guest"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type=result["token_type"],
+            expires_in=result["expires_in"]
+        )
+
+        return UnifiedResponse[AuthTokenData](
+            code=200,
+            data=token_data,
+            message="success"
+        )
 
     except UserNotFoundException as e:
-        return create_error_response(404, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=404,
+            data=None,
+            message=str(e)
+        )
     except ValidationError as e:
-        return create_error_response(400, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=400,
+            data=None,
+            message=str(e)
+        )
     except AuthenticationException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
 
 
 @router.post(
     "/refresh",
-    response_model=UnifiedResponse,
+    response_model=UnifiedResponse[AuthTokenData],
     summary="刷新访问令牌",
     description="使用刷新令牌获取新的访问令牌。"
 )
 async def refresh_token(
     request: TokenRefreshRequest,
     http_request: Request
-) -> JSONResponse:
+) -> UnifiedResponse[AuthTokenData]:
     """
     刷新访问令牌
 
@@ -326,12 +401,34 @@ async def refresh_token(
             user_agent=user_agent
         )
 
-        return create_success_response(result)
+        # 构造AuthTokenData
+        token_data = AuthTokenData(
+            user_id=result["user_id"],
+            is_guest=result["is_guest"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type=result["token_type"],
+            expires_in=result["expires_in"]
+        )
+
+        return UnifiedResponse[AuthTokenData](
+            code=200,
+            data=token_data,
+            message="success"
+        )
 
     except TokenException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
     except AuthenticationException as e:
-        return create_error_response(401, str(e))
+        return UnifiedResponse[AuthTokenData](
+            code=401,
+            data=None,
+            message=str(e)
+        )
 
 
 # ===== 依赖注入函数 =====

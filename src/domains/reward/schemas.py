@@ -34,7 +34,8 @@ class MyRewardsResponse(BaseModel):
 
 class RewardRedeemRequest(BaseModel):
     """兑换奖品请求"""
-    recipe_id: str = Field(..., description="兑换配方ID")
+    recipe_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="配方ID")
 
 
 class RewardRedeemResponse(BaseModel):
@@ -107,18 +108,25 @@ class RedeemRecipeRequest(BaseModel):
 
 class RecipeMaterial(BaseModel):
     """配方材料"""
-    reward_id: str = Field(..., description="材料奖品ID")
-    reward_name: str = Field(..., description="材料奖品名称")
-    quantity: int = Field(..., ge=1, description="材料数量")
+    reward_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="奖品ID")
+    reward_name: str = Field(...,
+        example="魔法药剂", description="奖品名称")
+    quantity: int = Field(..., ge=1, description="材料数量", example=2)
 
 
 class RecipeReward(BaseModel):
     """配方奖品信息"""
-    id: str = Field(..., description="奖品ID")
-    name: str = Field(..., description="奖品名称")
-    description: Optional[str] = Field(None, description="奖品描述")
-    image_url: Optional[str] = Field(None, description="奖品图片URL")
-    category: str = Field(..., description="奖品分类")
+    id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="奖品ID")
+    name: str = Field(...,
+        example="神秘宝箱", description="奖品名称")
+    description: Optional[str] = Field(None,
+        example="包含随机奖励的神秘宝箱", description="奖品描述")
+    image_url: Optional[str] = Field(None,
+        example="https://example.com/reward.jpg", description="奖品图片URL")
+    category: str = Field(...,
+        example="稀有", description="奖品类别")
 
 
 class RedeemRecipeResponse(BaseModel):
@@ -136,72 +144,64 @@ class RedeemRecipeResponse(BaseModel):
     - transaction_group: 事务组ID，用于追踪关联操作
     - message: 操作结果描述
     """
-    success: bool = Field(..., description="操作是否成功")
-    recipe_id: str = Field(..., description="配方ID")
-    recipe_name: Optional[str] = Field(None, description="配方名称")
-    result_reward: RecipeReward = Field(..., description="合成结果奖品")
-    materials_consumed: List[RecipeMaterial] = Field(..., description="消耗的材料列表")
-    transaction_group: Optional[str] = Field(None, description="事务组ID")
-    message: str = Field(..., description="操作结果描述")
+    success: bool = Field(...,
+        example=True, description="操作是否成功")
+    recipe_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="配方ID")
+    recipe_name: Optional[str] = Field(None,
+        example="初级合成配方", description="配方名称")
+    result_reward: RecipeReward = Field(...,
+        description="合成结果奖品")
+    materials_consumed: List[RecipeMaterial] = Field(...,
+        description="消耗的材料列表")
+    transaction_group: Optional[str] = Field(None,
+        example="txn_group_12345", description="事务组ID")
+    message: str = Field(...,
+        example="配方合成成功", description="操作结果描述")
 
 
 class UserMaterial(BaseModel):
     """用户材料"""
-    reward_id: str = Field(..., description="材料奖品ID")
-    reward_name: str = Field(..., description="材料奖品名称")
-    image_url: Optional[str] = Field(None, description="材料图片URL")
-    quantity: int = Field(..., ge=0, description="拥有数量")
+    reward_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="奖品ID")
+    reward_name: str = Field(...,
+        example="魔法药剂", description="奖品名称")
+    image_url: Optional[str] = Field(None,
+        example="https://example.com/potion.jpg", description="奖品图片URL")
+    quantity: int = Field(..., ge=0, example=5, description="拥有数量")
 
 
 class UserMaterialsResponse(BaseModel):
     """用户材料列表响应"""
-    materials: List[UserMaterial] = Field(..., description="用户材料列表")
-    total_types: int = Field(..., description="材料种类总数")
+    materials: List[UserMaterial] = Field(...,
+        description="用户材料列表")
+    total_types: int = Field(...,
+        example=15, description="材料种类总数")
 
 
 class AvailableRecipe(BaseModel):
     """可用配方"""
-    id: str = Field(..., description="配方ID")
-    name: str = Field(..., description="配方名称")
-    result_reward_id: str = Field(..., description="结果奖品ID")
-    result_reward_name: str = Field(..., description="结果奖品名称")
-    result_image_url: Optional[str] = Field(None, description="结果奖品图片URL")
-    materials: List[RecipeMaterial] = Field(..., description="所需材料列表")
-    created_at: datetime = Field(..., description="创建时间")
+    id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="配方ID")
+    name: str = Field(...,
+        example="初级合成配方", description="配方名称")
+    result_reward_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440001", description="结果奖品ID")
+    result_reward_name: str = Field(...,
+        example="神秘宝箱", description="结果奖品名称")
+    result_image_url: Optional[str] = Field(None,
+        example="https://example.com/chest.jpg", description="结果奖品图片")
+    materials: List[RecipeMaterial] = Field(...,
+        description="所需材料列表")
+    created_at: datetime = Field(...,
+        example="2024-01-15T10:30:00Z", description="创建时间")
 
 
 class AvailableRecipesResponse(BaseModel):
     """可用配方列表响应"""
-    recipes: List[AvailableRecipe] = Field(..., description="可用配方列表")
-    total_count: int = Field(..., description="配方总数")
+    recipes: List[AvailableRecipe] = Field(...,
+        description="可用配方列表")
+    total_count: int = Field(...,
+        example=25, description="可用配方总数")
 
 
-# ===== 统一响应格式 =====
-
-class RedeemRecipeResponseWrapper(BaseModel):
-    """
-    配方兑换统一响应
-
-    继承自标准的API响应格式，data字段包含配方合成的详细结果。
-    """
-    code: int = Field(..., description="状态码")
-    data: RedeemRecipeResponse = Field(..., description="配方兑换结果")
-    message: str = Field(..., description="响应消息")
-
-
-class UserMaterialsResponseWrapper(BaseModel):
-    """
-    用户材料列表统一响应
-    """
-    code: int = Field(..., description="状态码")
-    data: UserMaterialsResponse = Field(..., description="用户材料列表")
-    message: str = Field(..., description="响应消息")
-
-
-class AvailableRecipesResponseWrapper(BaseModel):
-    """
-    可用配方列表统一响应
-    """
-    code: int = Field(..., description="状态码")
-    data: AvailableRecipesResponse = Field(..., description="可用配方列表")
-    message: str = Field(..., description="响应消息")

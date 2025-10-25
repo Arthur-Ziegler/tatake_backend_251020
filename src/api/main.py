@@ -1,24 +1,34 @@
 """
 TaKeKe API 主应用
 
-基于FastAPI框架的综合API应用，提供认证和任务管理服务。
-包含两个核心领域：认证系统（auth）和任务管理（task）。
+基于FastAPI框架的综合API应用，提供认证和任务管理功能。
+完全使用FastAPI的自然机制，不再干预OpenAPI生成。
 """
 
 import os
 import time
 from contextlib import asynccontextmanager
+from typing import Dict, Any
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from dotenv import load_dotenv
+from pydantic import ValidationError, BaseModel, Field
+from typing import Dict, Any, List
 
 # 加载环境变量
 load_dotenv()
 
 from src.api.config import config
 from src.api.responses import create_success_response, create_error_response
+
+
+class HTTPValidationError(BaseModel):
+    """HTTP验证错误响应模型"""
+    loc: List[str] = Field(description="错误位置")
+    msg: str = Field(description="错误消息")
+    type: str = Field(description="错误类型")
 
 
 @asynccontextmanager
@@ -88,16 +98,20 @@ async def lifespan(app: FastAPI):
     print("✅ API服务已关闭")
 
 
-# 创建FastAPI应用实例
+# 创建FastAPI应用实例 - 完全自然配置
 app = FastAPI(
     title=f"{config.app_name}",
     version=config.app_version,
     description="TaKeKe API服务，提供认证和任务管理功能",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json",
     lifespan=lifespan
 )
+
+# 设置增强版OpenAPI - 确保所有Schema都被正确注册
+from src.api.openapi import setup_openapi
+setup_openapi(app)
+
 
 # 添加CORS中间件 - 解决部署时的跨域问题
 from fastapi.middleware.cors import CORSMiddleware
@@ -124,10 +138,6 @@ async def add_cors_headers(request, call_next):
     response.headers["Access-Control-Allow-Credentials"] = "true"
 
     return response
-
-# 设置自定义OpenAPI配置
-from src.api.openapi import setup_openapi
-setup_openapi(app)
 
 # 添加全局异常处理器
 @app.exception_handler(StarletteHTTPException)
@@ -250,7 +260,7 @@ async def api_info():
             "documentation": {
                 "swagger": "/docs",
                 "redoc": "/redoc",
-                "openapi": "/openapi.json"
+                # "openapi": "/openapi.json"  # 移除OpenAPI端点，让FastAPI自然工作
             },
             "status": "提供完整的认证、任务管理和智能聊天API服务"
         },
@@ -258,24 +268,12 @@ async def api_info():
     )
 
 
-# 添加认证API路由
+# 导入所有路由器
 from src.domains.auth.router import router as auth_router
-
-# 添加任务API路由
 from src.domains.task.router import router as task_router
-
-# 添加任务完成API路由
-
-# 添加奖励系统API路由
 from src.domains.reward.router import router as reward_router, points_router
-
-# 添加Top3系统API路由
 from src.domains.top3.api import router as top3_router
-
-# 添加聊天API路由
 from src.domains.chat.router import router as chat_router
-
-# 添加Focus番茄钟API路由
 from src.domains.focus.router import router as focus_router
 
 # 使用认证领域路由
@@ -311,6 +309,15 @@ async def test_cors():
         },
         message="CORS 配置测试通过"
     )
+
+
+# 手动注册所有Schema到OpenAPI - 解决泛型模型不自动注册的问题
+# 必须在所有路由注册完成后执行
+@app.on_event("startup")
+async def register_schemas_on_startup():
+    """在应用启动时注册所有Schema"""
+    from src.api.schema_registry import register_all_schemas_to_openapi
+    register_all_schemas_to_openapi(app)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,9 @@
 
 from datetime import datetime
 from typing import List, Optional, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+
+from src.domains.auth.schemas import UnifiedResponse
 
 
 # ========== 请求模型 ==========
@@ -32,12 +34,8 @@ from pydantic import BaseModel, Field, validator
 class CreateSessionRequest(BaseModel):
     """创建聊天会话请求"""
 
-    title: Optional[str] = Field(
-        default=None,
-        description="会话标题，如果不提供则使用默认标题",
-        example="日常对话",
-        max_length=100
-    )
+    title: Optional[str] = Field(default=None,
+        example="日常对话", description="会话标题")
 
     model_config = {
         "json_schema_extra": {
@@ -51,15 +49,10 @@ class CreateSessionRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     """发送消息请求"""
 
-    message: str = Field(
-        ...,
-        description="用户消息内容",
-        min_length=1,
-        max_length=4000,
-        example="你好，请帮我计算1+2等于多少？"
-    )
+    message: str = Field(...,
+        example="你好，请帮我计算1+2等于多少？", description="消息内容")
 
-    @validator('message')
+    @field_validator('message')
     def validate_message(cls, v):
         """验证消息内容"""
         if not v or not v.strip():
@@ -80,35 +73,20 @@ class SendMessageRequest(BaseModel):
 class ChatSessionResponse(BaseModel):
     """创建聊天会话响应"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    title: str = Field(
-        ...,
-        description="会话标题",
-        example="日常对话"
-    )
+    title: str = Field(...,
+        example="日常对话", description="会话标题")
 
-    created_at: str = Field(
-        ...,
-        description="创建时间（ISO格式）",
-        example="2024-01-01T12:00:00Z"
-    )
+    created_at: str = Field(...,
+        example="2024-01-01T12:00:00Z", description="创建时间")
 
-    welcome_message: str = Field(
-        ...,
-        description="欢迎消息",
-        example="你好！我是你的AI助手，很高兴为你服务。"
-    )
+    welcome_message: str = Field(...,
+        example="你好！我是你的AI助手，很高兴为你服务。", description="欢迎消息")
 
-    status: str = Field(
-        ...,
-        description="会话状态",
-        example="created"
-    )
+    status: str = Field(...,
+        example="created", description="会话状态")
 
     model_config = {
         "json_schema_extra": {
@@ -126,35 +104,20 @@ class ChatSessionResponse(BaseModel):
 class MessageResponse(BaseModel):
     """发送消息响应"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    user_message: str = Field(
-        ...,
-        description="用户消息",
-        example="你好，请帮我计算1+2等于多少？"
-    )
+    user_message: str = Field(...,
+        example="你好，请帮我计算1+2等于多少？", description="用户消息")
 
-    ai_response: str = Field(
-        ...,
-        description="AI回复",
-        example="1+2 = 3"
-    )
+    ai_response: str = Field(...,
+        example="1+2 = 3", description="AI回复")
 
-    timestamp: str = Field(
-        ...,
-        description="消息时间戳（ISO格式）",
-        example="2024-01-01T12:01:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:01:00Z", description="时间戳")
 
-    status: str = Field(
-        ...,
-        description="处理状态",
-        example="success"
-    )
+    status: str = Field(...,
+        example="success", description="响应状态")
 
     model_config = {
         "json_schema_extra": {
@@ -172,23 +135,14 @@ class MessageResponse(BaseModel):
 class ChatMessageItem(BaseModel):
     """聊天消息项"""
 
-    type: str = Field(
-        ...,
-        description="消息类型",
-        example="human"
-    )
+    type: str = Field(...,
+        example="human", description="消息类型: human/ai")
 
-    content: str = Field(
-        ...,
-        description="消息内容",
-        example="你好，请帮我计算1+2等于多少？"
-    )
+    content: str = Field(...,
+        example="你好，请帮我计算1+2等于多少？", description="消息内容")
 
-    timestamp: str = Field(
-        ...,
-        description="消息时间戳（ISO格式）",
-        example="2024-01-01T12:01:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:01:00Z", description="时间戳")
 
     model_config = {
         "json_schema_extra": {
@@ -204,40 +158,23 @@ class ChatMessageItem(BaseModel):
 class ChatHistoryResponse(BaseModel):
     """聊天历史响应"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    messages: List[ChatMessageItem] = Field(
-        ...,
-        description="消息列表"
-    )
+    messages: List[ChatMessageItem] = Field(...,
+        description="消息列表")
 
-    total_count: int = Field(
-        ...,
-        description="消息总数",
-        example=10
-    )
+    total_count: int = Field(...,
+        example=2, description="消息总数")
 
-    limit: int = Field(
-        ...,
-        description="返回数量限制",
-        example=50
-    )
+    limit: int = Field(...,
+        example=50, description="消息数量限制")
 
-    timestamp: str = Field(
-        ...,
-        description="查询时间戳（ISO格式）",
-        example="2024-01-01T12:02:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:02:00Z", description="时间戳")
 
-    status: str = Field(
-        ...,
-        description="查询状态",
-        example="success"
-    )
+    status: str = Field(...,
+        example="success", description="响应状态")
 
     model_config = {
         "json_schema_extra": {
@@ -267,41 +204,23 @@ class ChatHistoryResponse(BaseModel):
 class SessionInfoResponse(BaseModel):
     """会话信息响应"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    title: str = Field(
-        ...,
-        description="会话标题",
-        example="日常对话"
-    )
+    title: str = Field(...,
+        example="日常对话", description="会话标题")
 
-    message_count: int = Field(
-        ...,
-        description="消息数量",
-        example=5
-    )
+    message_count: int = Field(...,
+        example=5, description="消息数量")
 
-    created_at: str = Field(
-        ...,
-        description="创建时间（ISO格式）",
-        example="2024-01-01T12:00:00Z"
-    )
+    created_at: str = Field(...,
+        example="2024-01-01T12:00:00Z", description="创建时间")
 
-    updated_at: str = Field(
-        ...,
-        description="更新时间（ISO格式）",
-        example="2024-01-01T12:05:00Z"
-    )
+    updated_at: str = Field(...,
+        example="2024-01-01T12:05:00Z", description="更新时间")
 
-    status: str = Field(
-        ...,
-        description="会话状态",
-        example="active"
-    )
+    status: str = Field(...,
+        example="active", description="会话状态")
 
     model_config = {
         "json_schema_extra": {
@@ -320,35 +239,20 @@ class SessionInfoResponse(BaseModel):
 class ChatSessionItem(BaseModel):
     """聊天会话项"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    title: str = Field(
-        ...,
-        description="会话标题",
-        example="日常对话"
-    )
+    title: str = Field(...,
+        example="日常对话", description="会话标题")
 
-    message_count: int = Field(
-        ...,
-        description="消息数量",
-        example=5
-    )
+    message_count: int = Field(...,
+        example=5, description="消息数量")
 
-    created_at: str = Field(
-        ...,
-        description="创建时间（ISO格式）",
-        example="2024-01-01T12:00:00Z"
-    )
+    created_at: str = Field(...,
+        example="2024-01-01T12:00:00Z", description="创建时间")
 
-    updated_at: str = Field(
-        ...,
-        description="更新时间（ISO格式）",
-        example="2024-01-01T12:05:00Z"
-    )
+    updated_at: str = Field(...,
+        example="2024-01-01T12:05:00Z", description="更新时间")
 
     model_config = {
         "json_schema_extra": {
@@ -366,46 +270,26 @@ class ChatSessionItem(BaseModel):
 class SessionListResponse(BaseModel):
     """会话列表响应"""
 
-    user_id: str = Field(
-        ...,
-        description="用户ID",
-        example="test-user-123"
-    )
+    user_id: str = Field(...,
+        example="test-user-123", description="用户ID")
 
-    sessions: List[ChatSessionItem] = Field(
-        ...,
-        description="会话列表"
-    )
+    sessions: List[ChatSessionItem] = Field(...,
+        description="会话列表")
 
-    total_count: int = Field(
-        ...,
-        description="会话总数",
-        example=3
-    )
+    total_count: int = Field(...,
+        example=1, description="总会话数")
 
-    limit: int = Field(
-        ...,
-        description="返回数量限制",
-        example=20
-    )
+    limit: int = Field(...,
+        example=20, description="会话数量限制")
 
-    timestamp: str = Field(
-        ...,
-        description="查询时间戳（ISO格式）",
-        example="2024-01-01T12:10:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:10:00Z", description="时间戳")
 
-    status: str = Field(
-        ...,
-        description="查询状态",
-        example="success"
-    )
+    status: str = Field(...,
+        example="success", description="响应状态")
 
-    note: str = Field(
-        ...,
-        description="备注信息",
-        example=""
-    )
+    note: str = Field(...,
+        example="", description="备注信息")
 
     model_config = {
         "json_schema_extra": {
@@ -433,29 +317,17 @@ class SessionListResponse(BaseModel):
 class DeleteSessionResponse(BaseModel):
     """删除会话响应"""
 
-    session_id: str = Field(
-        ...,
-        description="会话ID",
-        example="123e4567-e89b-12d3-a456-426614174000"
-    )
+    session_id: str = Field(...,
+        example="550e8400-e29b-41d4-a716-446655440000", description="会话ID")
 
-    status: str = Field(
-        ...,
-        description="删除状态",
-        example="deleted"
-    )
+    status: str = Field(...,
+        example="deleted", description="操作状态")
 
-    timestamp: str = Field(
-        ...,
-        description="删除时间戳（ISO格式）",
-        example="2024-01-01T12:15:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:15:00Z", description="时间戳")
 
-    note: str = Field(
-        ...,
-        description="备注信息",
-        example=""
-    )
+    note: str = Field(...,
+        example="", description="备注信息")
 
     model_config = {
         "json_schema_extra": {
@@ -472,28 +344,17 @@ class DeleteSessionResponse(BaseModel):
 class ChatHealthResponse(BaseModel):
     """聊天服务健康检查响应"""
 
-    status: str = Field(
-        ...,
-        description="服务状态",
-        example="healthy"
-    )
+    status: str = Field(...,
+        example="healthy", description="服务状态")
 
-    database: dict = Field(
-        ...,
-        description="数据库状态"
-    )
+    database: dict = Field(...,
+        description="数据库状态")
 
-    graph_initialized: bool = Field(
-        ...,
-        description="图是否已初始化",
-        example=True
-    )
+    graph_initialized: bool = Field(...,
+        example=True, description="图数据库是否已初始化")
 
-    timestamp: str = Field(
-        ...,
-        description="检查时间戳（ISO格式）",
-        example="2024-01-01T12:20:00Z"
-    )
+    timestamp: str = Field(...,
+        example="2024-01-01T12:20:00Z", description="时间戳")
 
     model_config = {
         "json_schema_extra": {

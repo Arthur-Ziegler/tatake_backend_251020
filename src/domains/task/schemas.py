@@ -30,7 +30,7 @@ from datetime import datetime, date
 from typing import Optional, List, Dict, Any, Union
 from enum import Enum
 
-from pydantic import BaseModel, Field, ConfigDict, validator, model_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from pydantic_core import ValidationError
 
 # 导入相关模型
@@ -92,22 +92,26 @@ class CreateTaskRequest(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        description="任务标题，1-100字符，必填"
+        description="任务标题，1-100字符，必填",
+        example="完成项目文档编写"
     )
 
     # 可选字段
     description: Optional[str] = Field(
         default=None,
         max_length=5000,
-        description="任务描述，最多5000字符"
+        description="任务描述，最多5000字符",
+        example="编写项目的详细技术文档和用户手册"
     )
     status: TaskStatus = Field(
         default=TaskStatusConst.PENDING,
-        description="任务状态：pending/in_progress/completed"
+        description="任务状态：pending/in_progress/completed",
+        example="pending"
     )
     priority: TaskPriority = Field(
         default=TaskPriorityConst.MEDIUM,
-        description="任务优先级：low/medium/high"
+        description="任务优先级：low/medium/high",
+        example="medium"
     )
     parent_id: Optional[str] = Field(
         default=None,
@@ -116,7 +120,8 @@ class CreateTaskRequest(BaseModel):
     tags: Optional[List[str]] = Field(
         default=[],
         max_length=10,
-        description="任务标签列表，最多10个标签"
+        description="任务标签列表，最多10个标签",
+        example=["工作", "重要", "紧急"]
     )
     service_ids: Optional[List[str]] = Field(
         default=[],
@@ -136,7 +141,8 @@ class CreateTaskRequest(BaseModel):
         description="计划结束时间（ISO 8601格式）"
     )
 
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         """验证标签列表"""
         if v is None:
@@ -208,12 +214,14 @@ class UpdateTaskRequest(BaseModel):
         default=None,
         min_length=1,
         max_length=100,
-        description="任务标题，1-100字符"
+        description="任务标题，1-100字符",
+        example="更新后的任务标题"
     )
     description: Optional[str] = Field(
         default=None,
         max_length=5000,
-        description="任务描述，最多5000字符"
+        description="任务描述，最多5000字符",
+        example="编写项目的详细技术文档和用户手册"
     )
     status: Optional[TaskStatus] = Field(
         default=None,
@@ -250,7 +258,8 @@ class UpdateTaskRequest(BaseModel):
         description="计划结束时间（ISO 8601格式）"
     )
 
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         """验证标签列表"""
         if v is None:
@@ -365,18 +374,18 @@ class TaskResponse(BaseModel):
     )
 
     # 基本字段
-    id: str = Field(..., description="任务ID")
-    title: str = Field(..., description="任务标题")
-    description: Optional[str] = Field(None, description="任务描述")
-    status: TaskStatus = Field(..., description="任务状态")
-    priority: TaskPriority = Field(..., description="任务优先级")
-    parent_id: Optional[str] = Field(None, description="父任务ID")
-    tags: List[str] = Field(default=[], description="任务标签")
-    service_ids: List[str] = Field(default=[], description="关联服务ID列表，占位字段用于后续AI服务匹配")
-    due_date: Optional[datetime] = Field(None, description="截止日期")
-    planned_start_time: Optional[datetime] = Field(None, description="计划开始时间")
-    planned_end_time: Optional[datetime] = Field(None, description="计划结束时间")
-    last_claimed_date: Optional[date] = Field(None, description="最后领奖日期，用于防刷机制")
+    id: str = Field(..., description="任务ID", example="550e8400-e29b-41d4-a716-446655440000")
+    title: str = Field(..., description="任务标题", example="完成项目文档编写")
+    description: Optional[str] = Field(None, description="任务描述", example="编写项目的详细技术文档和用户手册")
+    status: TaskStatus = Field(..., description="任务状态", example="active")
+    priority: TaskPriority = Field(..., description="任务优先级", example="medium")
+    parent_id: Optional[str] = Field(None, description="父任务ID", example="550e8400-e29b-41d4-a716-446655440001")
+    tags: List[str] = Field(default=[], description="任务标签", example=["工作", "重要", "紧急"])
+    service_ids: List[str] = Field(default=[], description="关联服务ID列表，占位字段用于后续AI服务匹配", example=["chat", "timer", "points"])
+    due_date: Optional[datetime] = Field(None, description="截止日期", example="2024-12-31T23:59:59Z")
+    planned_start_time: Optional[datetime] = Field(None, description="计划开始时间", example="2024-01-01T09:00:00Z")
+    planned_end_time: Optional[datetime] = Field(None, description="计划结束时间", example="2024-01-01T18:00:00Z")
+    last_claimed_date: Optional[date] = Field(None, description="最后领奖日期，用于防刷机制", example="2024-01-15")
     is_deleted: bool = Field(..., description="是否已删除")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
@@ -446,49 +455,12 @@ class TaskDeleteResponse(BaseModel):
 
 # ===== 统一响应格式 =====
 
-class TaskCreateResponse(UnifiedResponse):
-    """
-    任务创建响应
-
-    继承自UnifiedResponse，data字段包含创建的任务信息。
-    """
-    data: TaskResponse = Field(..., description="创建的任务信息")
-
-
-class TaskGetResponse(UnifiedResponse):
-    """
-    任务获取响应
-
-    继承自UnifiedResponse，data字段包含获取的任务信息。
-    """
-    data: TaskResponse = Field(..., description="获取的任务信息")
-
-
-class TaskUpdateResponse(UnifiedResponse):
-    """
-    任务更新响应
-
-    继承自UnifiedResponse，data字段包含更新后的任务信息。
-    """
-    data: TaskResponse = Field(..., description="更新后的任务信息")
-
-
-class TaskDeleteResponseWrapper(UnifiedResponse):
-    """
-    任务删除响应
-
-    继承自UnifiedResponse，data字段包含删除操作的结果。
-    """
-    data: TaskDeleteResponse = Field(..., description="删除操作的结果")
-
-
-class TaskListResponseWrapper(UnifiedResponse):
-    """
-    任务列表响应
-
-    继承自UnifiedResponse，data字段包含任务列表和分页信息。
-    """
-    data: TaskListResponse = Field(..., description="任务列表和分页信息")
+# 删除的Wrapper类：
+# - TaskCreateResponse(UnifiedResponse)
+# - TaskGetResponse(UnifiedResponse)
+# - TaskUpdateResponse(UnifiedResponse)
+# - TaskDeleteResponseWrapper(UnifiedResponse)
+# - TaskListResponseWrapper(UnifiedResponse)
 
 
 # ===== 任务完成相关Schema =====
@@ -497,20 +469,33 @@ class CompleteTaskRequest(BaseModel):
     """
     完成任务请求Schema
 
-    用于完成任务操作的API请求。此请求不需要额外的请求体，
-    所有必要信息都从URL路径参数和JWT token中获取。
+    用于完成任务操作的API请求。支持可选的情绪和难度反馈。
 
     设计说明：
     - 任务ID从URL路径参数获取
     - 用户ID从JWT token中自动提取
-    - 请求体为空，简化API调用
+    - mood_feedback为可选字段，用于提供任务完成反馈
     """
     model_config = ConfigDict(
         from_attributes=True,
         extra="forbid",
         json_schema_extra={
-            "example": {},
-            "description": "完成任务请求不需要请求体"
+            "example": {
+                "mood_feedback": {
+                    "comment": "任务比较简单，顺利完成",
+                    "difficulty": "easy"
+                }
+            },
+            "description": "完成任务请求，可选包含情绪反馈"
+        }
+    )
+
+    mood_feedback: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="任务完成反馈，包含评论和难度信息",
+        example={
+            "comment": "任务比较简单，顺利完成",
+            "difficulty": "easy"
         }
     )
 
@@ -637,19 +622,6 @@ class UncompleteTaskResponse(BaseModel):
 
 # ===== 任务完成统一响应格式 =====
 
-class TaskCompleteResponseWrapper(UnifiedResponse):
-    """
-    任务完成响应
-
-    继承自UnifiedResponse，data字段包含任务完成的详细结果。
-    """
-    data: CompleteTaskResponse = Field(..., description="任务完成结果")
-
-
-class TaskUncompleteResponseWrapper(UnifiedResponse):
-    """
-    取消任务完成响应
-
-    继承自UnifiedResponse，data字段包含取消任务完成的结果。
-    """
-    data: UncompleteTaskResponse = Field(..., description="取消任务完成结果")
+# 删除的Wrapper类：
+# - TaskCompleteResponseWrapper(UnifiedResponse)
+# - TaskUncompleteResponseWrapper(UnifiedResponse)

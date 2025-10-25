@@ -72,7 +72,7 @@ class OpenAPIConfig:
     def get_security_schemes() -> Dict[str, Any]:
         """获取安全认证方案"""
         return {
-            "BearerAuth": {
+            "HTTPBearer": {
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
@@ -126,139 +126,34 @@ class OpenAPIConfig:
 
 
 def custom_openapi(app: FastAPI) -> Dict[str, Any]:
-    """自定义OpenAPI规范"""
+    """自定义OpenAPI规范 - 增强版，手动注册所有Schema"""
     if app.openapi_schema:
         return app.openapi_schema
 
-    openapi_config = OpenAPIConfig()
-
-    # 获取基础OpenAPI规范
+    # 生成基础OpenAPI schema
     openapi_schema = get_openapi(
-        title=openapi_config.get_api_info()["title"],
-        version=openapi_config.get_api_info()["version"],
-        description=openapi_config.get_api_info()["description"],
+        title=OpenAPIConfig.get_api_info()["title"],
+        version=OpenAPIConfig.get_api_info()["version"],
+        description=OpenAPIConfig.get_api_info()["description"],
         routes=app.routes,
-        servers=openapi_config.get_server_info(),
-        tags=openapi_config.get_tags_metadata()
+        servers=OpenAPIConfig.get_server_info()
     )
 
-    # 移除无效的联系人和许可证信息，保持简洁
+    # 添加安全方案
+    openapi_schema["components"]["securitySchemes"] = OpenAPIConfig.get_security_schemes()
 
-    # 添加组件 - OpenAPI 3.1规范
-    openapi_schema["components"] = {
-        "securitySchemes": openapi_config.get_security_schemes(),
-        "examples": openapi_config.get_examples(),
-        "schemas": {
-            # 统一响应格式 - 与 auth/schemas.py 保持一致
-            "UnifiedResponse": {
-                "type": "object",
-                "description": "API统一响应格式，所有API端点都使用这个格式",
-                "properties": {
-                    "code": {
-                        "type": "integer",
-                        "description": "HTTP状态码（200, 400, 401, 403, 404等）"
-                    },
-                    "data": {
-                        "description": "响应数据，成功时包含具体数据，失败时为null"
-                    },
-                    "message": {
-                        "type": "string",
-                        "description": "响应消息，成功时为success，失败时为具体错误描述"
-                    }
-                },
-                "required": ["code", "message"]
-            },
+    # 添加示例数据
+    openapi_schema["components"]["examples"] = OpenAPIConfig.get_examples()
 
-            # 标准响应格式
-            "StandardResponse": {
-                "type": "object",
-                "description": "API标准响应格式",
-                "properties": {
-                    "code": {
-                        "type": "integer",
-                        "description": "业务状态码，200表示成功"
-                    },
-                    "message": {
-                        "type": "string",
-                        "description": "响应消息"
-                    },
-                    "data": {
-                        "description": "响应数据，结构根据具体接口变化"
-                    },
-                    "timestamp": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "响应时间戳"
-                    },
-                    "traceId": {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "追踪ID，用于问题定位"
-                    }
-                },
-                "required": ["code", "message", "timestamp", "traceId"]
-            },
-
-            # 错误响应格式
-            "ErrorResponse": {
-                "allOf": [
-                    {"$ref": "#/components/schemas/StandardResponse"},
-                    {
-                        "type": "object",
-                        "properties": {
-                            "errorCode": {
-                                "type": "string",
-                                "description": "错误代码，用于程序化处理"
-                            }
-                        }
-                    }
-                ]
-            },
-
-            # 分页响应格式
-            "PaginatedResponse": {
-                "allOf": [
-                    {"$ref": "#/components/schemas/StandardResponse"},
-                    {
-                        "type": "object",
-                        "properties": {
-                            "data": {
-                                "type": "object",
-                                "properties": {
-                                    "items": {
-                                        "type": "array",
-                                        "description": "数据项列表"
-                                    },
-                                    "pagination": {
-                                        "type": "object",
-                                        "properties": {
-                                            "current_page": {"type": "integer"},
-                                            "total_pages": {"type": "integer"},
-                                            "total_count": {"type": "integer"},
-                                            "page_size": {"type": "integer"}
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    }
-
-    # 移除外部文档，保持简洁
-
-    # 添加全局安全要求
-    # 全局安全要求已通过 router 自动设置，无需重复配置
-
-    # 移除过度的 x- 扩展，保持简洁
-
+    # 【关键】手动注册所有Schema到OpenAPI
+    from .schema_registry import register_all_schemas_to_openapi
     app.openapi_schema = openapi_schema
+    register_all_schemas_to_openapi(app)
+
     return app.openapi_schema
 
 
 def setup_openapi(app: FastAPI) -> None:
-    """设置OpenAPI文档"""
-    # 设置自定义OpenAPI函数
+    """设置OpenAPI文档 - 使用增强版Schema注册机制"""
+    # 使用增强版的custom_openapi，确保所有Schema都被正确注册
     app.openapi = lambda: custom_openapi(app)
