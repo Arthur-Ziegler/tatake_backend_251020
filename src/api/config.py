@@ -78,7 +78,14 @@ class APIConfig(BaseSettings):
 
     # CORS配置
     allowed_origins: list = Field(
-        default=["http://localhost:3000", "http://localhost:8080", "https://tatake.app"],
+        default=[
+            "http://localhost:3000",
+            "http://localhost:8080",
+            "https://tatake.app",
+            "http://0.0.0.0:3000",
+            "http://0.0.0.0:8080",
+            "https://*.tatake.app"
+        ],
         description="允许的源地址"
     )
     allowed_methods: list = Field(

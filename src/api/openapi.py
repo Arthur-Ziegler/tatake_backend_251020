@@ -22,87 +22,8 @@ class OpenAPIConfig:
         """获取API基本信息"""
         return {
             "title": config.app_name,
-            "description": """
-# TaKeKe 任务管理API服务
-
-TaKeKe是一个现代化的任务管理系统，提供专注时间管理、奖励机制和AI智能对话等功能。
-
-## 主要功能
-
-### 🎯 任务管理
-- 创建、编辑、删除任务
-- 任务分类和标签管理
-- 任务优先级和进度跟踪
-- 任务统计和分析
-
-### 🍅 番茄钟专注
-- 专注会话管理
-- 自定义专注时长
-- 休息时间设置
-- 专注统计报告
-
-### 🏆 奖励系统
-- 积分奖励机制
-- 成就徽章系统
-- 等级升级体系
-- 奖励兑换功能
-
-### 🤖 AI智能对话
-- 任务建议和规划
-- 专注提醒和激励
-- 个性化指导
-- 智能问答
-
-## 技术特性
-
-- **现代化架构**: 基于FastAPI框架，支持异步处理
-- **统一响应格式**: 所有API响应采用标准格式，包含TraceID追踪
-- **完整错误处理**: 详细的错误信息和本地化支持
-- **安全认证**: JWT + RefreshToken双重认证机制
-- **性能优化**: Redis缓存、数据库连接池、请求限流
-- **实时监控**: 完整的日志记录和性能监控
-
-## 使用指南
-
-### 认证方式
-API使用Bearer Token认证，在请求头中添加：
-```
-Authorization: Bearer <your_token>
-```
-
-### 响应格式
-所有响应都采用统一格式：
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": {...},
-  "timestamp": "2024-01-01T00:00:00Z",
-  "traceId": "unique-trace-id"
-}
-```
-
-### 错误处理
-错误响应包含详细的错误信息和TraceID，便于问题定位。
-
-## 开发支持
-
-- **Swagger UI**: `/docs` - 交互式API文档
-- **ReDoc**: `/redoc` - 美观的API文档
-- **OpenAPI**: `/openapi.json` - 标准API规范
-- **健康检查**: `/health` - 服务状态检查
-""",
-            "version": config.app_version,
-            "termsOfService": "https://tatake.app/terms",
-            "contact": {
-                "name": "TaKeKe API Support",
-                "url": "https://tatake.app/support",
-                "email": "api-support@tatake.app"
-            },
-            "license": {
-                "name": "MIT License",
-                "url": "https://opensource.org/licenses/MIT"
-            }
+            "description": "TaKeKe API服务，提供认证、任务管理、奖励系统和智能对话功能",
+            "version": config.app_version
         }
 
     @staticmethod
@@ -156,12 +77,6 @@ Authorization: Bearer <your_token>
                 "scheme": "bearer",
                 "bearerFormat": "JWT",
                 "description": "JWT认证令牌，格式：Bearer <token>"
-            },
-            "ApiKeyAuth": {
-                "type": "apiKey",
-                "in": "header",
-                "name": "X-API-Key",
-                "description": "API密钥认证（预留接口）"
             }
         }
 
@@ -172,20 +87,8 @@ Authorization: Bearer <your_token>
             {
                 "url": f"http://{config.api_host}:{config.api_port}{config.api_prefix}",
                 "description": "开发环境服务器"
-            },
-            {
-                "url": f"https://api.tatake.app{config.api_prefix}",
-                "description": "生产环境服务器"
             }
         ]
-
-    @staticmethod
-    def get_external_docs() -> Dict[str, str]:
-        """获取外部文档链接"""
-        return {
-            "description": "完整的API文档和开发指南",
-            "url": "https://docs.tatake.app"
-        }
 
     @staticmethod
     def get_examples() -> Dict[str, Any]:
@@ -193,69 +96,30 @@ Authorization: Bearer <your_token>
         return {
             # 成功响应示例
             "SuccessResponse": {
-                "summary": "标准成功响应",
-                "description": "API调用成功时的标准响应格式，包含业务数据和追踪信息",
+                "summary": "成功响应",
+                "description": "API调用成功时的标准响应格式",
                 "value": {
                     "code": 200,
                     "message": "操作成功",
                     "data": {
                         "id": "550e8400-e29b-41d4-a716-446655440000",
                         "title": "完成项目文档编写",
-                        "description": "编写完整的API文档和用户指南",
-                        "status": "completed",
-                        "priority": "high",
-                        "completion_percentage": 100,
-                        "tags": ["文档", "项目"],
-                        "created_at": "2025-01-15T09:00:00Z",
-                        "updated_at": "2025-01-15T15:30:00Z"
-                    },
-                    "timestamp": "2025-01-15T15:30:00Z",
-                    "traceId": "550e8400-e29b-41d4-a716-446655440000"
+                        "status": "completed"
+                    }
                 }
             },
 
             # 错误响应示例
             "ErrorResponse": {
-                "summary": "标准错误响应",
-                "description": "API调用失败时的标准响应格式，包含详细错误信息和追踪ID",
+                "summary": "错误响应",
+                "description": "API调用失败时的标准响应格式",
                 "value": {
                     "code": 4001,
                     "message": "请求参数验证失败",
                     "data": {
                         "field": "title",
-                        "error": "任务标题不能为空",
-                        "received_value": ""
-                    },
-                    "timestamp": "2025-01-15T15:30:00Z",
-                    "traceId": "550e8400-e29b-41d4-a716-446655440000",
-                    "errorCode": "VALIDATION_ERROR"
-                }
-            },
-
-            # 任务完成奖励示例
-            "TaskCompletionReward": {
-                "summary": "任务完成奖励响应",
-                "description": "完成任务时获得的奖励详情，包含积分或奖品信息",
-                "value": {
-                    "code": 200,
-                    "message": "任务完成，奖励已发放",
-                    "data": {
-                        "task": {
-                            "id": "550e8400-e29b-41d4-a716-446655440000",
-                            "title": "完成项目文档",
-                            "status": "completed",
-                            "completion_percentage": 100
-                        },
-                        "reward_earned": {
-                            "type": "points",
-                            "transaction_id": "550e8400-e29b-41d4-a716-446655440001",
-                            "amount": 100,
-                            "reward_id": None,
-                            "message": "Top3任务完成，获得100积分奖励"
-                        }
-                    },
-                    "timestamp": "2025-01-15T15:30:00Z",
-                    "traceId": "550e8400-e29b-41d4-a716-446655440000"
+                        "error": "任务标题不能为空"
+                    }
                 }
             },
         }
@@ -278,12 +142,7 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         tags=openapi_config.get_tags_metadata()
     )
 
-    # 添加联系人和许可证信息
-    openapi_schema["info"].update({
-        "contact": openapi_config.get_api_info()["contact"],
-        "license": openapi_config.get_api_info()["license"],
-        "termsOfService": openapi_config.get_api_info()["termsOfService"]
-    })
+    # 移除无效的联系人和许可证信息，保持简洁
 
     # 添加组件 - OpenAPI 3.1规范
     openapi_schema["components"] = {
@@ -388,13 +247,10 @@ def custom_openapi(app: FastAPI) -> Dict[str, Any]:
         }
     }
 
-    # 添加外部文档
-    openapi_schema["externalDocs"] = openapi_config.get_external_docs()
+    # 移除外部文档，保持简洁
 
     # 添加全局安全要求
-    openapi_schema["security"] = [
-        {"BearerAuth": []}
-    ]
+    # 全局安全要求已通过 router 自动设置，无需重复配置
 
     # 移除过度的 x- 扩展，保持简洁
 

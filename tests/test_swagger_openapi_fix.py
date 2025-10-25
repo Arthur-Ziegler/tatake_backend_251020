@@ -58,13 +58,14 @@ class TestSwaggerOpenAPIFix:
         assert "message" in required_fields, "message 应该是必填字段"
 
     def test_openapi_description_not_empty(self):
-        """测试 API 描述不为空"""
+        """测试 API 描述不为空且精简"""
         info = self.openapi_schema.get("info", {})
         description = info.get("description", "")
 
-        # 验证描述不为空
+        # 验证描述不为空且已精简
         assert description.strip() != "", "API 描述不能为空"
-        assert len(description) > 50, "API 描述应该有足够的内容"
+        assert len(description) > 10, "API 描述应该有基本内容"
+        assert len(description) < 100, "API 描述应该保持精简"
 
     def test_no_tags_duplication_in_routes(self):
         """测试路由中没有重复的 tags"""
@@ -119,6 +120,46 @@ class TestSwaggerOpenAPIFix:
         except Exception as e:
             pytest.fail(f"OpenAPI schema 无法正确处理: {e}")
 
+    def test_apikey_auth_removed(self):
+        """测试 ApiKeyAuth 认证方案已移除"""
+        security_schemes = self.openapi_schema.get("components", {}).get("securitySchemes", {})
+
+        # 检查 ApiKeyAuth 已移除
+        assert "ApiKeyAuth" not in security_schemes, "ApiKeyAuth 应该已移除"
+
+        # 检查只保留 BearerAuth
+        assert "BearerAuth" in security_schemes, "BearerAuth 应该保留"
+        assert len(security_schemes) == 1, "应该只保留一种认证方案"
+
+    def test_invalid_external_links_removed(self):
+        """测试无效外部链接已移除"""
+        info = self.openapi_schema.get("info", {})
+
+        # 检查无效的联系人和许可证信息已移除
+        assert "contact" not in info, "联系人信息应该已移除"
+        assert "license" not in info, "许可证信息应该已移除"
+        assert "termsOfService" not in info, "服务条款链接应该已移除"
+
+        # 检查外部文档已移除
+        assert "externalDocs" not in self.openapi_schema, "外部文档应该已移除"
+
+    def test_response_format_simplified(self):
+        """测试响应格式已简化为 code message data"""
+        examples = self.openapi_schema.get("components", {}).get("examples", {})
+
+        for example_name, example in examples.items():
+            value = example.get("value", {})
+
+            # 检查包含必要字段
+            assert "code" in value, f"示例 {example_name} 应该包含 code 字段"
+            assert "message" in value, f"示例 {example_name} 应该包含 message 字段"
+            assert "data" in value, f"示例 {example_name} 应该包含 data 字段"
+
+            # 检查不包含多余字段
+            extra_fields = ["timestamp", "traceId", "errorCode"]
+            for field in extra_fields:
+                assert field not in value, f"示例 {example_name} 不应该包含 {field} 字段"
+
     def test_docs_endpoints_accessible(self):
         """测试文档端点可以访问"""
         # 测试 Swagger UI
@@ -142,15 +183,11 @@ class TestSwaggerOpenAPIFix:
 
     def test_no_x_extensions_overload(self):
         """测试没有过度的 x- 扩展"""
-        # 检查是否存在不必要的 x- 扩展
+        # 检查已移除 x- 扩展
         extensions_to_check = ["x-tag-groups", "x-changelog"]
 
         for ext in extensions_to_check:
-            # 检查扩展是否存在且内容过于复杂
-            if ext in self.openapi_schema:
-                ext_value = self.openapi_schema[ext]
-                if isinstance(ext_value, list) and len(ext_value) > 5:
-                    pytest.fail(f"{ext} 扩展内容过于复杂，应该精简")
+            assert ext not in self.openapi_schema, f"{ext} 扩展应该已删除"
 
     def test_main_py_tags_parameters_removed(self):
         """测试 main.py 中 include_router 的 tags 参数已被移除"""
