@@ -19,7 +19,7 @@ from src.domains.task.schemas import (
     CreateTaskRequest, UpdateTaskRequest, TaskResponse, TaskListResponse,
     TaskDeleteResponse, TaskStatus, TaskPriority, CompleteTaskRequest,
     CompleteTaskResponse, UncompleteTaskRequest, UncompleteTaskResponse,
-    TaskGetResponse, TaskListQuery
+    TaskListQuery
 )
 
 from src.domains.chat.schemas import (
@@ -73,7 +73,6 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "CompleteTaskResponse": CompleteTaskResponse,
     "UncompleteTaskRequest": UncompleteTaskRequest,
     "UncompleteTaskResponse": UncompleteTaskResponse,
-    "TaskGetResponse": TaskGetResponse,
     "TaskListQuery": TaskListQuery,
 
     # 枚举类型

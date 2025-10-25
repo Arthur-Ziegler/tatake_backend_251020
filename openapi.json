@@ -1,0 +1,3674 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TaKeKe API",
+    "description": "TaKeKe API服务，提供认证和任务管理功能",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "Root",
+        "description": "根路径，返回API信息 - 只返回code、message、data三个字段",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "Health Check",
+        "description": "认证服务健康检查端点 - 只返回code、message、data三个字段",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "Api Info",
+        "description": "API信息端点 - 只返回code、message、data三个字段",
+        "operationId": "api_info_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/guest/init": {
+      "post": {
+        "tags": [
+          "认证系统"
+        ],
+        "summary": "游客账号初始化",
+        "description": "创建一个新的游客账号，无需任何参数。每次请求都创建全新的随机游客身份。",
+        "operationId": "guest_init_auth_guest_init_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "认证系统"
+        ],
+        "summary": "微信用户注册",
+        "description": "通过微信OpenID注册新用户。内部实现为创建游客账号并立即升级为正式用户，包含完整的用户初始化流程。",
+        "operationId": "wechat_register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeChatRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "认证系统"
+        ],
+        "summary": "微信用户登录",
+        "description": "通过微信OpenID登录已有用户账号。支持新用户自动注册和已有用户登录，返回JWT访问令牌。",
+        "operationId": "wechat_login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeChatLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/guest/upgrade": {
+      "post": {
+        "tags": [
+          "认证系统"
+        ],
+        "summary": "游客账号升级",
+        "description": "将当前游客账号升级为正式用户，需要提供微信OpenID。",
+        "operationId": "upgrade_guest_auth_guest_upgrade_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuestUpgradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "认证系统"
+        ],
+        "summary": "刷新访问令牌",
+        "description": "使用刷新令牌获取新的访问令牌。",
+        "operationId": "refresh_token_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnifiedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "创建新任务",
+        "description": "创建一个新的任务，支持设置标题、描述、状态、优先级、父任务等完整信息。",
+        "operationId": "create_task_tasks__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "获取任务列表",
+        "description": "获取任务列表 - 简化版本，只支持基本分页\n\n获取当前用户的任务列表，按创建时间倒序排列，支持分页和是否包含已删除任务。\n\nArgs:\n    page (int): 页码，从1开始\n    page_size (int): 每页大小，1-100\n    include_deleted (bool): 是否包含已删除的任务\n    user_id (UUID): 当前用户ID（从JWT token中获取）\n    session (Session): 数据库会话\n\nReturns:\n    TaskListResponseWrapper: 任务列表和分页信息响应\n\nRaises:\n    HTTPException: 查询参数错误或业务逻辑异常",
+        "operationId": "get_task_list_tasks__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码，从1开始",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码，从1开始"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页大小，1-100",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "每页大小，1-100"
+          },
+          {
+            "name": "include_deleted",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "是否包含已删除的任务",
+              "default": false,
+              "title": "Include Deleted"
+            },
+            "description": "是否包含已删除的任务"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponseWrapper"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "获取任务详情",
+        "description": "获取任务详情\n\n根据任务ID获取任务的详细信息，包括所有字段和计算字段。\n\nArgs:\n    task_id (UUID): 任务ID\n    user_id (UUID): 当前用户ID（从JWT token中获取）\n    session (Session): 数据库会话\n\nReturns:\n    TaskGetResponse: 任务详情响应\n\nRaises:\n    HTTPException: 任务不存在或无权限访问",
+        "operationId": "get_task_tasks__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskGetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "更新任务信息",
+        "description": "更新现有任务的信息，包括标题、描述、状态、优先级等，支持部分更新。",
+        "operationId": "update_task_tasks__task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskUpdateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "删除任务",
+        "description": "软删除指定任务，任务会被标记为已删除但不会物理删除，支持恢复操作。",
+        "operationId": "delete_task_tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDeleteResponseWrapper"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/complete": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "完成任务",
+        "description": "完成任务并触发奖励分发。支持普通任务和Top3任务，奖励机制不同。",
+        "operationId": "complete_task_tasks__task_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteTaskRequest",
+                "examples": {
+                  "NormalTaskCompletion": {
+                    "summary": "普通任务完成",
+                    "description": "完成普通任务，获得2积分基础奖励",
+                    "value": {
+                      "mood_feedback": {
+                        "comment": "任务比较简单，顺利完成",
+                        "difficulty": "easy"
+                      }
+                    }
+                  },
+                  "Top3TaskCompletion": {
+                    "summary": "Top3任务完成",
+                    "description": "完成Top3任务，有概率获得100积分或随机奖品",
+                    "value": {
+                      "mood_feedback": {
+                        "comment": "挑战性任务，很有成就感",
+                        "difficulty": "hard"
+                      }
+                    }
+                  },
+                  "TaskWithFeedback": {
+                    "summary": "带详细反馈的任务完成",
+                    "description": "完成任务并提供详细的情绪和难度反馈",
+                    "value": {
+                      "mood_feedback": {
+                        "comment": "这个任务让我学到了很多新知识，虽然有些挑战但最终还是完成了",
+                        "difficulty": "medium"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCompleteResponseWrapper"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/uncomplete": {
+      "post": {
+        "tags": [
+          "任务管理"
+        ],
+        "summary": "取消任务完成",
+        "description": "取消任务完成状态\n\n业务流程：\n1. 验证任务存在性和权限\n2. 检查任务是否处于完成状态\n3. 更新任务状态为pending\n4. 递归更新父任务完成度\n5. 记录操作日志\n6. 返回操作结果\n\n注意事项：\n- 取消完成不会回收已发放的积分或奖励，这是业务规则决定\n- 支持多层任务树的父任务完成度自动回退\n- 操作不可逆，请谨慎执行\n\nArgs:\n    task_id (UUID): 任务ID\n    request (UncompleteTaskRequest): 取消完成请求（空请求体）\n    user_id (UUID): 当前用户ID（从JWT token中获取）\n    session (Session): 数据库会话\n\nReturns:\n    TaskUncompleteResponseWrapper: 取消完成操作结果响应\n\nRaises:\n    HTTPException: 任务不存在、无权限访问或业务逻辑异常",
+        "operationId": "uncomplete_task_tasks__task_id__uncomplete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UncompleteTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskUncompleteResponseWrapper"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/catalog": {
+      "get": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "获取奖品目录",
+        "description": "获取系统中所有可用奖品的完整目录，包括奖品名称、描述、价值和兑换条件。",
+        "operationId": "get_reward_catalog_rewards_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RewardCatalogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/my-rewards": {
+      "get": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "获取我的奖品",
+        "description": "获取当前用户拥有的所有奖品及数量，包括通过任务完成和兑换获得的奖品。",
+        "operationId": "get_my_rewards_rewards_my_rewards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRewardsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/rewards/exchange/{reward_id}": {
+      "post": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "积分兑换奖品",
+        "description": "使用积分兑换奖品",
+        "operationId": "exchange_reward_with_points_rewards_exchange__reward_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reward_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Reward Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RewardRedeemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/materials": {
+      "get": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "获取我的材料",
+        "description": "获取用户拥有的所有材料（奖品）\n\n返回用户当前拥有的所有奖品及其数量，用于配方合成。\n\nArgs:\n    user_id (UUID): 当前用户ID（从JWT token中获取）\n    session (Session): 数据库会话\n\nReturns:\n    UserMaterialsResponseWrapper: 用户材料列表响应",
+        "operationId": "get_user_materials_rewards_materials_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMaterialsResponseWrapper"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/rewards/recipes": {
+      "get": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "获取可用配方",
+        "description": "获取所有可用的配方列表\n\n返回系统中所有可用的配方及其材料要求。\n\nArgs:\n    session (Session): 数据库会话\n\nReturns:\n    AvailableRecipesResponseWrapper: 可用配方列表响应",
+        "operationId": "get_available_recipes_rewards_recipes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableRecipesResponseWrapper"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/recipes/{recipe_id}/redeem": {
+      "post": {
+        "tags": [
+          "奖励系统"
+        ],
+        "summary": "配方合成奖品",
+        "description": "使用配方合成奖品\n\n业务流程：\n1. 验证配方存在性和可用性\n2. 检查用户材料是否充足\n3. 扣除材料并发放结果奖品\n4. 记录所有流水记录（事务组关联）\n5. 返回合成结果\n\n注意事项：\n- 材料不足会导致合成失败\n- 所有操作在事务中执行，确保数据一致性\n- 合成成功后材料会被扣除，无法恢复\n\nArgs:\n    recipe_id (str): 配方ID\n    request (RedeemRecipeRequest): 配方合成请求（空请求体）\n    user_id (UUID): 当前用户ID（从JWT token中获取）\n    session (Session): 数据库会话\n\nReturns:\n    RedeemRecipeResponseWrapper: 配方合成结果响应\n\nRaises:\n    HTTPException: 配方不存在、材料不足或业务逻辑异常",
+        "operationId": "redeem_recipe_rewards_recipes__recipe_id__redeem_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recipe_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Recipe Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedeemRecipeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedeemRecipeResponseWrapper"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/points/my-points": {
+      "get": {
+        "tags": [
+          "积分系统"
+        ],
+        "summary": "获取积分余额",
+        "description": "获取当前用户积分余额 - v3 API路径",
+        "operationId": "get_points_balance_my_points_points_my_points_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "用户ID",
+              "title": "User Id"
+            },
+            "description": "用户ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/points/balance": {
+      "get": {
+        "tags": [
+          "积分系统"
+        ],
+        "summary": "获取积分余额",
+        "description": "获取当前用户积分余额",
+        "operationId": "get_points_balance_points_balance_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/points/transactions": {
+      "get": {
+        "tags": [
+          "积分系统"
+        ],
+        "summary": "获取积分流水",
+        "description": "获取当前用户积分流水记录",
+        "operationId": "get_points_transactions_points_transactions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "每页数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/special/top3": {
+      "post": {
+        "tags": [
+          "Top3管理"
+        ],
+        "summary": "设置Top3任务",
+        "description": "设置每日Top3重要任务\n\n业务规则：\n- 消耗300积分\n- 每天只能设置一次\n- 支持1-3个任务\n- 需要包含位置信息\n\nArgs:\n    request: Top3设置请求\n    user_id: 用户ID（暂时使用默认值）\n    session: 数据库会话",
+        "operationId": "set_top3_tasks_special_top3_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTop3Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Set Top3 Tasks Special Top3 Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/special/top3/{target_date}": {
+      "get": {
+        "tags": [
+          "Top3管理"
+        ],
+        "summary": "查看指定日期Top3",
+        "description": "查看指定日期的Top3任务\n\nArgs:\n    target_date: 日期字符串，格式YYYY-MM-DD\n    user_id: 用户ID（暂时使用默认值）\n    session: 数据库会话",
+        "operationId": "get_top3_tasks_special_top3__target_date__get",
+        "parameters": [
+          {
+            "name": "target_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Target Date"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "550e8400-e29b-41d4-a716-446655440000",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Top3 Tasks Special Top3  Target Date  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions": {
+      "post": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "创建聊天会话",
+        "description": "创建新的聊天会话\n\nArgs:\n    request: 创建会话请求\n    user_id: 当前用户ID\n\nReturns:\n    dict: 会话创建结果\n\nRaises:\n    HTTPException: 创建失败时抛出",
+        "operationId": "create_chat_session_chat_sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Chat Session Chat Sessions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "List Chat Sessions",
+        "description": "获取用户的聊天会话列表\n\nArgs:\n    limit: 返回会话数量限制\n    user_id: 当前用户ID\n\nReturns:\n    SessionListResponse: 会话列表\n\nRaises:\n    HTTPException: 获取失败时抛出",
+        "operationId": "list_chat_sessions_chat_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "返回会话数量限制",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "返回会话数量限制"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions/{session_id}/send": {
+      "post": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "发送消息",
+        "description": "发送消息到聊天会话\n\nArgs:\n    session_id: 会话ID\n    request: 发送消息请求\n    user_id: 当前用户ID\n\nReturns:\n    dict: 消息处理结果\n\nRaises:\n    HTTPException: 发送失败时抛出",
+        "operationId": "send_chat_message_chat_sessions__session_id__send_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Send Chat Message Chat Sessions  Session Id  Send Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions/{session_id}/messages": {
+      "get": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "Get Chat History",
+        "description": "获取聊天历史记录\n\nArgs:\n    session_id: 会话ID\n    limit: 返回消息数量限制\n    user_id: 当前用户ID\n\nReturns:\n    list: 消息历史记录\n\nRaises:\n    HTTPException: 获取失败时抛出",
+        "operationId": "get_chat_history_chat_sessions__session_id__messages_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "返回消息数量限制",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "返回消息数量限制"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {},
+                  "title": "Response Get Chat History Chat Sessions  Session Id  Messages Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "Get Chat Session Info",
+        "description": "获取聊天会话信息\n\nArgs:\n    session_id: 会话ID\n    user_id: 当前用户ID\n\nReturns:\n    SessionInfoResponse: 会话信息\n\nRaises:\n    HTTPException: 获取失败时抛出",
+        "operationId": "get_chat_session_info_chat_sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "Delete Chat Session",
+        "description": "删除聊天会话\n\nArgs:\n    session_id: 会话ID\n    user_id: 当前用户ID\n\nReturns:\n    dict: 删除结果\n\nRaises:\n    HTTPException: 删除失败时抛出",
+        "operationId": "delete_chat_session_chat_sessions__session_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/health": {
+      "get": {
+        "tags": [
+          "智能聊天"
+        ],
+        "summary": "Chat Health Check",
+        "description": "聊天服务健康检查\n\nReturns:\n    dict: 健康检查结果",
+        "operationId": "chat_health_check_chat_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/focus/sessions": {
+      "post": {
+        "tags": [
+          "番茄钟系统"
+        ],
+        "summary": "开始专注会话",
+        "description": "开始专注会话\n\n业务逻辑：\n1. 验证任务是否存在且属于当前用户\n2. 自动关闭用户当前未完成的会话\n3. 创建新的专注会话\n\n请求参数：\n- task_id: 关联的任务ID（必填）\n- session_type: 会话类型，默认为\"focus\"\n\n权限要求：需要登录",
+        "operationId": "start_focus_focus_sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartFocusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "番茄钟系统"
+        ],
+        "summary": "获取专注会话列表",
+        "description": "获取用户专注会话列表\n\n返回当前用户的所有会话记录，按时间倒序排列。\n支持分页查询。\n\n权限要求：需要登录",
+        "operationId": "get_focus_sessions_focus_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "页码"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "每页数量",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "每页数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/focus/sessions/{session_id}/pause": {
+      "post": {
+        "tags": [
+          "番茄钟系统"
+        ],
+        "summary": "暂停专注会话",
+        "description": "暂停专注会话\n\n业务逻辑：\n1. 完成当前的专注会话\n2. 创建一个新的暂停会话\n3. 返回暂停会话信息\n\n权限要求：需要登录且只能暂停自己的会话",
+        "operationId": "pause_focus_focus_sessions__session_id__pause_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/focus/sessions/{session_id}/resume": {
+      "post": {
+        "tags": [
+          "番茄钟系统"
+        ],
+        "summary": "恢复专注会话",
+        "description": "恢复专注会话\n\n业务逻辑：\n1. 完成当前的暂停会话\n2. 创建一个新的专注会话\n3. 返回新的专注会话信息\n\n权限要求：需要登录且只能恢复自己的暂停会话",
+        "operationId": "resume_focus_focus_sessions__session_id__resume_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/focus/sessions/{session_id}/complete": {
+      "post": {
+        "tags": [
+          "番茄钟系统"
+        ],
+        "summary": "完成专注会话",
+        "description": "完成专注会话\n\n业务逻辑：\n1. 设置会话的结束时间为当前时间\n2. 返回完成的会话信息\n\n权限要求：需要登录且只能完成自己的会话",
+        "operationId": "complete_focus_focus_sessions__session_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test-cors": {
+      "get": {
+        "tags": [
+          "系统"
+        ],
+        "summary": "Test Cors",
+        "description": "测试 CORS 配置的专用端点",
+        "operationId": "test_cors_test_cors_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AvailableRecipe": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "配方ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "配方名称",
+            "example": "初级合成配方"
+          },
+          "result_reward_id": {
+            "type": "string",
+            "title": "Result Reward Id",
+            "description": "结果奖品ID",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "result_reward_name": {
+            "type": "string",
+            "title": "Result Reward Name",
+            "description": "结果奖品名称",
+            "example": "神秘宝箱"
+          },
+          "result_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Image Url",
+            "description": "结果奖品图片",
+            "example": "https://example.com/chest.jpg"
+          },
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeMaterial"
+            },
+            "type": "array",
+            "title": "Materials",
+            "description": "所需材料列表"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "创建时间",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "result_reward_id",
+          "result_reward_name",
+          "materials",
+          "created_at"
+        ],
+        "title": "AvailableRecipe",
+        "description": "可用配方"
+      },
+      "AvailableRecipesResponse-Input": {
+        "properties": {
+          "recipes": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableRecipe"
+            },
+            "type": "array",
+            "title": "Recipes",
+            "description": "可用配方列表"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "可用配方总数",
+            "example": 25
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipes",
+          "total_count"
+        ],
+        "title": "AvailableRecipesResponse",
+        "description": "可用配方列表响应"
+      },
+      "AvailableRecipesResponse-Output": {
+        "properties": {
+          "recipes": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableRecipe"
+            },
+            "type": "array",
+            "title": "Recipes",
+            "description": "可用配方列表"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "可用配方总数",
+            "example": 25
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipes",
+          "total_count"
+        ],
+        "title": "AvailableRecipesResponse",
+        "description": "可用配方列表响应"
+      },
+      "AvailableRecipesResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "响应状态码",
+            "example": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/AvailableRecipesResponse-Output",
+            "description": "可用配方列表数据"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息",
+            "example": "success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "AvailableRecipesResponseWrapper",
+        "description": "可用配方列表统一响应"
+      },
+      "ChatSessionItem": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "会话ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "会话标题",
+            "example": "日常对话"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count",
+            "description": "消息数量",
+            "example": 5
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "创建时间",
+            "example": "2024-01-01T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At",
+            "description": "更新时间",
+            "example": "2024-01-01T12:05:00Z"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "title",
+          "message_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ChatSessionItem",
+        "description": "聊天会话项",
+        "example": {
+          "created_at": "2024-01-01T12:00:00Z",
+          "message_count": 5,
+          "session_id": "123e4567-e89b-12d3-a456-426614174000",
+          "title": "日常对话",
+          "updated_at": "2024-01-01T12:05:00Z"
+        }
+      },
+      "CompleteTaskRequest": {
+        "properties": {},
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CompleteTaskRequest",
+        "description": "完成任务请求不需要请求体",
+        "example": {}
+      },
+      "CompleteTaskResponse": {
+        "properties": {
+          "task": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Task",
+            "description": "完成后的任务信息"
+          },
+          "completion_result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Completion Result",
+            "description": "任务完成操作结果"
+          },
+          "lottery_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lottery Result",
+            "description": "抽奖结果（Top3任务）"
+          },
+          "parent_update": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Update",
+            "description": "父任务完成度更新信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果描述"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "completion_result",
+          "message"
+        ],
+        "title": "CompleteTaskResponse",
+        "description": "完成任务响应Schema\n\n用于返回任务完成操作的详细结果，包含任务信息、奖励信息和父任务更新信息。\n\n字段说明：\n- task: 完成后的任务信息\n- completion_result: 任务完成操作结果（积分奖励等）\n- lottery_result: 抽奖结果（如果是Top3任务）\n- parent_update: 父任务完成度更新信息\n- message: 操作结果描述",
+        "example": {
+          "completion_result": {
+            "points_awarded": 2,
+            "reward_type": "task_complete",
+            "success": true
+          },
+          "lottery_result": {
+            "message": "恭喜获得100积分！",
+            "points": 100,
+            "reward_type": "points"
+          },
+          "message": "任务完成成功",
+          "parent_update": {
+            "success": true,
+            "updated_tasks": [
+              {
+                "child_count": 4,
+                "completion_percentage": 75.0,
+                "task_id": "parent-uuid"
+              }
+            ],
+            "updated_tasks_count": 2
+          },
+          "task": {
+            "completion_percentage": 100.0,
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "status": "completed",
+            "title": "完成项目文档"
+          }
+        }
+      },
+      "CreateSessionRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "会话标题",
+            "example": "日常对话"
+          }
+        },
+        "type": "object",
+        "title": "CreateSessionRequest",
+        "description": "创建聊天会话请求",
+        "example": {
+          "title": "日常对话"
+        }
+      },
+      "CreateTaskRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title",
+            "description": "任务标题，1-100字符，必填",
+            "example": "完成项目文档编写"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "任务描述，最多5000字符",
+            "example": "编写项目的详细技术文档和用户手册"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "任务状态：pending/in_progress/completed",
+            "default": "pending",
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "description": "任务优先级：low/medium/high",
+            "default": "medium",
+            "example": "medium"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "父任务ID，支持任务树结构"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags",
+            "description": "任务标签列表，最多10个标签",
+            "default": [],
+            "example": [
+              "工作",
+              "重要",
+              "紧急"
+            ]
+          },
+          "service_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Ids",
+            "description": "关联服务ID列表，占位字段用于后续AI服务匹配",
+            "default": []
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "任务截止日期（ISO 8601格式）"
+          },
+          "planned_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start Time",
+            "description": "计划开始时间（ISO 8601格式）"
+          },
+          "planned_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End Time",
+            "description": "计划结束时间（ISO 8601格式）"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "CreateTaskRequest",
+        "description": "创建任务请求Schema\n\n用于创建新任务的API请求。只包含创建任务时必要的字段，\n其他字段可以使用默认值或在创建后通过更新API设置。\n\n必填字段：\n- title: 任务标题（1-100字符）\n\n可选字段：\n- description: 任务描述\n- status: 任务状态（默认为pending）\n- priority: 任务优先级（默认为medium）\n- parent_id: 父任务ID\n- tags: 任务标签列表\n- due_date: 截止日期\n- planned_start_time: 计划开始时间\n- planned_end_time: 计划结束时间\n\n验证规则：\n- title长度必须在1-100字符之间\n- 如果设置parent_id，必须为有效的字符串ID\n- 如果设置时间范围，结束时间必须晚于开始时间\n- tags最多包含10个标签，每个标签最多20字符",
+        "example": {
+          "description": "编写项目的详细技术文档和用户手册",
+          "due_date": "2024-12-31T23:59:59Z",
+          "planned_end_time": "2024-12-30T18:00:00Z",
+          "planned_start_time": "2024-12-20T09:00:00Z",
+          "priority": "high",
+          "status": "pending",
+          "tags": [
+            "文档",
+            "项目"
+          ],
+          "title": "完成项目文档"
+        }
+      },
+      "GuestUpgradeRequest": {
+        "properties": {
+          "wechat_openid": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Wechat Openid",
+            "description": "微信OpenID",
+            "example": "ox1234567890abcdef"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wechat_openid"
+        ],
+        "title": "GuestUpgradeRequest",
+        "description": "游客账号升级请求\n\n将游客账号升级为正式用户，需要提供微信OpenID。"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MyRewardsResponse": {
+        "properties": {
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/RewardResponse"
+            },
+            "type": "array",
+            "title": "Rewards"
+          },
+          "total_types": {
+            "type": "integer",
+            "title": "Total Types"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rewards",
+          "total_types"
+        ],
+        "title": "MyRewardsResponse",
+        "description": "我的奖品响应"
+      },
+      "PaginationInfo": {
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "title": "Current Page",
+            "description": "当前页码"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "description": "每页大小"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "总记录数"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages",
+            "description": "总页数"
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next",
+            "description": "是否有下一页"
+          },
+          "has_prev": {
+            "type": "boolean",
+            "title": "Has Prev",
+            "description": "是否有上一页"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_page",
+          "page_size",
+          "total_count",
+          "total_pages",
+          "has_next",
+          "has_prev"
+        ],
+        "title": "PaginationInfo",
+        "description": "分页信息Schema\n\n用于返回列表数据的分页信息。\n\n字段说明：\n- current_page: 当前页码\n- page_size: 每页大小\n- total_count: 总记录数\n- total_pages: 总页数\n- has_next: 是否有下一页\n- has_prev: 是否有上一页"
+      },
+      "RecipeMaterial": {
+        "properties": {
+          "reward_id": {
+            "type": "string",
+            "title": "Reward Id",
+            "description": "奖品ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "reward_name": {
+            "type": "string",
+            "title": "Reward Name",
+            "description": "奖品名称",
+            "example": "魔法药剂"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantity",
+            "description": "材料数量",
+            "example": 2
+          }
+        },
+        "type": "object",
+        "required": [
+          "reward_id",
+          "reward_name",
+          "quantity"
+        ],
+        "title": "RecipeMaterial",
+        "description": "配方材料"
+      },
+      "RecipeReward": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "奖品ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "奖品名称",
+            "example": "神秘宝箱"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "奖品描述",
+            "example": "包含随机奖励的神秘宝箱"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "奖品图片URL",
+            "example": "https://example.com/reward.jpg"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "奖品类别",
+            "example": "稀有"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category"
+        ],
+        "title": "RecipeReward",
+        "description": "配方奖品信息"
+      },
+      "RedeemRecipeRequest": {
+        "properties": {},
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RedeemRecipeRequest",
+        "description": "配方兑换请求Schema\n\n用于配方合成操作的API请求。\n\n设计说明：\n- 配方ID从URL路径参数获取\n- 用户ID从JWT token中自动提取\n- 请求体为空，简化API调用"
+      },
+      "RedeemRecipeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "操作是否成功",
+            "example": true
+          },
+          "recipe_id": {
+            "type": "string",
+            "title": "Recipe Id",
+            "description": "配方ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "recipe_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Name",
+            "description": "配方名称",
+            "example": "初级合成配方"
+          },
+          "result_reward": {
+            "$ref": "#/components/schemas/RecipeReward",
+            "description": "合成结果奖品"
+          },
+          "materials_consumed": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeMaterial"
+            },
+            "type": "array",
+            "title": "Materials Consumed",
+            "description": "消耗的材料列表"
+          },
+          "transaction_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Group",
+            "description": "事务组ID",
+            "example": "txn_group_12345"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果描述",
+            "example": "配方合成成功"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "recipe_id",
+          "result_reward",
+          "materials_consumed",
+          "message"
+        ],
+        "title": "RedeemRecipeResponse",
+        "description": "配方兑换响应Schema\n\n用于返回配方合成操作的详细结果。\n\n字段说明：\n- success: 操作是否成功\n- recipe_id: 配方ID\n- recipe_name: 配方名称\n- result_reward: 合成结果奖品\n- materials_consumed: 消耗的材料列表\n- transaction_group: 事务组ID，用于追踪关联操作\n- message: 操作结果描述"
+      },
+      "RedeemRecipeResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "响应状态码",
+            "example": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/RedeemRecipeResponse",
+            "description": "配方兑换响应数据"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息",
+            "example": "success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "RedeemRecipeResponseWrapper",
+        "description": "配方兑换统一响应\n\n继承自标准的API响应格式，data字段包含配方合成的详细结果。"
+      },
+      "RewardCatalogResponse": {
+        "properties": {
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/RewardResponse"
+            },
+            "type": "array",
+            "title": "Rewards"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rewards",
+          "total_count"
+        ],
+        "title": "RewardCatalogResponse",
+        "description": "奖品目录响应"
+      },
+      "RewardRedeemResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "result_reward": {
+            "$ref": "#/components/schemas/RewardResponse"
+          },
+          "consumed_rewards": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Consumed Rewards"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "result_reward",
+          "consumed_rewards",
+          "message"
+        ],
+        "title": "RewardRedeemResponse",
+        "description": "兑换奖品响应"
+      },
+      "RewardResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_exchangeable": {
+            "type": "boolean",
+            "title": "Is Exchangeable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "description",
+          "is_exchangeable"
+        ],
+        "title": "RewardResponse",
+        "description": "奖品响应"
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "消息内容",
+            "example": "你好，请帮我计算1+2等于多少？"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SendMessageRequest",
+        "description": "发送消息请求",
+        "example": {
+          "message": "你好，请帮我计算1+2等于多少？"
+        }
+      },
+      "SessionInfoResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "会话ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "会话标题",
+            "example": "日常对话"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count",
+            "description": "消息数量",
+            "example": 5
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "创建时间",
+            "example": "2024-01-01T12:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At",
+            "description": "更新时间",
+            "example": "2024-01-01T12:05:00Z"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "会话状态",
+            "example": "active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "title",
+          "message_count",
+          "created_at",
+          "updated_at",
+          "status"
+        ],
+        "title": "SessionInfoResponse",
+        "description": "会话信息响应",
+        "example": {
+          "created_at": "2024-01-01T12:00:00Z",
+          "message_count": 5,
+          "session_id": "123e4567-e89b-12d3-a456-426614174000",
+          "status": "active",
+          "title": "日常对话",
+          "updated_at": "2024-01-01T12:05:00Z"
+        }
+      },
+      "SessionListResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "用户ID",
+            "example": "test-user-123"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSessionItem"
+            },
+            "type": "array",
+            "title": "Sessions",
+            "description": "会话列表"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "description": "总会话数",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "会话数量限制",
+            "example": 20
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "时间戳",
+            "example": "2024-01-01T12:10:00Z"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "响应状态",
+            "example": "success"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "备注信息",
+            "example": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "sessions",
+          "total_count",
+          "limit",
+          "timestamp",
+          "status",
+          "note"
+        ],
+        "title": "SessionListResponse",
+        "description": "会话列表响应",
+        "example": {
+          "limit": 20,
+          "note": "",
+          "sessions": [
+            {
+              "created_at": "2024-01-01T12:00:00Z",
+              "message_count": 5,
+              "session_id": "123e4567-e89b-12d3-a456-426614174000",
+              "title": "日常对话",
+              "updated_at": "2024-01-01T12:05:00Z"
+            }
+          ],
+          "status": "success",
+          "timestamp": "2024-01-01T12:10:00Z",
+          "total_count": 1,
+          "user_id": "test-user-123"
+        }
+      },
+      "SetTop3Request": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "日期",
+            "example": "2025-01-15"
+          },
+          "task_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Task Ids",
+            "description": "任务ID列表",
+            "example": [
+              "550e8400-e29b-41d4-a716-446655440000",
+              "550e8400-e29b-41d4-a716-446655440001"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "task_ids"
+        ],
+        "title": "SetTop3Request",
+        "description": "设置Top3请求"
+      },
+      "StartFocusRequest": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "任务ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "session_type": {
+            "type": "string",
+            "title": "Session Type",
+            "description": "会话类型: focus(专注)/break(短休息)/long_break(长休息)/pause(暂停)",
+            "default": "focus",
+            "example": "focus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "title": "StartFocusRequest",
+        "description": "开始专注会话请求模型\n\n极简设计，只需要任务ID和会话类型：\n- task_id: 必须关联一个有效任务\n- session_type: 支持多种会话类型\n\n设计说明：\n- 不包含计划时长，由前端控制\n- 不包含备注等非必要字段\n- 所有会话（包括暂停）都使用同一个请求模型"
+      },
+      "TaskCompleteResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CompleteTaskResponse",
+            "description": "任务完成结果"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskCompleteResponseWrapper",
+        "description": "任务完成响应\n\n继承自UnifiedResponse，data字段包含任务完成的详细结果。"
+      },
+      "TaskCreateResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskResponse",
+            "description": "创建的任务信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskCreateResponse",
+        "description": "任务创建响应\n\n继承自UnifiedResponse，data字段包含创建的任务信息。"
+      },
+      "TaskDeleteResponse": {
+        "properties": {
+          "deleted_task_id": {
+            "type": "string",
+            "title": "Deleted Task Id",
+            "description": "被删除的任务ID"
+          },
+          "deleted_count": {
+            "type": "integer",
+            "title": "Deleted Count",
+            "description": "删除的任务总数"
+          },
+          "cascade_deleted": {
+            "type": "boolean",
+            "title": "Cascade Deleted",
+            "description": "是否有级联删除"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted_task_id",
+          "deleted_count",
+          "cascade_deleted"
+        ],
+        "title": "TaskDeleteResponse",
+        "description": "任务删除响应Schema\n\n用于返回任务删除操作的结果。\n\n字段说明：\n- deleted_task_id: 被删除的任务ID\n- deleted_count: 删除的任务总数（包括级联删除的子任务）\n- cascade_deleted: 是否有级联删除的子任务"
+      },
+      "TaskDeleteResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskDeleteResponse",
+            "description": "删除操作的结果"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskDeleteResponseWrapper",
+        "description": "任务删除响应\n\n继承自UnifiedResponse，data字段包含删除操作的结果。"
+      },
+      "TaskGetResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskResponse",
+            "description": "获取的任务信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskGetResponse",
+        "description": "任务获取响应\n\n继承自UnifiedResponse，data字段包含获取的任务信息。"
+      },
+      "TaskListResponse": {
+        "properties": {
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Tasks",
+            "description": "任务列表"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationInfo",
+            "description": "分页信息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tasks",
+          "pagination"
+        ],
+        "title": "TaskListResponse",
+        "description": "任务列表响应Schema\n\n用于返回任务列表和分页信息。\n\n结构说明：\n- tasks: 任务列表\n- pagination: 分页信息"
+      },
+      "TaskListResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskListResponse",
+            "description": "任务列表和分页信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskListResponseWrapper",
+        "description": "任务列表响应\n\n继承自UnifiedResponse，data字段包含任务列表和分页信息。"
+      },
+      "TaskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "任务ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "任务标题",
+            "example": "完成项目文档编写"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "任务描述",
+            "example": "编写项目的详细技术文档和用户手册"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "任务状态",
+            "example": "active"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "description": "任务优先级",
+            "example": "medium"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "父任务ID",
+            "example": "550e8400-e29b-41d4-a716-446655440001"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "任务标签",
+            "default": [],
+            "example": [
+              "工作",
+              "重要",
+              "紧急"
+            ]
+          },
+          "service_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Service Ids",
+            "description": "关联服务ID列表，占位字段用于后续AI服务匹配",
+            "default": [],
+            "example": [
+              "chat",
+              "timer",
+              "points"
+            ]
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "截止日期",
+            "example": "2024-12-31T23:59:59Z"
+          },
+          "planned_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start Time",
+            "description": "计划开始时间",
+            "example": "2024-01-01T09:00:00Z"
+          },
+          "planned_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End Time",
+            "description": "计划结束时间",
+            "example": "2024-01-01T18:00:00Z"
+          },
+          "last_claimed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Claimed Date",
+            "description": "最后领奖日期，用于防刷机制",
+            "example": "2024-01-15"
+          },
+          "is_deleted": {
+            "type": "boolean",
+            "title": "Is Deleted",
+            "description": "是否已删除"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "创建时间"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "更新时间"
+          },
+          "completion_percentage": {
+            "type": "number",
+            "title": "Completion Percentage",
+            "description": "任务完成百分比，0.0-100.0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "priority",
+          "is_deleted",
+          "created_at",
+          "updated_at",
+          "completion_percentage"
+        ],
+        "title": "TaskResponse",
+        "description": "任务响应Schema\n\n用于返回单个任务的详细信息。包含任务的所有字段和计算字段。\n\n字段说明：\n- 包含任务的所有基本字段\n- 添加计算字段：is_overdue, duration_minutes\n- 时间字段使用ISO 8601格式返回\n- parent_id在为None时返回null",
+        "example": {
+          "created_at": "2024-12-15T10:00:00Z",
+          "description": "编写项目的详细技术文档和用户手册",
+          "due_date": "2024-12-31T23:59:59Z",
+          "duration_minutes": 540,
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "is_deleted": false,
+          "is_overdue": false,
+          "parent_id": "550e8400-e29b-41d4-a716-446655440002",
+          "planned_end_time": "2024-12-30T18:00:00Z",
+          "planned_start_time": "2024-12-20T09:00:00Z",
+          "priority": "high",
+          "status": "in_progress",
+          "tags": [
+            "文档",
+            "项目"
+          ],
+          "title": "完成项目文档",
+          "updated_at": "2024-12-16T14:30:00Z",
+          "user_id": "550e8400-e29b-41d4-a716-446655440001"
+        }
+      },
+      "TaskUncompleteResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UncompleteTaskResponse",
+            "description": "取消任务完成结果"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskUncompleteResponseWrapper",
+        "description": "取消任务完成响应\n\n继承自UnifiedResponse，data字段包含取消任务完成的结果。"
+      },
+      "TaskUpdateResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskResponse",
+            "description": "更新后的任务信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "TaskUpdateResponse",
+        "description": "任务更新响应\n\n继承自UnifiedResponse，data字段包含更新后的任务信息。"
+      },
+      "TokenRefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Refresh Token",
+            "description": "刷新令牌",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "TokenRefreshRequest",
+        "description": "令牌刷新请求\n\n使用刷新令牌获取新的访问令牌。"
+      },
+      "UncompleteTaskRequest": {
+        "properties": {},
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UncompleteTaskRequest",
+        "description": "取消任务完成请求不需要请求体",
+        "example": {}
+      },
+      "UncompleteTaskResponse": {
+        "properties": {
+          "task": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Task",
+            "description": "取消完成后的任务信息"
+          },
+          "parent_update": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Update",
+            "description": "父任务完成度更新信息"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "操作结果描述"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "message"
+        ],
+        "title": "UncompleteTaskResponse",
+        "description": "取消任务完成响应Schema\n\n用于返回取消任务完成操作的详细结果。\n\n字段说明：\n- task: 取消完成后的任务信息\n- parent_update: 父任务完成度更新信息\n- message: 操作结果描述（包含不回收奖励的提示）",
+        "example": {
+          "message": "取消完成成功（注意：已发放的积分和奖励不会回收）",
+          "parent_update": {
+            "success": true,
+            "updated_tasks": [
+              {
+                "child_count": 4,
+                "completion_percentage": 50.0,
+                "task_id": "parent-uuid"
+              }
+            ],
+            "updated_tasks_count": 2
+          },
+          "task": {
+            "completion_percentage": 25.0,
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "status": "pending",
+            "title": "完成项目文档"
+          }
+        }
+      },
+      "UnifiedResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP状态码"
+          },
+          "data": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "响应数据，成功时包含具体数据，失败时为null"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "UnifiedResponse",
+        "description": "统一响应格式\n\n所有API端点都使用这个统一的响应格式：\n- code: HTTP状态码（200, 400, 401, 403, 404, 409等）\n- data: 响应数据，成功时包含具体数据，失败时为null\n- message: 响应消息，成功时为\"success\"，失败时为具体错误描述\n\nExamples:\n    成功响应：\n    {\n        \"code\": 200,\n        \"data\": {\"user_id\": \"...\", \"access_token\": \"...\"},\n        \"message\": \"success\"\n    }\n\n    错误响应：\n    {\n        \"code\": 404,\n        \"data\": null,\n        \"message\": \"用户不存在\"\n    }"
+      },
+      "UpdateTaskRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "任务标题，1-100字符",
+            "example": "更新后的任务标题"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "任务描述，最多5000字符",
+            "example": "编写项目的详细技术文档和用户手册"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "任务状态：pending/in_progress/completed"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority",
+            "description": "任务优先级：low/medium/high"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "父任务ID，支持任务树结构"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags",
+            "description": "任务标签列表，最多10个标签"
+          },
+          "service_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Ids",
+            "description": "关联服务ID列表，占位字段用于后续AI服务匹配"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "任务截止日期（ISO 8601格式）"
+          },
+          "planned_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start Time",
+            "description": "计划开始时间（ISO 8601格式）"
+          },
+          "planned_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End Time",
+            "description": "计划结束时间（ISO 8601格式）"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateTaskRequest",
+        "description": "更新任务请求Schema\n\n用于更新现有任务的API请求。所有字段都是可选的，\n支持部分更新（只更新提供的字段）。\n\n字段说明：\n- 所有字段都是可选的，支持部分更新\n- 更新时会验证字段的有效性\n- 时间字段的验证规则与创建时相同\n- tags字段会完全替换，不是追加\n\n特殊说明：\n- 如果parent_id设置为None，会将任务移至根级别\n- 如果tags设置为空列表，会清空所有标签",
+        "example": {
+          "description": "更新后的任务描述",
+          "due_date": "2024-12-25T23:59:59Z",
+          "planned_end_time": "2024-12-20T18:00:00Z",
+          "planned_start_time": "2024-12-15T09:00:00Z",
+          "priority": "high",
+          "status": "in_progress",
+          "tags": [
+            "更新",
+            "测试"
+          ],
+          "title": "更新后的任务标题"
+        }
+      },
+      "UserMaterial": {
+        "properties": {
+          "reward_id": {
+            "type": "string",
+            "title": "Reward Id",
+            "description": "奖品ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "reward_name": {
+            "type": "string",
+            "title": "Reward Name",
+            "description": "奖品名称",
+            "example": "魔法药剂"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "奖品图片URL",
+            "example": "https://example.com/potion.jpg"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quantity",
+            "description": "拥有数量",
+            "example": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "reward_id",
+          "reward_name",
+          "quantity"
+        ],
+        "title": "UserMaterial",
+        "description": "用户材料"
+      },
+      "UserMaterialsResponse": {
+        "properties": {
+          "materials": {
+            "items": {
+              "$ref": "#/components/schemas/UserMaterial"
+            },
+            "type": "array",
+            "title": "Materials",
+            "description": "用户材料列表"
+          },
+          "total_types": {
+            "type": "integer",
+            "title": "Total Types",
+            "description": "材料种类总数",
+            "example": 15
+          }
+        },
+        "type": "object",
+        "required": [
+          "materials",
+          "total_types"
+        ],
+        "title": "UserMaterialsResponse",
+        "description": "用户材料列表响应"
+      },
+      "UserMaterialsResponseWrapper": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "响应状态码",
+            "example": 200
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserMaterialsResponse",
+            "description": "用户材料列表数据"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "响应消息",
+            "example": "success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
+        "title": "UserMaterialsResponseWrapper",
+        "description": "用户材料列表统一响应"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeChatLoginRequest": {
+        "properties": {
+          "wechat_openid": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Wechat Openid",
+            "description": "微信OpenID",
+            "example": "ox1234567890abcdef"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wechat_openid"
+        ],
+        "title": "WeChatLoginRequest",
+        "description": "微信登录请求\n\n通过微信OpenID进行登录验证。"
+      },
+      "WeChatRegisterRequest": {
+        "properties": {
+          "wechat_openid": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Wechat Openid",
+            "description": "微信OpenID",
+            "example": "ox1234567890abcdef"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wechat_openid"
+        ],
+        "title": "WeChatRegisterRequest",
+        "description": "微信注册请求\n\n微信注册本质上是\"创建游客 + 立即升级\"的组合操作。\n客户端只需要提供微信openid。"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

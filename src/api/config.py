@@ -28,7 +28,7 @@ class APIConfig(BaseSettings):
     debug: bool = Field(default=False, description="调试模式")
 
     # API配置
-    api_prefix: str = Field(default="", description="API路径前缀（极简设计，无前缀）")
+    api_prefix: str = Field(default="", description="API路径前缀")
     api_host: str = Field(default="0.0.0.0", description="API主机地址")
     api_port: int = Field(default=8001, description="API端口")
 

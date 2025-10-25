@@ -1,0 +1,77 @@
+INFO:     Started server process [66692]
+INFO:     Waiting for application startup.
+✅ OpenAPI组件注册完成，共注册了 30 个模型
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [generated in 0.00008s] ()
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 11:54:31,507 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 11:54:31,508 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:54:31,510 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 11:54:31,510 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 11:54:31,511 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 11:54:31,511 INFO sqlalchemy.engine.Engine [cached since 0.0003327s ago] ('钻石',)
+2025-10-25 11:54:31,511 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 11:54:31,511 INFO sqlalchemy.engine.Engine [generated in 0.00003s] ('小金币合成钻石',)
+2025-10-25 11:54:31,511 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 11:54:31,512 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:54:31,513 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('127.0.0.1', 8001): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+✅ Focus数据库初始化完成
+✅ API服务启动完成
+🛑 API服务正在关闭...
+✅ API服务已关闭

@@ -1,0 +1,118 @@
+INFO:     Started server process [64543]
+INFO:     Waiting for application startup.
+✅ 使用FastAPI默认的OpenAPI自动注册机制
+🚀 TaKeKe API v1.0.0 正在启动...
+📝 环境: 开发
+🌐 API服务地址: http://0.0.0.0:8001
+✅ 简化认证数据库表创建成功（auth + auth_audit_logs）
+✅ 认证数据库初始化完成
+2025-10-25 11:43:34,205 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:43:34,205 INFO sqlalchemy.engine.Engine SELECT 1
+2025-10-25 11:43:34,205 INFO sqlalchemy.engine.Engine [generated in 0.00006s] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,206 INFO sqlalchemy.engine.Engine COMMIT
+✅ 任务数据库初始化完成
+2025-10-25 11:43:34,207 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:43:34,209 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 11:43:34,209 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ('小金币',)
+2025-10-25 11:43:34,210 INFO sqlalchemy.engine.Engine SELECT rewards.id, rewards.name, rewards.description, rewards.points_value, rewards.image_url, rewards.cost_type, rewards.cost_value, rewards.stock_quantity, rewards.category, rewards.is_active, rewards.created_at, rewards.updated_at 
+FROM rewards 
+WHERE rewards.name = ?
+2025-10-25 11:43:34,210 INFO sqlalchemy.engine.Engine [cached since 0.001011s ago] ('钻石',)
+2025-10-25 11:43:34,210 INFO sqlalchemy.engine.Engine SELECT reward_recipes.id, reward_recipes.name, reward_recipes.result_reward_id, reward_recipes.materials, reward_recipes.is_active, reward_recipes.created_at, reward_recipes.updated_at 
+FROM reward_recipes 
+WHERE reward_recipes.name = ?
+2025-10-25 11:43:34,210 INFO sqlalchemy.engine.Engine [generated in 0.00004s] ('小金币合成钻石',)
+2025-10-25 11:43:34,210 INFO sqlalchemy.engine.Engine COMMIT
+✅ 奖励数据库初始化完成
+✅ 聊天数据库初始化完成
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth")
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("auth_audit_logs")
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("points_transactions")
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("rewards")
+2025-10-25 11:43:34,211 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_recipes")
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("reward_transactions")
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("task_top3")
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("focus_sessions")
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:43:34,212 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8007 (Press CTRL+C to quit)
+✅ Focus数据库初始化完成
+✅ API服务启动完成
+2025-10-25 11:44:37,019 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:44:37,019 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("tasks")
+2025-10-25 11:44:37,019 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,020 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 11:44:37,020 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:44:37,020 INFO sqlalchemy.engine.Engine 
+                SELECT
+                    COUNT(*) as total_tasks,
+                    COUNT(CASE WHEN is_deleted = false THEN 1 END) as active_tasks,
+                    COUNT(CASE WHEN is_deleted = true THEN 1 END) as deleted_tasks,
+                    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_tasks,
+                    COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_tasks,
+                    COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tasks
+                FROM tasks
+            
+2025-10-25 11:44:37,020 INFO sqlalchemy.engine.Engine [generated in 0.00005s] ()
+2025-10-25 11:44:37,024 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:44:37,024 INFO sqlalchemy.engine.Engine PRAGMA main.index_list("tasks")
+2025-10-25 11:44:37,024 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,024 INFO sqlalchemy.engine.Engine PRAGMA main.index_info("ix_tasks_parent_id")
+2025-10-25 11:44:37,024 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine PRAGMA main.index_info("ix_tasks_status")
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine PRAGMA main.index_info("ix_tasks_user_id")
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine PRAGMA main.index_info("ix_tasks_is_deleted")
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine PRAGMA main.foreign_key_list("tasks")
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine PRAGMA temp.foreign_key_list("tasks")
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ()
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine SELECT sql FROM  (SELECT * FROM sqlite_master UNION ALL   SELECT * FROM sqlite_temp_master) WHERE name = ? AND type in ('table', 'view')
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine [raw sql] ('tasks',)
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-10-25 11:44:37,025 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:63818 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63846 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63851 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63872 - "GET /docs HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64543]

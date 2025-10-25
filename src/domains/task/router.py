@@ -397,14 +397,14 @@ async def get_task_list(
         tasks = [TaskResponse(**task_data) for task_data in list_result.get("tasks", [])]
 
         # 构造分页信息
-        pagination_info = PaginationInfo(
-            current_page=list_result.get("current_page", page),
-            page_size=list_result.get("page_size", page_size),
-            total_count=list_result.get("total_count", 0),
-            total_pages=list_result.get("total_pages", 0),
-            has_next=list_result.get("has_next", False),
-            has_prev=list_result.get("has_prev", False)
-        )
+        pagination_info = {
+            "current_page": list_result.get("current_page", page),
+            "page_size": list_result.get("page_size", page_size),
+            "total_count": list_result.get("total_count", 0),
+            "total_pages": list_result.get("total_pages", 0),
+            "has_next": list_result.get("has_next", False),
+            "has_prev": list_result.get("has_prev", False)
+        }
 
         # 构造TaskListResponse
         list_data = TaskListResponse(

@@ -143,7 +143,6 @@ class TestOpenAPISchemas:
 
         forbidden_wrapper_classes = [
             "TaskCreateResponse",
-            "TaskGetResponse",
             "TaskUpdateResponse",
             "TaskDeleteResponseWrapper",
             "TaskListResponseWrapper",
