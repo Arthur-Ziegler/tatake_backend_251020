@@ -113,31 +113,19 @@ from src.api.openapi import setup_openapi
 setup_openapi(app)
 
 
-# 添加CORS中间件 - 解决部署时的跨域问题
+# 添加CORS中间件 - 使用FastAPI原生方法，最宽松配置
 from fastapi.middleware.cors import CORSMiddleware
 
-# 方法1: 使用 FastAPI 内置的 CORS 中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有源，解决部署问题
+    allow_origins=["*"],  # 允许所有源
     allow_credentials=True,  # 允许认证凭据
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许所有HTTP方法
+    allow_methods=["*"],  # 允许所有HTTP方法
     allow_headers=["*"],  # 允许所有请求头
-    expose_headers=["X-Total-Count", "X-Trace-ID"]  # 暴露自定义响应头
+    expose_headers=["*"],  # 暴露所有响应头
+    max_age=86400,  # 预检请求缓存24小时（最长时间）
 )
 
-# 方法2: 手动设置 CORS 响应头（备用方案）
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-
-    # 允许所有来源
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-
-    return response
 
 # 添加全局异常处理器
 @app.exception_handler(StarletteHTTPException)
