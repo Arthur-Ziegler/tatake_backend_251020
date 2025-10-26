@@ -205,12 +205,12 @@ class TestAuthTokenResponse:
         )
 
         response = AuthTokenResponse(
-            success=True,
+            code=200,
             message="认证成功",
             data=token_data
         )
 
-        assert response.success is True
+        assert response.code == 200
         assert response.message == "认证成功"
         assert response.data.user_id == user_id
         assert response.data.is_guest is False
@@ -238,7 +238,7 @@ class TestSchemaIntegration:
 
         # 3. 认证响应
         auth_response = AuthTokenResponse(
-            success=True,
+            code=200,
             message="游客初始化成功",
             data=auth_data
         )

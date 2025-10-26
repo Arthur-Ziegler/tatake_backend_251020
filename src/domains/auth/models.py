@@ -47,14 +47,15 @@ class BaseModel(SQLModel):
 
 class Auth(BaseModel, table=True):
     """
-    简化的用户认证表
+    用户认证表（支持微信OpenID和手机号双通道认证）
 
-    根据设计文档，这是从auth_users表简化而来的核心认证表。
-    只保留7个核心字段，专注于身份认证功能。
+    根据add-phone-sms-auth提案，扩展为支持双通道认证的核心认证表。
+    支持微信OpenID和手机号+验证码两种登录方式。
 
     字段说明：
     - id: 主键
-    - wechat_openid: 微信OpenID（游客为null，正式用户必须有值）
+    - wechat_openid: 微信OpenID（游客为null，正式用户可为null或必填）
+    - phone: 手机号（11位数字，可选，唯一索引）
     - is_guest: 是否为游客账号
     - created_at: 创建时间
     - updated_at: 最后更新时间
@@ -63,6 +64,7 @@ class Auth(BaseModel, table=True):
 
     索引设计：
     - idx_auth_wechat_openid: 支持微信登录查询
+    - idx_auth_phone: 支持手机号登录查询（唯一索引）
     - idx_auth_is_guest: 支持游客统计
     - idx_auth_created_at: 支持按创建时间查询
     """
@@ -74,7 +76,14 @@ class Auth(BaseModel, table=True):
         max_length=100,
         unique=True,
         index=True,
-        description="微信OpenID，游客为null，正式用户必填"
+        description="微信OpenID，游客为null，正式用户可选"
+    )
+    phone: Optional[str] = Field(
+        default=None,
+        max_length=11,
+        unique=True,
+        index=True,
+        description="手机号，11位数字，唯一"
     )
     is_guest: bool = Field(
         default=True,
@@ -94,6 +103,7 @@ class Auth(BaseModel, table=True):
     # 索引定义
     __table_args__ = (
         Index('idx_auth_wechat_openid', 'wechat_openid'),
+        Index('idx_auth_phone', 'phone'),
         Index('idx_auth_is_guest', 'is_guest'),
         Index('idx_auth_created_at', 'created_at'),
     )
@@ -174,8 +184,79 @@ class AuthLog(SQLModel, table=True):
     )
 
 
+class SMSVerification(BaseModel, table=True):
+    """
+    短信验证码表
+
+    根据add-phone-sms-auth提案新增，用于存储短信验证码相关信息。
+    支持注册、登录、绑定等多种场景的验证码管理。
+
+    字段说明：
+    - id: 主键
+    - phone: 手机号（11位数字）
+    - code: 验证码（6位数字）
+    - scene: 使用场景（register/login/bind）
+    - created_at: 创建时间
+    - verified: 是否已验证
+    - verified_at: 验证时间
+    - ip_address: 请求IP地址
+    - error_count: 错误次数
+    - locked_until: 锁定截止时间
+
+    索引设计：
+    - idx_sms_phone_scene: 支持按手机号和场景查询
+    - idx_sms_created_at: 支持按创建时间查询（清理过期数据）
+    - idx_sms_locked_until: 支持锁定状态查询
+    """
+
+    __tablename__ = "sms_verification"
+
+    phone: str = Field(
+        max_length=11,
+        index=True,
+        description="手机号，11位数字"
+    )
+    code: str = Field(
+        max_length=6,
+        description="验证码，6位数字"
+    )
+    scene: str = Field(
+        max_length=20,
+        description="使用场景: register | login | bind"
+    )
+    verified: bool = Field(
+        default=False,
+        description="是否已验证"
+    )
+    verified_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True)),
+        description="验证时间"
+    )
+    ip_address: Optional[str] = Field(
+        default=None,
+        max_length=45,
+        description="请求IP地址"
+    )
+    error_count: int = Field(
+        default=0,
+        description="错误次数"
+    )
+    locked_until: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True)),
+        description="锁定截止时间"
+    )
+
+    # 索引定义
+    __table_args__ = (
+        Index('idx_sms_phone_scene', 'phone', 'scene'),
+        Index('idx_sms_created_at', 'created_at'),
+        Index('idx_sms_locked_until', 'locked_until'),
+    )
+
+
 # 删除的模型（保留注释说明删除原因）：
 # - UserSettings: 用户设置移至独立的user领域
-# - SMSVerification: 移除短信验证功能，只支持微信登录
 # - TokenBlacklist: 移除登出功能，不维护token黑名单
 # - UserSession: 移除会话管理，采用无状态JWT

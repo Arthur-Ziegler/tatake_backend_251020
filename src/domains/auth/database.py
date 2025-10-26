@@ -43,7 +43,7 @@ from sqlmodel import SQLModel
 # 数据库配置
 AUTH_DATABASE_URL = os.getenv(
     "AUTH_DATABASE_URL",
-    "sqlite:///./tatake_auth.db"
+    "sqlite:///./data/auth.db"
 )
 
 # 是否在控制台输出SQL语句（调试用）
@@ -112,8 +112,8 @@ def create_tables() -> None:
         Exception: 数据库连接或表创建失败时抛出
     """
     try:
-        # 导入简化后的模型
-        from src.domains.auth.models import Auth, AuthLog
+        # 导入模型
+        from src.domains.auth.models import Auth, AuthLog, SMSVerification
 
         # 创建表
         SQLModel.metadata.create_all(
@@ -121,7 +121,7 @@ def create_tables() -> None:
             checkfirst=True
         )
 
-        print("✅ 简化认证数据库表创建成功（auth + auth_audit_logs）")
+        print("✅ 认证数据库表创建成功（auth + auth_audit_logs + sms_verification）")
 
     except Exception as e:
         print(f"❌ 认证数据库表创建失败: {e}")
@@ -138,8 +138,8 @@ def drop_tables() -> None:
         Exception: 数据库连接或表删除失败时抛出
     """
     try:
-        # 导入简化后的模型
-        from src.domains.auth.models import Auth, AuthLog
+        # 导入模型
+        from src.domains.auth.models import Auth, AuthLog, SMSVerification
 
         # 删除所有表
         SQLModel.metadata.drop_all(
@@ -293,7 +293,7 @@ class AuthDatabaseManager:
                 auth_columns = [row[1] for row in result.fetchall()]
 
                 expected_auth_columns = {
-                    'id', 'wechat_openid', 'is_guest', 'created_at',
+                    'id', 'wechat_openid', 'phone', 'is_guest', 'created_at',
                     'updated_at', 'last_login_at', 'jwt_version'
                 }
 

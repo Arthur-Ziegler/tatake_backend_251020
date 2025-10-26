@@ -21,9 +21,12 @@ from .schemas import (
 )
 from src.domains.auth.schemas import UnifiedResponse
 from src.database import get_db_session
+from src.domains.auth.database import get_auth_db
 from src.api.dependencies import get_current_user_id
 from src.domains.auth.models import Auth
 from src.domains.auth.repository import AuthRepository
+from src.domains.user.repository import UserRepository
+from src.domains.user.models import User, UserSettings, UserStats
 from src.domains.points.service import PointsService
 from src.domains.reward.welcome_gift_service import WelcomeGiftService
 
@@ -38,31 +41,40 @@ router = APIRouter(prefix="/user", tags=["用户管理"])
 
 @router.get("/profile", summary="获取用户信息")
 async def get_user_profile(
-    session: Annotated[Session, Depends(get_db_session)],
+    business_session: Annotated[Session, Depends(get_db_session)],
     user_id: UUID = Depends(get_current_user_id)
 ) -> UnifiedResponse[UserProfileResponse]:
     """获取当前用户基本信息"""
     try:
-        # 使用Repository层获取用户，Service层只处理UUID对象
-        auth_repo = AuthRepository(session)
-        user = auth_repo.get_by_id(user_id)
+        # 使用UserRepository获取完整的用户信息（跨域查询）
+        user_repo = UserRepository(business_session)
+        user_data = user_repo.get_by_id_with_auth(user_id)
 
-        if not user:
+        if not user_data:
             return UnifiedResponse(
                 code=404,
                 data=None,
                 message="用户不存在"
             )
 
-        # 构造用户信息数据（只使用Auth模型中存在的字段）
+        auth_user = user_data["auth"]
+        business_user = user_data["user"]
+        stats = user_data["stats"]
+
+        # 如果业务用户不存在，创建一个
+        if not business_user:
+            business_user = user_repo.create_user(user_id)
+
+        # 构造用户信息数据（结合认证域和用户域的数据）
         user_profile = {
-            "id": str(user.id),
-            "nickname": f"用户_{user.id[:8]}",  # 生成默认昵称
-            "avatar": None,  # Auth模型中没有avatar字段
-            "wechat_openid": user.wechat_openid,
-            "is_guest": user.is_guest,
-            "created_at": user.created_at.isoformat(),
-            "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None
+            "id": str(auth_user.id),
+            "nickname": business_user.nickname if business_user else f"用户_{auth_user.id[:8]}",
+            "avatar": business_user.avatar_url if business_user else None,
+            "bio": business_user.bio if business_user else None,
+            "wechat_openid": auth_user.wechat_openid,
+            "is_guest": auth_user.is_guest,
+            "created_at": auth_user.created_at.isoformat(),
+            "last_login_at": auth_user.last_login_at.isoformat() if auth_user.last_login_at else None
         }
 
         return UnifiedResponse(
@@ -82,35 +94,54 @@ async def get_user_profile(
 @router.put("/profile", summary="更新用户信息")
 async def update_user_profile(
     request: UpdateProfileRequest,
-    session: Annotated[Session, Depends(get_db_session)],
+    business_session: Annotated[Session, Depends(get_db_session)],
     user_id: UUID = Depends(get_current_user_id)
 ) -> UnifiedResponse[UpdateProfileResponse]:
     """更新用户基本信息"""
     try:
-        # 使用Repository层获取用户，Service层只处理UUID对象
-        auth_repo = AuthRepository(session)
-        user = auth_repo.get_by_id(user_id)
+        # 使用UserRepository进行用户数据更新
+        user_repo = UserRepository(business_session)
 
-        if not user:
+        # 验证用户存在
+        user_data = user_repo.get_by_id_with_auth(user_id)
+        if not user_data or not user_data["auth"]:
             return UnifiedResponse(
                 code=404,
                 data=None,
                 message="用户不存在"
             )
 
-        # 注意：Auth模型中没有nickname字段，暂时返回默认昵称
-        # 在未来的版本中可以考虑扩展Auth模型或创建独立的User模型
+        # 准备更新数据
+        updates = {}
         updated_fields = []
+
         if request.nickname:
-            # 暂时无法更新昵称，因为Auth模型中没有该字段
-            # 这里可以记录日志或在未来版本中实现
-            logger.info(f"User requested nickname update to '{request.nickname}', but Auth model doesn't support nickname field")
-            updated_fields.append("nickname_requested")
+            updates["nickname"] = request.nickname
+            updated_fields.append("nickname")
+
+        if request.avatar_url:
+            updates["avatar_url"] = request.avatar_url
+            updated_fields.append("avatar_url")
+
+        if request.bio:
+            updates["bio"] = request.bio
+            updated_fields.append("bio")
+
+        # 执行更新（如果有需要更新的字段）
+        updated_user = None
+        if updates:
+            updated_user = user_repo.update_user(user_id, updates)
+
+        # 获取更新后的用户信息
+        business_user = updated_user or user_data["user"]
+        nickname = business_user.nickname if business_user else f"用户_{user_id[:8]}"
 
         # 构造更新响应数据
         update_response = {
-            "id": str(user.id),
-            "nickname": f"用户_{user.id[:8]}",  # 返回默认昵称
+            "id": str(user_id),
+            "nickname": nickname,
+            "avatar_url": business_user.avatar_url if business_user else None,
+            "bio": business_user.bio if business_user else None,
             "updated_fields": updated_fields
         }
 

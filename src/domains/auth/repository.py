@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 from sqlmodel import select, update, Session
 from sqlalchemy import and_, desc
 
-from .models import Auth, AuthLog
+from .models import Auth, AuthLog, SMSVerification
 from src.core.uuid_converter import UUIDConverter
 
 logger = logging.getLogger(__name__)
@@ -238,6 +238,169 @@ class AuthRepository:
             self.session.rollback()
             return False
 
+    # ===== SMS认证相关方法 =====
+
+    def get_auth_by_phone(self, phone: str) -> Optional[Auth]:
+        """
+        根据手机号获取用户
+
+        Args:
+            phone: 手机号
+
+        Returns:
+            Optional[Auth]: 用户实体或None
+        """
+        try:
+            statement = select(Auth).where(Auth.phone == phone)
+            result = self.session.execute(statement).scalar()
+
+            if result:
+                logger.info(f"Found user by phone: {phone}, user_id: {result.id}")
+            else:
+                logger.info(f"No user found for phone: {phone}")
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get user by phone {phone}: {e}")
+            return None
+
+    def create_sms_verification(self, verification: SMSVerification) -> SMSVerification:
+        """
+        创建SMS验证码记录
+
+        Args:
+            verification: SMS验证码实体
+
+        Returns:
+            SMSVerification: 创建的验证码实体
+        """
+        try:
+            self.session.add(verification)
+            self.session.commit()
+            self.session.refresh(verification)
+
+            logger.info(f"Created SMS verification: {verification.id}, phone: {verification.phone}, scene: {verification.scene}")
+            return verification
+        except Exception as e:
+            logger.error(f"Failed to create SMS verification: {e}")
+            self.session.rollback()
+            raise
+
+    def get_latest_verification(self, phone: str) -> Optional[SMSVerification]:
+        """
+        获取指定手机号的最新验证码
+
+        Args:
+            phone: 手机号
+
+        Returns:
+            Optional[SMSVerification]: 最新的验证码实体或None
+        """
+        try:
+            statement = (
+                select(SMSVerification)
+                .where(SMSVerification.phone == phone)
+                .order_by(desc(SMSVerification.created_at))
+                .limit(1)
+            )
+            result = self.session.execute(statement).scalar()
+
+            if result:
+                logger.info(f"Found latest verification for phone: {phone}, created_at: {result.created_at}")
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get latest verification for phone {phone}: {e}")
+            return None
+
+    def get_latest_unverified(self, phone: str, scene: str) -> Optional[SMSVerification]:
+        """
+        获取指定手机号和场景的最新未验证验证码
+
+        Args:
+            phone: 手机号
+            scene: 使用场景
+
+        Returns:
+            Optional[SMSVerification]: 最新的未验证验证码或None
+        """
+        try:
+            statement = (
+                select(SMSVerification)
+                .where(
+                    and_(
+                        SMSVerification.phone == phone,
+                        SMSVerification.scene == scene,
+                        SMSVerification.verified == False
+                    )
+                )
+                .order_by(desc(SMSVerification.created_at))
+                .limit(1)
+            )
+            result = self.session.execute(statement).scalar()
+
+            if result:
+                logger.info(f"Found latest unverified verification for phone: {phone}, scene: {scene}")
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get latest unverified verification for phone {phone}, scene {scene}: {e}")
+            return None
+
+    def count_today_sends(self, phone: str) -> int:
+        """
+        统计指定手机号今日发送次数
+
+        Args:
+            phone: 手机号
+
+        Returns:
+            int: 今日发送次数
+        """
+        try:
+            # 获取今日开始时间
+            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+
+            statement = (
+                select(SMSVerification)
+                .where(
+                    and_(
+                        SMSVerification.phone == phone,
+                        SMSVerification.created_at >= today
+                    )
+                )
+            )
+            results = self.session.execute(statement).scalars().all()
+            count = len(results)
+
+            logger.info(f"Counted {count} SMS sends for phone {phone} today")
+            return count
+        except Exception as e:
+            logger.error(f"Failed to count today SMS sends for phone {phone}: {e}")
+            return 0
+
+    def update_verification(self, verification: SMSVerification) -> SMSVerification:
+        """
+        更新SMS验证码记录
+
+        Args:
+            verification: 要更新的验证码实体
+
+        Returns:
+            SMSVerification: 更新后的验证码实体
+        """
+        try:
+            self.session.merge(verification)
+            self.session.commit()
+            self.session.refresh(verification)
+
+            logger.info(f"Updated SMS verification: {verification.id}, verified: {verification.verified}")
+            return verification
+        except Exception as e:
+            logger.error(f"Failed to update SMS verification {verification.id}: {e}")
+            self.session.rollback()
+            raise
+
 
 class AuditRepository:
     """
@@ -319,6 +482,7 @@ class AuditRepository:
             self.session.rollback()
             return None
 
+    
 
 # ===== 删除的Repository注释 =====
 # 以下Repository已被删除，原因：

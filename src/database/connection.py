@@ -49,6 +49,7 @@ class DatabaseConnection:
         # 优先使用环境变量，其次使用传入参数，最后使用默认值
         self.database_url = (
             os.getenv('DATABASE_URL') or
+            os.getenv('AUTH_DATABASE_URL') or  # 优先使用认证数据库
             database_url or
             "sqlite:///./tatake.db"
         )
@@ -140,18 +141,26 @@ def get_database_connection() -> DatabaseConnection:
 
     创建并返回一个全局的数据库连接实例，确保整个应用中
     使用相同的数据库配置和引擎实例。
+    注意：不传递database_url参数，让DatabaseConnection类自己处理优先级。
 
     Returns:
         DatabaseConnection: 全局数据库连接实例
     """
     global _global_db_connection
     if _global_db_connection is None:
-        # 从环境变量读取配置
+        # 不传递database_url，让DatabaseConnection类自己处理环境变量优先级
         _global_db_connection = DatabaseConnection(
-            database_url=os.getenv('DATABASE_URL'),
             echo=os.getenv('DEBUG', 'false').lower() == 'true'
         )
     return _global_db_connection
+
+
+def reset_database_connection():
+    """
+    重置全局数据库连接实例（用于测试和配置更改）
+    """
+    global _global_db_connection
+    _global_db_connection = None
 
 
 def get_engine() -> Engine:

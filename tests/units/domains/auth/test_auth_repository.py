@@ -13,7 +13,7 @@ Auth领域Repository测试
 
 import pytest
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from src.domains.auth.models import Auth, AuthLog
 from src.domains.auth.repository import AuthRepository, AuditRepository
@@ -38,7 +38,7 @@ class TestAuthRepository:
         assert guest.jwt_version == 1
 
         # 验证数据库中确实存在
-        retrieved = repo.get_by_id(Auth, guest.id)
+        retrieved = repo.get_by_id(UUID(guest.id))
         assert retrieved is not None
         assert retrieved.id == guest.id
         assert retrieved.is_guest is True

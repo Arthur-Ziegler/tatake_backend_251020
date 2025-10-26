@@ -30,17 +30,20 @@ from pydantic import BaseModel, Field, ConfigDict
 
 # ===== 类型变量 =====
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 # ===== 枚举类型 =====
 
+
 class UserTypeEnum(str, Enum):
     """简化的用户类型枚举"""
-    GUEST = "guest"      # 游客
-    WECHAT = "wechat"    # 微信用户
+
+    GUEST = "guest"  # 游客
+    WECHAT = "wechat"  # 微信用户
 
 
 # ===== 核心响应格式 =====
+
 
 class UnifiedResponse(BaseModel, Generic[T]):
     """
@@ -66,14 +69,18 @@ class UnifiedResponse(BaseModel, Generic[T]):
             "message": "用户不存在"
         }
     """
+
     code: int = Field(..., description="HTTP状态码")
-    data: Optional[T] = Field(None, description="响应数据，成功时包含具体数据，失败时为null")
+    data: Optional[T] = Field(
+        None, description="响应数据，成功时包含具体数据，失败时为null"
+    )
     message: str = Field(..., description="响应消息")
 
     model_config = ConfigDict(from_attributes=True)
 
 
 # ===== 请求Schema =====
+
 
 class GuestInitRequest(BaseModel):
     """
@@ -83,10 +90,7 @@ class GuestInitRequest(BaseModel):
     每次请求都会创建全新的随机游客身份。
     """
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid"  # 禁止额外字段
-    )
+    model_config = ConfigDict(from_attributes=True, extra="forbid")  # 禁止额外字段
 
 
 class WeChatRegisterRequest(BaseModel):
@@ -96,18 +100,16 @@ class WeChatRegisterRequest(BaseModel):
     微信注册本质上是"创建游客 + 立即升级"的组合操作。
     客户端只需要提供微信openid。
     """
+
     wechat_openid: str = Field(
         ...,
         min_length=1,
         max_length=100,
         description="微信OpenID",
-        example="ox1234567890abcdef"
+        example="ox1234567890abcdef",
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid"
-    )
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class WeChatLoginRequest(BaseModel):
@@ -116,18 +118,16 @@ class WeChatLoginRequest(BaseModel):
 
     通过微信OpenID进行登录验证。
     """
+
     wechat_openid: str = Field(
         ...,
         min_length=1,
         max_length=100,
         description="微信OpenID",
-        example="ox1234567890abcdef"
+        example="ox1234567890abcdef",
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid"
-    )
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class GuestUpgradeRequest(BaseModel):
@@ -136,18 +136,16 @@ class GuestUpgradeRequest(BaseModel):
 
     将游客账号升级为正式用户，需要提供微信OpenID。
     """
+
     wechat_openid: str = Field(
         ...,
         min_length=1,
         max_length=100,
         description="微信OpenID",
-        example="ox1234567890abcdef"
+        example="ox1234567890abcdef",
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid"
-    )
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class TokenRefreshRequest(BaseModel):
@@ -156,20 +154,19 @@ class TokenRefreshRequest(BaseModel):
 
     使用刷新令牌获取新的访问令牌。
     """
+
     refresh_token: str = Field(
         ...,
         min_length=1,
         description="刷新令牌",
-        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        extra="forbid"
-    )
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 # ===== Auth业务数据Schema =====
+
 
 class AuthTokenData(BaseModel):
     """
@@ -177,41 +174,31 @@ class AuthTokenData(BaseModel):
 
     包含用户认证成功后返回的所有必要信息。
     """
+
     user_id: str = Field(
         ...,
         description="用户唯一标识符",
-        example="550e8400-e29b-41d4-a716-446655440000"
+        example="550e8400-e29b-41d4-a716-446655440000",
     )
-    is_guest: bool = Field(
-        ...,
-        description="是否为游客账号",
-        example=False
-    )
+    is_guest: bool = Field(..., description="是否为游客账号", example=False)
     access_token: str = Field(
         ...,
         description="JWT访问令牌",
-        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     )
     refresh_token: str = Field(
         ...,
         description="JWT刷新令牌",
-        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     )
-    token_type: str = Field(
-        default="bearer",
-        description="令牌类型",
-        example="bearer"
-    )
-    expires_in: int = Field(
-        ...,
-        description="访问令牌过期时间（秒）",
-        example=3600
-    )
+    token_type: str = Field(default="bearer", description="令牌类型", example="bearer")
+    expires_in: int = Field(..., description="访问令牌过期时间（秒）", example=3600)
 
     model_config = ConfigDict(from_attributes=True)
 
 
 # ===== 响应Schema =====
+
 
 class AuthTokenResponse(UnifiedResponse[AuthTokenData]):
     """
@@ -220,6 +207,153 @@ class AuthTokenResponse(UnifiedResponse[AuthTokenData]):
     所有认证相关的成功响应都使用这个Schema，
     返回统一的令牌数据结构。
     """
+
+
+# ===== SMS认证Schema =====
+
+
+class SMSSendRequest(BaseModel):
+    """
+    发送短信验证码请求模型
+
+    用于请求发送短信验证码的API请求参数验证。
+    支持register、login、bind三种场景。
+
+    字段说明：
+    - phone: 手机号，11位数字，中国大陆格式
+    - scene: 使用场景，register|login|bind
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",  # 拒绝额外字段
+        json_schema_extra={"example": {"phone": "13800138000", "scene": "register"}},
+    )
+
+    phone: str = Field(
+        ..., pattern=r"^1[3-9]\d{9}$", description="手机号，11位数字，中国大陆格式"
+    )
+    scene: str = Field(
+        ...,
+        pattern=r"^(register|login|bind)$",
+        description="使用场景：register(注册) | login(登录) | bind(绑定)",
+    )
+
+
+class SMSVerifyRequest(BaseModel):
+    """
+    验证短信验证码请求模型
+
+    用于验证短信验证码的API请求参数验证。
+    支持register、login、bind三种场景。
+
+    字段说明：
+    - phone: 手机号，11位数字，中国大陆格式
+    - code: 验证码，6位数字
+    - scene: 使用场景，register|login|bind
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",  # 拒绝额外字段
+        json_schema_extra={
+            "example": {"phone": "13800138000", "code": "123456", "scene": "register"}
+        },
+    )
+
+    phone: str = Field(
+        ..., pattern=r"^1[3-9]\d{9}$", description="手机号，11位数字，中国大陆格式"
+    )
+    code: str = Field(..., pattern=r"^\d{6}$", description="验证码，6位数字")
+    scene: str = Field(
+        ...,
+        pattern=r"^(register|login|bind)$",
+        description="使用场景：register(注册) | login(登录) | bind(绑定)",
+    )
+
+
+class SMSSendResponse(BaseModel):
+    """
+    发送短信验证码响应模型
+
+    用于返回短信发送成功的响应数据。
+
+    字段说明：
+    - expires_in: 验证码有效期（秒）
+    - retry_after: 重试间隔（秒）
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"expires_in": 300, "retry_after": 60}}
+    )
+
+    expires_in: int = Field(
+        default=300, gt=0, description="验证码有效期（秒），默认300秒（5分钟）"
+    )
+    retry_after: int = Field(default=60, gt=0, description="重试间隔（秒），默认60秒")
+
+
+class SMSVerifyResponse(BaseModel):
+    """
+    验证短信验证码响应模型
+
+    用于返回验证码验证成功的响应数据，包含JWT令牌。
+
+    字段说明：
+    - access_token: 访问令牌
+    - refresh_token: 刷新令牌
+    - user_id: 用户ID
+    - is_new_user: 是否为新用户（仅注册场景有效）
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                "is_new_user": True,
+            }
+        }
+    )
+
+    access_token: str = Field(..., min_length=20, description="JWT访问令牌")
+    refresh_token: str = Field(..., min_length=20, description="JWT刷新令牌")
+    user_id: str = Field(..., min_length=1, description="用户ID")
+    is_new_user: bool = Field(
+        default=False, description="是否为新用户（仅注册场景有效）"
+    )
+
+
+class PhoneBindResponse(BaseModel):
+    """
+    手机号绑定响应模型
+
+    用于返回手机号绑定成功的响应数据。
+
+    字段说明：
+    - user_id: 用户ID
+    - phone: 绑定的手机号
+    - upgraded: 是否升级（从游客升级为正式用户）
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                "phone": "13800138000",
+                "upgraded": True,
+            }
+        }
+    )
+
+    user_id: str = Field(..., min_length=1, description="用户ID")
+    phone: str = Field(
+        ...,
+        pattern=r"^1[3-9]\d{9}$",
+        description="绑定的手机号，11位数字，中国大陆格式",
+    )
+    upgraded: bool = Field(
+        default=False, description="是否升级（从游客升级为正式用户）"
+    )
 
 
 # ===== 删除的Schema注释 =====

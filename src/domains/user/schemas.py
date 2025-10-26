@@ -9,10 +9,11 @@ class UserProfileResponse(BaseModel):
     id: str = Field(..., description="用户ID")
     nickname: str = Field(..., description="用户昵称")
     avatar: Optional[str] = Field(None, description="头像URL")
+    bio: Optional[str] = Field(None, description="用户简介")
     wechat_openid: Optional[str] = Field(None, description="微信OpenID")
     is_guest: bool = Field(..., description="是否为游客")
     created_at: str = Field(..., description="创建时间")
-    last_login_at: str = Field(..., description="最后登录时间")
+    last_login_at: Optional[str] = Field(None, description="最后登录时间")
 
     class Config:
         """Pydantic配置 - 使用json_schema_extra提供示例"""
@@ -21,6 +22,7 @@ class UserProfileResponse(BaseModel):
                 "id": "550e8400-e29b-41d4-a716-446655440000",
                 "nickname": "张三",
                 "avatar": "https://example.com/avatar.jpg",
+                "bio": "这是用户简介",
                 "wechat_openid": "ox1234567890abcdef",
                 "is_guest": False,
                 "created_at": "2024-01-15T10:30:00Z",
@@ -32,12 +34,16 @@ class UserProfileResponse(BaseModel):
 class UpdateProfileRequest(BaseModel):
     """更新用户信息请求"""
     nickname: Optional[str] = Field(None, description="用户昵称")
+    avatar_url: Optional[str] = Field(None, description="头像URL")
+    bio: Optional[str] = Field(None, description="用户简介")
 
     class Config:
         """Pydantic配置 - 使用json_schema_extra提供示例"""
         json_schema_extra = {
             "example": {
-                "nickname": "新昵称"
+                "nickname": "新昵称",
+                "avatar_url": "https://example.com/new-avatar.jpg",
+                "bio": "这是我的新简介"
             }
         }
 
@@ -48,6 +54,8 @@ class UpdateProfileResponse(BaseModel):
     """更新用户信息响应"""
     id: str = Field(..., description="用户ID")
     nickname: str = Field(..., description="用户昵称")
+    avatar_url: Optional[str] = Field(None, description="头像URL")
+    bio: Optional[str] = Field(None, description="用户简介")
     updated_fields: list[str] = Field(..., description="已更新的字段列表")
 
     class Config:
@@ -56,7 +64,9 @@ class UpdateProfileResponse(BaseModel):
             "example": {
                 "id": "550e8400-e29b-41d4-a716-446655440000",
                 "nickname": "张三",
-                "updated_fields": ["nickname"]
+                "avatar_url": "https://example.com/new-avatar.jpg",
+                "bio": "这是我的新简介",
+                "updated_fields": ["nickname", "avatar_url", "bio"]
             }
         }
 

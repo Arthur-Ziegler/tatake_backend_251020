@@ -1,444 +1,354 @@
 """
-Pytest配置和共享fixtures
+测试配置和共享Fixtures
 
-提供测试环境的配置和共享的测试工具函数，遵循FastAPI最佳实践。
+提供统一的测试基础设施，包括：
+1. 数据库配置和清理
+2. 测试数据工厂
+3. Mock服务配置
+4. 异步测试支持
+5. 测试环境隔离
 
-测试结构:
-- 单元测试 (unit): 测试单个函数或类
-- 集成测试 (integration): 测试API端点和数据库交互
-- 端到端测试 (e2e): 模拟完整用户流程
+设计原则：
+- 测试隔离：每个测试用例独立运行，不相互影响
+- 数据清理：测试后自动清理，保持环境干净
+- 配置统一：统一的测试配置和环境变量
+- 异步支持：完整的异步测试框架支持
 
 作者：TaKeKe团队
-版本：2.0.0 - 测试基础设施重建
+版本：2.0.0 - 测试基础设施重构
 """
 
-import pytest
-import pytest_asyncio
 import asyncio
-import requests
-import json
-from typing import Generator, AsyncGenerator
-from uuid import uuid4
-from fastapi.testclient import TestClient
-from httpx import AsyncClient, ASGITransport
+import os
+import pytest
+import tempfile
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import AsyncGenerator, Generator, Optional
+from unittest.mock import Mock, AsyncMock
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlmodel import Session, SQLModel
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
-# 导入FastAPI应用
-from src.api.main import app
+# 设置测试环境变量
+os.environ["ENVIRONMENT"] = "test"
+os.environ["DEBUG"] = "true"
+os.environ["LOG_LEVEL"] = "ERROR"  # 测试时减少日志噪音
+os.environ["SMS_MODE"] = "mock"  # 测试时使用Mock SMS
 
-# API测试配置
-API_BASE_URL = "http://localhost:8001"
-
-# 测试数据库配置 - 使用内存数据库以提高测试速度
+# 测试数据库配置
 TEST_DATABASE_URL = "sqlite:///:memory:"
-test_engine = create_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    echo=False,  # 测试时关闭SQL日志
-    pool_pre_ping=True
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """创建一个事件循环用于异步测试"""
+    """创建事件循环用于异步测试"""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture
-def client() -> Generator[TestClient, None, None]:
-    """
-    FastAPI TestClient fixture
-
-    提供用于测试的FastAPI客户端，支持同步测试。
-    """
-    with TestClient(app) as test_client:
-        yield test_client
-
-
-@pytest.fixture
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
-    """
-    异步HTTP客户端fixture
-
-    提供用于异步测试的httpx AsyncClient，使用ASGITransport
-    直接与FastAPI应用交互，无需运行服务器。
-    """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
-
-
-@pytest_asyncio.fixture
-async def test_client() -> AsyncGenerator[AsyncClient, None]:
-    """
-    测试客户端fixture（别名async_client，用于兼容现有测试）
-
-    提供用于异步测试的httpx AsyncClient，使用ASGITransport
-    直接与FastAPI应用交互，无需运行服务器。
-    """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
-
-
 @pytest.fixture(scope="function")
 def test_db_session() -> Generator[Session, None, None]:
     """
-    测试数据库会话fixture
+    提供内存数据库session用于测试
 
-    提供独立的测试数据库会话，确保测试之间不会相互影响。
-    每个测试函数都会获得一个全新的数据库会话。
-    使用内存数据库确保完全隔离。
+    每个测试函数都会获得一个全新的内存数据库，
+    确保测试之间的完全隔离。
     """
-    # 创建测试数据库表
-    SQLModel.metadata.create_all(test_engine)
+    # 创建内存数据库引擎
+    engine = create_engine(
+        TEST_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
 
-    # 提供数据库会话
-    session = TestingSessionLocal()
-    try:
-        yield session
-        # 提交事务以确保测试完成
-        session.commit()
-    except Exception:
-        # 发生异常时回滚
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 清理测试数据库
-        SQLModel.metadata.drop_all(test_engine)
+    # 创建会话工厂
+    SessionLocal = sessionmaker(
+        bind=engine,
+        autocommit=False,
+        autoflush=False,
+    )
 
-
-@pytest.fixture(scope="function")
-async def async_test_db_session() -> AsyncGenerator[Session, None]:
-    """
-    异步测试数据库会话fixture
-
-    为异步测试提供独立的数据库会话。
-    每个测试函数都会获得一个全新的数据库会话。
-    """
-    # 创建测试数据库表
-    SQLModel.metadata.create_all(test_engine)
-
-    # 提供数据库会话
-    session = TestingSessionLocal()
-    try:
-        yield session
-        # 提交事务以确保测试完成
-        session.commit()
-    except Exception:
-        # 发生异常时回滚
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 清理测试数据库
-        SQLModel.metadata.drop_all(test_engine)
-
-
-@pytest.fixture
-def sample_user_data():
-    """示例用户数据fixture"""
-    return {
-        "is_guest": True,
-        "device_id": "test-device-12345",
-        "user_agent": "test-user-agent"
-    }
-
-
-@pytest.fixture
-def sample_task_data():
-    """示例任务数据fixture"""
-    return {
-        "title": "测试任务",
-        "description": "这是一个测试任务",
-        "priority": "medium",
-        "status": "pending",
-        "tags": ["测试"],
-        "parent_id": None,
-        "due_date": None,
-        "planned_start_time": None,
-        "planned_end_time": None
-    }
-
-
-@pytest.fixture
-def sample_reward_data():
-    """示例奖品数据fixture"""
-    return {
-        "name": "测试奖品",
-        "description": "这是一个测试奖品",
-        "points_value": 100,
-        "image_url": "https://example.com/image.jpg",
-        "cost_type": "points",
-        "cost_value": 100,
-        "stock_quantity": 10,
-        "category": "测试分类"
-    }
-
-
-@pytest.fixture
-def auth_headers():
-    """认证headers fixture"""
-    return {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer test-token"
-    }
-
-
-# API配置
-API_BASE_URL = "http://localhost:8001"
-
-
-def get_auth_headers(access_token: str) -> dict:
-    """
-    获取认证headers
-
-    Args:
-        access_token (str): JWT访问令牌
-
-    Returns:
-        dict: 包含认证信息的headers
-    """
-    return {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {access_token}"
-    }
-
-
-# 领域特定数据库fixtures
-@pytest.fixture(scope="function")
-def auth_db_session() -> Generator[Session, None, None]:
-    """Auth领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.auth.models import Auth, AuthLog
-
-    # 创建认证数据库表
-    Auth.metadata.create_all(test_engine)
-    AuthLog.metadata.create_all(test_engine)
-
-    session = TestingSessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 清理所有表
-        AuthLog.metadata.drop_all(test_engine)
-        Auth.metadata.drop_all(test_engine)
-
-
-@pytest.fixture(scope="function")
-def task_db_session() -> Generator[Session, None, None]:
-    """Task领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.auth.models import Auth
+    # 创建所有表
+    from src.domains.auth.models import Auth, AuthLog, SMSVerification
     from src.domains.task.models import Task
-
-    # 先创建auth表（因为task表有外键依赖）
-    Auth.metadata.create_all(test_engine)
-    Task.metadata.create_all(test_engine)
-
-    session = TestingSessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 清理所有表
-        Task.metadata.drop_all(test_engine)
-        Auth.metadata.drop_all(test_engine)
-
-
-@pytest.fixture(scope="function")
-def reward_db_session() -> Generator[Session, None, None]:
-    """Reward领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.reward.models import Reward, RewardTransaction, RewardRecipe
-    from src.domains.points.models import PointsTransaction
-
-    # 创建所有相关表
-    Reward.metadata.create_all(test_engine)
-    RewardTransaction.metadata.create_all(test_engine)
-    RewardRecipe.metadata.create_all(test_engine)
-    PointsTransaction.metadata.create_all(test_engine)
-
-    session = TestingSessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 清理所有表
-        PointsTransaction.metadata.drop_all(test_engine)
-        RewardRecipe.metadata.drop_all(test_engine)
-        RewardTransaction.metadata.drop_all(test_engine)
-        Reward.metadata.drop_all(test_engine)
-
-
-@pytest.fixture(scope="function")
-def focus_db_session() -> Generator[Session, None, None]:
-    """Focus领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.auth.models import Auth
-    from src.domains.task.models import Task
+    from src.domains.reward.models import Reward, RewardRecipe, RewardTransaction
+    from src.domains.top3.models import TaskTop3
     from src.domains.focus.models import FocusSession
 
-    # 按依赖顺序创建表：Auth -> Task -> FocusSession
-    Auth.metadata.create_all(test_engine)
-    Task.metadata.create_all(test_engine)
-    FocusSession.metadata.create_all(test_engine)
+    # 创建所有需要的表
+    Auth.metadata.create_all(bind=engine)
+    AuthLog.metadata.create_all(bind=engine)
+    SMSVerification.metadata.create_all(bind=engine)
+    Task.metadata.create_all(bind=engine)
+    Reward.metadata.create_all(bind=engine)
+    RewardRecipe.metadata.create_all(bind=engine)
+    RewardTransaction.metadata.create_all(bind=engine)
+    TaskTop3.metadata.create_all(bind=engine)
+    FocusSession.metadata.create_all(bind=engine)
 
-    session = TestingSessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        # 按相反顺序清理表
-        FocusSession.metadata.drop_all(test_engine)
-        Task.metadata.drop_all(test_engine)
-        Auth.metadata.drop_all(test_engine)
+    # 提供session
+    session = SessionLocal()
+    yield session
 
-
-@pytest.fixture(scope="function")
-def chat_db_session() -> Generator[Session, None, None]:
-    """Chat领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.chat.models import ChatSession, ChatMessage
-
-    # 创建聊天数据库表
-    ChatSession.metadata.create_all(test_engine)
-    ChatMessage.metadata.create_all(test_engine)
-
-    session = TestingSessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-        ChatMessage.metadata.drop_all(test_engine)
-        ChatSession.metadata.drop_all(test_engine)
+    # 清理：关闭session并删除所有表
+    session.close()
+    # 内存数据库会自动清理
 
 
 @pytest.fixture(scope="function")
-def top3_db_session() -> Generator[Session, None, None]:
-    """Top3领域专用数据库fixture"""
-    # 导入模型放在fixture内部，避免初始化时的循环依赖
-    from src.domains.top3.models import Top3Entry
+def auth_db_session(test_db_session: Session) -> Session:
+    """
+    提供认证数据库session（别名，为了向后兼容）
+    """
+    yield test_db_session
 
-    # 创建Top3数据库表
-    Top3Entry.metadata.create_all(test_engine)
 
-    session = TestingSessionLocal()
+@pytest.fixture
+def mock_sms_client():
+    """
+    提供Mock SMS客户端
+
+    模拟SMS发送行为，避免真实网络调用。
+    支持验证发送参数和模拟响应。
+    """
+    client = Mock()
+
+    async def mock_send_code(phone: str, code: str):
+        # 记录调用参数用于验证
+        mock_send_code.calls.append({"phone": phone, "code": code})
+
+        # 模拟不同的响应场景
+        if phone in ["13800138000", "13800138001"]:
+            return {"success": True, "message_id": f"mock_{len(mock_send_code.calls)}"}
+        else:
+            return {"success": False, "error": "Phone not supported"}
+
+    # 初始化调用记录
+    mock_send_code.calls = []
+    client.send_code = mock_send_code
+
+    yield client
+
+
+@pytest.fixture
+def mock_jwt_service():
+    """
+    提供Mock JWT服务
+
+    模拟JWT生成和验证，避免依赖真实的密钥。
+    """
+    service = Mock()
+
+    def mock_generate_tokens(user_data):
+        return {
+            "access_token": f"mock_access_token_{user_data['user_id']}",
+            "refresh_token": f"mock_refresh_token_{user_data['user_id']}",
+            "expires_in": 3600,
+            "token_type": "bearer"
+        }
+
+    service.generate_tokens = mock_generate_tokens
+    yield service
+
+
+@asynccontextmanager
+async def get_test_auth_service() -> AsyncGenerator:
+    """
+    异步上下文管理器：创建带测试数据库的认证服务
+
+    专门为异步测试设计，确保session在整个异步测试期间保持活跃。
+    """
+    from src.domains.auth.dependencies import get_auth_service_with_db
+
+    # 创建测试数据库
+    engine = create_engine(
+        TEST_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+
+    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+    # 创建表结构
+    from src.domains.auth.models import Auth, AuthLog, SMSVerification
+    Auth.metadata.create_all(bind=engine)
+    AuthLog.metadata.create_all(bind=engine)
+    SMSVerification.metadata.create_all(bind=engine)
+
+    session = SessionLocal()
     try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        # 使用依赖注入创建service
+        async with get_auth_service_with_db() as service:
+            # 替换为测试session
+            service.repository.session = session
+            service.audit_repository.session = session
+            yield service
     finally:
         session.close()
-        Top3Entry.metadata.drop_all(test_engine)
 
 
-def get_test_user_token() -> str:
+@pytest.fixture
+async def async_auth_service():
     """
-    获取测试用户token
+    异步测试fixture：提供认证服务实例
 
-    用于集成测试的认证token获取。
-    优先使用已有的token文件，否则创建新的guest用户。
+    适用于异步测试函数，自动管理session生命周期。
     """
-    try:
-        # 尝试使用已有的token文件 - 从JSON中提取access_token
-        with open("/tmp/token_new.txt", "r") as f:
-            content = f.read().strip()
-            if content:
-                # 尝试解析JSON并提取access_token
-                try:
-                    data = json.loads(content)
-                    if "data" in data and "access_token" in data["data"]:
-                        return data["data"]["access_token"]
-                except json.JSONDecodeError:
-                    # 如果不是JSON，直接返回内容（可能是纯token）
-                    return content
-    except FileNotFoundError:
-        pass
-
-    # 如果没有token文件，创建guest用户
-    try:
-        response = requests.post(f"{API_BASE_URL}/auth/guest/init")
-        if response.status_code == 200:
-            data = response.json()
-            if "data" in data and "access_token" in data["data"]:
-                # 保存新的token到文件
-                with open("/tmp/token_new.txt", "w") as f:
-                    f.write(json.dumps(data))
-                return data["data"]["access_token"]
-    except Exception:
-        pass
-
-    # 如果都失败，返回空字符串（某些测试可能不需要认证）
-    return ""
+    async with get_test_auth_service() as service:
+        yield service
 
 
-@pytest_asyncio.fixture
-async def guest_user(test_client: AsyncClient) -> dict:
-    """创建游客用户"""
-    response = await test_client.post("/api/v3/auth/guest-init")
-    assert response.status_code == 200
-    data = response.json()
+# 测试数据工厂
+@pytest.fixture
+def sample_user_data():
+    """示例用户数据"""
     return {
-        "user_id": data["data"]["user_id"],
-        "access_token": data["data"]["access_token"],
-        "refresh_token": data["data"]["refresh_token"]
+        "wechat_openid": "wx_test_12345",
+        "is_guest": False,
+        "jwt_version": 1,
     }
 
 
-@pytest_asyncio.fixture
-async def registered_user(test_client: AsyncClient) -> dict:
-    """创建注册用户"""
-    # 先创建游客
-    guest_data = await guest_user(test_client)
-    # 模拟微信注册
-    register_data = {
-        "wechat_openid": f"test_openid_{id(guest_data)}",
-        "nickname": "测试用户"
-    }
-    headers = {"Authorization": f"Bearer {guest_data['access_token']}"}
-    response = await test_client.post("/api/v3/auth/wechat-register", json=register_data, headers=headers)
-    assert response.status_code == 200
-    data = response.json()
+@pytest.fixture
+def sample_sms_data():
+    """示例SMS数据"""
     return {
-        "user_id": data["data"]["user_id"],
-        "access_token": data["data"]["access_token"],
-        "wechat_openid": register_data["wechat_openid"]
+        "phone": "13800138000",
+        "code": "123456",
+        "scene": "register",
+        "ip_address": "127.0.0.1",
     }
 
 
-# 测试标记
-pytest.mark.unit = pytest.mark.unit
-pytest.mark.integration = pytest.mark.integration
-pytest.mark.e2e = pytest.mark.e2e
-pytest.mark.slow = pytest.mark.slow
-pytest.mark.performance = pytest.mark.performance
-pytest.mark.security = pytest.mark.security
+# 异步测试支持
+@pytest.fixture
+async def async_test_client():
+    """
+    提供异步测试客户端
+
+    用于测试FastAPI的异步端点。
+    """
+    from httpx import AsyncClient
+    from src.api.main import app
+
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+
+
+# 错误注入支持
+@pytest.fixture
+def error_injector():
+    """
+    错误注入器fixture
+
+    支持在测试中模拟各种错误场景。
+    """
+    class ErrorInjector:
+        def __init__(self):
+            self.errors = {}
+
+        def inject_error(self, target: str, error: Exception):
+            """注入错误到指定目标"""
+            self.errors[target] = error
+
+        def should_error(self, target: str) -> bool:
+            """检查目标是否应该抛出错误"""
+            return target in self.errors
+
+        def get_error(self, target: str) -> Optional[Exception]:
+            """获取目标对应的错误"""
+            return self.errors.get(target)
+
+        def clear(self):
+            """清除所有注入的错误"""
+            self.errors.clear()
+
+    injector = ErrorInjector()
+    yield injector
+    injector.clear()
+
+
+# 性能测试支持
+@pytest.fixture
+def performance_profiler():
+    """
+    性能分析器fixture
+
+    用于测试代码性能，识别性能瓶颈。
+    """
+    import time
+
+    class PerformanceProfiler:
+        def __init__(self):
+            self.timings = {}
+
+        def start_timer(self, name: str):
+            """开始计时"""
+            self.timings[name] = {"start": time.time()}
+
+        def end_timer(self, name: str) -> float:
+            """结束计时，返回耗时（秒）"""
+            if name in self.timings:
+                duration = time.time() - self.timings[name]["start"]
+                self.timings[name]["duration"] = duration
+                return duration
+            return 0.0
+
+        def get_timing(self, name: str) -> Optional[float]:
+            """获取指定计时"""
+            return self.timings.get(name, {}).get("duration")
+
+        def get_all_timings(self) -> dict:
+            """获取所有计时结果"""
+            return {
+                name: data.get("duration", 0.0)
+                for name, data in self.timings.items()
+                if "duration" in data
+            }
+
+    profiler = PerformanceProfiler()
+    yield profiler
+
+
+# 测试标记定义
+def pytest_configure(config):
+    """配置pytest标记"""
+    config.addinivalue_line(
+        "markers", "unit: 单元测试标记"
+    )
+    config.addinivalue_line(
+        "markers", "integration: 集成测试标记"
+    )
+    config.addinivalue_line(
+        "markers", "functional: 功能测试标记"
+    )
+    config.addinivalue_line(
+        "markers", "async_test: 异步测试标记"
+    )
+    config.addinivalue_line(
+        "markers", "slow: 慢速测试标记"
+    )
+    config.addinivalue_line(
+        "markers", "performance: 性能测试标记"
+    )
+
+
+# 测试收集钩子
+def pytest_collection_modifyitems(config, items):
+    """修改测试收集，添加默认标记"""
+    for item in items:
+        # 根据文件路径自动添加标记
+        if "units/" in str(item.fspath):
+            item.add_marker(pytest.mark.unit)
+        elif "integration/" in str(item.fspath):
+            item.add_marker(pytest.mark.integration)
+        elif "functional/" in str(item.fspath):
+            item.add_marker(pytest.mark.functional)
+
+        # 异步测试标记
+        if asyncio.iscoroutinefunction(item.function):
+            item.add_marker(pytest.mark.async_test)

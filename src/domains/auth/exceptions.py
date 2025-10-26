@@ -163,3 +163,68 @@ class ConfigurationException(AuthenticationException):
 
     def __init__(self, message: str = "系统配置错误"):
         super().__init__(message, "CONFIGURATION_ERROR")
+
+
+# SMS认证相关异常（add-phone-sms-auth提案新增）
+
+class RateLimitException(SMSException):
+    """发送频率限制异常"""
+
+    def __init__(self, message: str = "短信发送过于频繁，请稍后再试"):
+        super().__init__(message, "SMS_RATE_LIMIT")
+
+
+class DailyLimitException(SMSException):
+    """每日次数限制异常"""
+
+    def __init__(self, message: str = "今日短信发送次数已达上限"):
+        super().__init__(message, "SMS_DAILY_LIMIT")
+
+
+class AccountLockedException(SMSException):
+    """账号锁定异常"""
+
+    def __init__(self, message: str = "账号已锁定，请稍后再试"):
+        super().__init__(message, "ACCOUNT_LOCKED")
+
+
+class VerificationNotFoundException(SMSException):
+    """验证码不存在异常"""
+
+    def __init__(self, message: str = "验证码不存在"):
+        super().__init__(message, "VERIFICATION_NOT_FOUND")
+
+
+class VerificationExpiredException(SMSException):
+    """验证码过期异常"""
+
+    def __init__(self, message: str = "验证码已过期"):
+        super().__init__(message, "VERIFICATION_EXPIRED")
+
+
+class InvalidVerificationCodeException(SMSException):
+    """验证码错误异常"""
+
+    def __init__(self, message: str = "验证码错误"):
+        super().__init__(message, "INVALID_VERIFICATION_CODE")
+
+
+class PhoneNotFoundException(SMSException):
+    """手机号未注册异常"""
+
+    def __init__(self, message: str = "手机号未注册"):
+        super().__init__(message, "PHONE_NOT_FOUND")
+
+
+class PhoneAlreadyExistsException(SMSException):
+    """手机号已注册异常"""
+
+    def __init__(self, message: str = "手机号已注册"):
+        super().__init__(message, "PHONE_ALREADY_EXISTS")
+
+
+class PhoneAlreadyBoundException(SMSException):
+    """手机号已绑定异常"""
+
+    def __init__(self, message: str = "手机号已绑定"):
+        super().__init__(message, "PHONE_ALREADY_BOUND")
