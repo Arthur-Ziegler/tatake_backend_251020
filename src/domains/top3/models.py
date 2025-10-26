@@ -1,19 +1,13 @@
 """Top3领域数据模型"""
 
-from datetime import datetime, date
+from datetime import date
 from typing import List, Dict, Any, Optional
-from uuid import UUID
 
-from sqlmodel import Field, Column, Index, Date
+from sqlmodel import SQLModel, Field, Column, Index, Date, String
 from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 
-try:
-    from src.domains.auth.models import BaseModel
-except ImportError:
-    from ...auth.models import BaseModel
 
-
-class TaskTop3(BaseModel, table=True):
+class TaskTop3(SQLModel, table=True):
     """
     任务Top3模型
 
@@ -22,10 +16,11 @@ class TaskTop3(BaseModel, table=True):
     """
     __tablename__ = "task_top3"
 
+    id: Optional[int] = Field(default=None, primary_key=True, sa_column_kwargs={"autoincrement": True}, description="主键ID")
     user_id: str = Field(
         ...,
-        index=True,
-        description="用户ID"
+        sa_column=Column(String(36), index=True),
+        description="用户ID（字符串格式）"
     )
     top_date: date = Field(
         ...,
@@ -33,7 +28,7 @@ class TaskTop3(BaseModel, table=True):
         description="日期（YYYY-MM-DD）"
     )
     task_ids: Optional[List[Dict[str, Any]]] = Field(
-        ...,
+        default=None,
         sa_column=Column(SQLiteJSON),
         description="任务ID列表，包含位置信息，格式：[{'task_id': 'uuid', 'position': 1}]"
     )
@@ -41,12 +36,12 @@ class TaskTop3(BaseModel, table=True):
         default=300,
         description="消耗积分数"
     )
+    created_at: date = Field(
+        default_factory=date.today,
+        description="创建时间"
+    )
 
     __table_args__ = (
         Index('idx_user_date', 'user_id', 'top_date', unique=True),
         Index('idx_date', 'top_date'),
-        {
-            'mysql_engine': 'InnoDB',
-            'mysql_charset': 'utf8mb4'
-        }
     )

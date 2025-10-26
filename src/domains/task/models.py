@@ -32,12 +32,13 @@ Task领域数据模型
 """
 
 from datetime import datetime, timezone, date
-from typing import Optional, List, Dict, Any, Literal
+from typing import Optional, List, Dict, Any, Literal, Union
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel, Column, DateTime, Text, JSON, Date, String
-from sqlalchemy import Index, ForeignKey
+from sqlalchemy import Index, ForeignKey, event
 from sqlalchemy.orm import relationship
+import json
 
 # 导入基础模型
 try:
@@ -45,6 +46,15 @@ try:
 except ImportError:
     # 相对导入作为备选方案
     from ...auth.models import BaseModel
+
+# UUID JSON序列化处理器
+class UUIDEncoder(json.JSONEncoder):
+    """自定义JSON编码器，支持UUID对象"""
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)
+        return super().default(obj)
+
 
 # 使用Literal类型定义枚举值
 TaskStatus = Literal["pending", "in_progress", "completed"]
@@ -108,10 +118,10 @@ class Task(SQLModel, table=True):
     __tablename__ = "tasks"
 
     # === 基础字段 ===
-    id: str = Field(
-        default_factory=lambda: str(uuid4()),
+    id: UUID = Field(
+        default_factory=uuid4,
         primary_key=True,
-        description="主键ID"
+        description="主键ID（UUID对象）"
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -123,7 +133,7 @@ class Task(SQLModel, table=True):
     )
 
     # === 用户关联字段 ===
-    user_id: str = Field(
+    user_id: UUID = Field(
         ...,
         index=True,
         description="用户ID，关联到认证表"
@@ -143,7 +153,7 @@ class Task(SQLModel, table=True):
     )
 
     # === 层级结构 ===
-    parent_id: Optional[str] = Field(
+    parent_id: Optional[UUID] = Field(
         default=None,
         index=True,
         description="父任务ID，支持任务树结构"
@@ -188,7 +198,7 @@ class Task(SQLModel, table=True):
     )
 
     # === 服务关联（占位字段，后续AI匹配） ===
-    service_ids: Optional[List[str]] = Field(
+    service_ids: Optional[List[UUID]] = Field(
         default=[],
         sa_column=Column(JSON),
         description="关联服务ID列表，JSON格式存储。占位字段，后续通过AI匹配任务与服务。示例: ['service-001', 'service-002']"
@@ -259,12 +269,12 @@ class Task(SQLModel, table=True):
         """
         return {
             # 基础字段
-            "id": self.id,
-            "user_id": self.user_id,
+            "id": str(self.id),
+            "user_id": str(self.user_id),
             "title": self.title,
             "description": self.description,
             "tags": self.tags or [],
-            "service_ids": self.service_ids or [],
+            "service_ids": [str(service_id) for service_id in (self.service_ids or [])],
 
             # 状态字段
             "status": self.status,
@@ -305,8 +315,14 @@ class Task(SQLModel, table=True):
 
     
     @classmethod
-    def create_example(cls, user_id: UUID, **kwargs) -> "Task":
+    def create_example(cls, user_id: Union[UUID, str], **kwargs) -> "Task":
         """创建示例任务（用于测试）"""
+        from src.core.uuid_converter import UUIDConverter
+
+        # 确保user_id是UUID类型
+        if isinstance(user_id, str):
+            user_id = UUIDConverter.ensure_uuid(user_id)
+
         defaults = {
             "title": "示例任务",
             "description": "这是一个示例任务",
@@ -335,3 +351,32 @@ class Task(SQLModel, table=True):
 #
 # # 在模块导入时自动添加关系
 # add_task_relationship_to_auth()
+
+
+# SQLAlchemy事件监听器：处理UUID JSON序列化
+@event.listens_for(Task, 'before_insert')
+@event.listens_for(Task, 'before_update')
+def serialize_uuid_fields(mapper, connection, target):
+    """在保存前序列化UUID字段为字符串"""
+    if target.service_ids:
+        # 将UUID列表转换为字符串列表以便JSON序列化
+        target.service_ids = [str(uuid) for uuid in target.service_ids]
+
+
+@event.listens_for(Task, 'load')
+def deserialize_uuid_fields(target, context):
+    """加载时反序列化UUID字符串为UUID对象"""
+    if target.service_ids and isinstance(target.service_ids, list):
+        # 将字符串列表转换回UUID对象列表
+        uuid_list = []
+        for item in target.service_ids:
+            if isinstance(item, str):
+                try:
+                    uuid_list.append(UUID(item))
+                except ValueError:
+                    # 如果不是有效的UUID字符串，保持原样
+                    uuid_list.append(item)
+            else:
+                # 如果已经是UUID对象，直接添加
+                uuid_list.append(item)
+        target.service_ids = uuid_list

@@ -9,7 +9,16 @@ from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
-from src.core.uuid_converter import UUIDConverter
+# from src.core.uuid_converter import UUIDConverter  # 临时移除，使用简单的字符串转换
+
+
+# 临时UUID转换函数
+def uuid_to_string(uuid_obj) -> str:
+    """将UUID对象转换为字符串"""
+    if hasattr(uuid_obj, '__str__'):
+        return str(uuid_obj)
+    else:
+        return str(uuid_obj)
 from .repository import Top3Repository
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from .exceptions import Top3AlreadyExistsException, Top3NotFoundException
@@ -56,8 +65,8 @@ class Top3Service:
         # 检查所有任务是否存在且属于用户
         for task_id_str in request.task_ids:
             task = self.task_repo.get_by_id(
-                task_id=UUIDConverter.ensure_string(task_id_str),
-                user_id=UUIDConverter.ensure_string(user_id)
+                task_id=uuid_to_string(task_id_str),
+                user_id=uuid_to_string(user_id)
             )
             if not task:
                 raise TaskNotFoundException(task_id_str)
