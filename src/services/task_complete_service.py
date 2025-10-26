@@ -26,7 +26,7 @@ from enum import Enum
 
 # 导入Schema数据库管理器
 from src.core.schema_database import db_manager, cross_domains, domain_session
-from src.domains.task.models_schema import Task, TaskStatusConst, TaskQueryBuilder
+from src.domains.task.models import Task, TaskStatusConst, TaskQueryBuilder
 from src.domains.points.models import PointsTransaction
 from src.domains.reward.models import RewardTransaction
 from src.domains.auth.models import AuthLog

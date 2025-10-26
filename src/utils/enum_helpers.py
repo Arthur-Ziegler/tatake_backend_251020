@@ -25,8 +25,8 @@ def ensure_enum_value(value: Union[str, Enum, None], enum_class: Type) -> Option
         Optional[Union[Enum, str]]: 枚举对象或字符串常量
 
     Examples:
-        >>> from src.domains.task.models_schema import TaskStatusConst
-        >>> ensure_enum_value("pending", TaskStatusConst)
+        >>> from src.domains.task.models import TaskStatus
+        >>> ensure_enum_value("pending", TaskStatus)
         'pending'
 
         >>> ensure_enum_value(TaskStatusConst.PENDING, TaskStatusConst)
@@ -77,9 +77,9 @@ def ensure_enum_str(value: Union[str, Enum, None]) -> Optional[str]:
         Optional[str]: 字符串或None
 
     Examples:
-        >>> from src.domains.task.models import TaskStatusConst
-        >>> ensure_enum_str(TaskStatusConst.PENDING)
-        'pending'
+        >>> from src.domains.task.models import TaskStatus
+        >>> ensure_enum_str(TaskStatus.ACTIVE)
+        'active'
 
         >>> ensure_enum_str("pending")
         'pending'

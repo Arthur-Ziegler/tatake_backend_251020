@@ -23,7 +23,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
 from langgraph.graph import MessagesState
@@ -51,11 +51,11 @@ class ChatMessage(BaseModel):
     # 元数据
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="额外元数据")
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ChatSession(BaseModel):
@@ -76,11 +76,11 @@ class ChatSession(BaseModel):
     message_count: int = Field(default=0, description="消息数量")
     is_active: bool = Field(default=True, description="是否活跃")
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 class ChatState(MessagesState):
@@ -166,11 +166,11 @@ class ToolCallResult(BaseModel):
     error: Optional[str] = Field(default=None, description="错误信息")
     execution_time: Optional[float] = Field(default=None, description="执行时间（秒）")
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+    )
 
 
 # 便捷函数

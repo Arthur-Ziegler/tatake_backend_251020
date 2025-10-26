@@ -21,10 +21,7 @@ from .schemas import (
 )
 from src.domains.auth.schemas import UnifiedResponse
 from src.database import get_db_session
-from src.domains.auth.database import get_auth_db
 from src.api.dependencies import get_current_user_id
-from src.domains.auth.models import Auth
-from src.domains.auth.repository import AuthRepository
 from src.domains.user.repository import UserRepository
 from src.domains.user.models import User, UserSettings, UserStats
 from src.domains.points.service import PointsService
@@ -66,16 +63,16 @@ async def get_user_profile(
             business_user = user_repo.create_user(user_id)
 
         # 构造用户信息数据（结合认证域和用户域的数据）
-        user_profile = {
-            "id": str(auth_user.id),
-            "nickname": business_user.nickname if business_user else f"用户_{auth_user.id[:8]}",
-            "avatar": business_user.avatar_url if business_user else None,
-            "bio": business_user.bio if business_user else None,
-            "wechat_openid": auth_user.wechat_openid,
-            "is_guest": auth_user.is_guest,
-            "created_at": auth_user.created_at.isoformat(),
-            "last_login_at": auth_user.last_login_at.isoformat() if auth_user.last_login_at else None
-        }
+        user_profile = UserProfileResponse(
+            id=str(auth_user.id),
+            nickname=business_user.nickname if business_user else f"用户_{str(auth_user.id)[:8]}",
+            avatar=business_user.avatar_url if business_user else None,
+            bio=business_user.bio if business_user else None,
+            wechat_openid=auth_user.wechat_openid,
+            is_guest=auth_user.is_guest,
+            created_at=auth_user.created_at.isoformat(),
+            last_login_at=auth_user.last_login_at.isoformat() if auth_user.last_login_at else None
+        )
 
         return UnifiedResponse(
             code=200,
@@ -134,7 +131,7 @@ async def update_user_profile(
 
         # 获取更新后的用户信息
         business_user = updated_user or user_data["user"]
-        nickname = business_user.nickname if business_user else f"用户_{user_id[:8]}"
+        nickname = business_user.nickname if business_user else f"用户_{str(user_id)[:8]}"
 
         # 构造更新响应数据
         update_response = {
@@ -177,18 +174,11 @@ async def claim_welcome_gift(
     - 可重复领取，无防刷限制
     - 完整流水记录
     - 事务性发放
+
+    说明：
+    JWT token已经验证了用户身份和有效性，无需数据库二次验证
     """
     try:
-        # 验证用户存在（使用Repository层）
-        auth_repo = AuthRepository(session)
-        user = auth_repo.get_by_id(user_id)
-
-        if not user:
-            return UnifiedResponse(
-                code=404,
-                data=None,
-                message="用户不存在"
-            )
 
         # 初始化服务
         points_service = PointsService(session)
@@ -241,18 +231,11 @@ async def get_welcome_gift_history(
     Args:
         user_id: 用户ID
         limit: 返回记录数量限制，默认10条
+
+    说明：
+    JWT token已经验证了用户身份和有效性，无需数据库二次验证
     """
     try:
-        # 验证用户存在（使用Repository层）
-        auth_repo = AuthRepository(session)
-        user = auth_repo.get_by_id(user_id)
-
-        if not user:
-            return UnifiedResponse(
-                code=404,
-                data=None,
-                message="用户不存在"
-            )
 
         # 初始化服务
         points_service = PointsService(session)

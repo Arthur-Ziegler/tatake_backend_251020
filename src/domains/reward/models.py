@@ -117,8 +117,6 @@ class Reward(BaseModel, table=True):
 
 
 class RewardRecipe(BaseModel, table=True):
-    class Config:
-        arbitrary_types_allowed = True
     """
     奖品兑换配方模型
 

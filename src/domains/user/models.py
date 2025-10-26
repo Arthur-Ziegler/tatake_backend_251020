@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Optional
 from sqlmodel import SQLModel, Field
 from uuid import UUID
+from pydantic import ConfigDict
 
 
 class UserBase(SQLModel):
@@ -35,8 +36,7 @@ class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, description="主键ID")
     is_active: bool = Field(default=True, description="是否激活")
 
-    class Config:
-        table_name = "user"
+    model_config = ConfigDict(table_name = "user")
 
 
 class UserSettings(SQLModel, table=True):
@@ -50,8 +50,7 @@ class UserSettings(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
 
-    class Config:
-        table_name = "user_settings"
+    model_config = ConfigDict(table_name = "user_settings")
 
 
 class UserPreferences(SQLModel, table=True):

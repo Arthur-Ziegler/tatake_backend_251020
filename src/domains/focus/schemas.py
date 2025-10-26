@@ -14,7 +14,7 @@ Schema设计原则：
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from src.core.uuid_converter import UUIDConverter
 from .models import SessionType, SessionTypeConst
@@ -84,11 +84,11 @@ class FocusSessionResponse(BaseModel):
         """检查会话是否正在进行中"""
         return self.end_time is None
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat() if v else None
         }
+    )
 
 
 class FocusOperationResponse(BaseModel):
@@ -107,11 +107,11 @@ class FocusOperationResponse(BaseModel):
     session: FocusSessionResponse = Field(...,
         description="专注会话信息")
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat() if v else None
         }
+    )
 
 
 class FocusSessionListResponse(BaseModel):
@@ -139,8 +139,8 @@ class FocusSessionListResponse(BaseModel):
     has_more: bool = Field(...,
         example=True, description="是否有更多页")
 
-    class Config:
-        """Pydantic配置"""
+    model_config = ConfigDict(
         json_encoders = {
             datetime: lambda v: v.isoformat() if v else None
         }
+    )

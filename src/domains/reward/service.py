@@ -74,11 +74,9 @@ class RewardService:
                 text("""
                     SELECT
                         id, name, description, category, image_url,
-                        cost_type, cost_value, stock_quantity,
-                        created_at, updated_at
+                        points_value, is_active, created_at, updated_at
                     FROM rewards
-                    WHERE stock_quantity > 0
-                    AND is_active = true
+                    WHERE is_active = true
                     ORDER BY category, name
                 """)
             ).fetchall()
@@ -90,11 +88,10 @@ class RewardService:
                     "description": row[2],
                     "category": row[3],
                     "image_url": row[4],
-                    "cost_type": row[5],
-                    "cost_value": row[6],
-                    "stock_quantity": row[7],
-                    "created_at": row[8],
-                    "updated_at": row[9]
+                    "points_value": row[5],
+                    "is_active": row[6],
+                    "created_at": row[7],
+                    "updated_at": row[8]
                 }
                 for row in result
             ]
@@ -118,7 +115,7 @@ class RewardService:
         try:
             rewards = self.get_available_rewards()
 
-            # 转换为RewardResponse格式
+            # 转换为RewardResponse格式（v4：所有奖品无限供应）
             reward_responses = []
             for reward in rewards:
                 reward_responses.append({
@@ -126,7 +123,7 @@ class RewardService:
                     "name": reward["name"],
                     "icon": reward["image_url"],
                     "description": reward["description"],
-                    "is_exchangeable": reward["stock_quantity"] > 0
+                    "is_exchangeable": True  # v4：所有奖品无限供应
                 })
 
             return {
@@ -160,49 +157,36 @@ class RewardService:
             InsufficientPointsException: 积分不足
             Exception: 其他错误
         """
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = str(user_id)
         self.logger.info(f"User {user_id_str} redeeming reward {reward_id}")
 
         try:
             with self.transaction_scope():
-                # 1. 锁定奖品记录
+                # 1. 获取奖品信息（v4：无需锁定库存，所有奖品无限供应）
                 reward_result = self.session.execute(
                     text("""
-                        SELECT id, name, cost_type, cost_value, stock_quantity
+                        SELECT id, name, points_value
                         FROM rewards
-                        WHERE id = :reward_id FOR UPDATE
+                        WHERE id = :reward_id AND is_active = true
                     """),
                     {"reward_id": reward_id}
                 ).first()
 
                 if not reward_result:
-                    raise RewardNotFoundException(f"奖品不存在: {reward_id}")
+                    raise RewardNotFoundException(f"奖品不存在或已禁用: {reward_id}")
 
-                reward_id_db, name, cost_type, cost_value, stock_quantity = reward_result
+                reward_id_db, name, points_value = reward_result
 
-                if stock_quantity <= 0:
-                    raise Exception("奖品库存不足")
-
-                # 2. 检查用户积分
+                # 2. 检查用户积分（v4：使用points_value作为兑换成本）
                 current_balance = self.points_service.calculate_balance(user_id_str)
 
-                required_points = cost_value if cost_type == "points" else 0
+                required_points = points_value  # v4：直接使用points_value
 
                 if current_balance < required_points:
-                    raise InsufficientPointsException(
-                        f"积分不足，当前: {current_balance}, 需要: {required_points}",
-                        required_points=required_points,
-                        current_points=current_balance
-                    )
+                    raise InsufficientPointsException(required_points, current_balance)
 
-                # 3. 执行兑换操作
+                # 3. 执行兑换操作（v4：只扣减积分，无需扣减库存）
                 transaction_group = str(uuid4())
-
-                # 扣减库存
-                self.session.execute(
-                    text("UPDATE rewards SET stock_quantity = stock_quantity - 1 WHERE id = :reward_id"),
-                    {"reward_id": reward_id}
-                )
 
                 # 扣减积分
                 if required_points > 0:
@@ -229,8 +213,7 @@ class RewardService:
                     "reward": {
                         "id": reward_id_db,
                         "name": name,
-                        "cost_type": cost_type,
-                        "cost_value": cost_value
+                        "points_value": points_value  # v4：返回积分价值
                     },
                     "transaction_group": transaction_group,
                     "points_deducted": required_points,
@@ -240,7 +223,7 @@ class RewardService:
                 self.logger.info(f"Successfully redeemed reward {reward_id} for user {user_id_str}")
                 return result
 
-        except (RewardNotFoundException, InsufficientPointsException):
+        except (RewardNotFoundException, InsufficientPointsException) as e:
             # 业务异常，重新抛出
             self.logger.warning(f"Redemption failed for user {user_id_str}, reward {reward_id}: {e}")
             raise
@@ -262,18 +245,17 @@ class RewardService:
         Returns:
             Dict[str, Any]: 抽奖结果
         """
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = str(user_id)
         self.logger.info(f"User {user_id_str} participating in Top3 lottery")
 
         try:
             with self.transaction_scope():
-                # 获取所有可用的奖品（不限category）
+                # 获取所有可用的奖品（v4：不限category，无需库存检查）
                 available_rewards = self.session.execute(
                     text("""
                         SELECT id, name, description, image_url
                         FROM rewards
-                        WHERE stock_quantity > 0
-                        AND is_active = true
+                        WHERE is_active = true
                         ORDER BY name
                     """)
                 ).fetchall()
@@ -284,13 +266,9 @@ class RewardService:
                 if is_winner and available_rewards:
                     # 中奖且有可用奖品：随机选择一个
                     prize = random.choice(available_rewards)
-                    prize_id = prize[0]
+                    prize_id = prize["id"]
 
-                    # 扣减库存
-                    self.session.execute(
-                        text("UPDATE rewards SET stock_quantity = stock_quantity - 1 WHERE id = :prize_id"),
-                        {"prize_id": prize_id}
-                    )
+                    # v4：无需扣减库存，所有奖品无限供应
 
                     # 创建中奖记录
                     transaction_group = str(uuid4())
@@ -363,7 +341,7 @@ class RewardService:
         Returns:
             List[Dict[str, Any]]: 交易记录
         """
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = str(user_id)
         self.logger.info(f"Getting reward transactions for user {user_id_str}")
 
         try:
@@ -448,7 +426,7 @@ class RewardService:
         Raises:
             Exception: 配方不存在、材料不足、数据库错误等
         """
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = str(user_id)
         self.logger.info(f"User {user_id_str} composing recipe {recipe_id}")
 
         try:
@@ -568,23 +546,7 @@ class RewardService:
             self.logger.error(f"Error composing recipe {recipe_id} for user {user_id_str}: {e}")
             raise
 
-    def get_user_materials(self, user_id: Union[str, UUID]) -> List[Dict[str, Any]]:
-        """
-        获取用户材料列表（用于前端展示）
-
-        Args:
-            user_id (str): 用户ID
-
-        Returns:
-            List[Dict[str, Any]]: 用户材料列表
-        """
-        try:
-            user_id_str = UUIDConverter.to_string(user_id)
-            return self.reward_repository.get_user_materials(user_id_str)
-        except Exception as e:
-            self.logger.error(f"Error getting user materials for {user_id_str}: {e}")
-            raise
-
+    
     def get_available_recipes(self) -> List[Dict[str, Any]]:
         """
         获取可用配方列表
@@ -619,8 +581,9 @@ class RewardService:
             reward_counts = {}
             for transaction in reward_transactions:
                 reward_id = transaction.get("reward_id")
+                quantity = transaction.get("quantity", 0)
                 if reward_id and reward_id != "points":
-                    reward_counts[reward_id] = reward_counts.get(reward_id, 0) + 1
+                    reward_counts[reward_id] = reward_counts.get(reward_id, 0) + quantity
 
             # 获取奖品详细信息
             rewards = []
@@ -633,7 +596,8 @@ class RewardService:
                             "name": reward_detail["name"],
                             "icon": reward_detail.get("image_url"),
                             "description": reward_detail.get("description"),
-                            "is_exchangeable": reward_detail.get("stock_quantity", 0) > 0
+                            "quantity": quantity,  # 添加数量字段
+                            "is_exchangeable": True  # v4：所有奖品无限供应
                         })
                 except Exception as e:
                     self.logger.warning(f"Failed to get reward detail for {reward_id}: {e}")
@@ -644,6 +608,6 @@ class RewardService:
                 "total_types": len(rewards)
             }
         except Exception as e:
-            user_id_str = UUIDConverter.to_string(user_id)
+            user_id_str = str(user_id)
             self.logger.error(f"Error getting my rewards for user {user_id_str}: {e}")
             raise

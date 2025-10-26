@@ -56,7 +56,7 @@ class UserRepository:
             result = self.session.execute(statement)
             row = result.first()
             if row:
-                user = User(**row._asdict())
+                user = row[0]  # 直接从Row中获取User对象
             else:
                 user = None
 

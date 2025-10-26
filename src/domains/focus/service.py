@@ -113,7 +113,7 @@ class FocusService:
             if not task:
                 raise FocusException(f"任务不存在或无权限: {request.task_id}", status_code=404)
 
-            # 创建新会话
+            # 创建新会话（Repository会自动关闭用户未完成的旧会话）
             focus_session = FocusSession(
                 user_id=UUIDConverter.ensure_string(user_id),
                 task_id=UUIDConverter.ensure_string(request.task_id),
@@ -122,7 +122,8 @@ class FocusService:
             )
             created_session = self.repository.create(focus_session)
 
-            logger.info(f"用户 {user_id} 开始会话 {created_session.id} 类型: {request.session_type}")
+            logger.info(f"用户 {user_id} 开始新会话 {created_session.id} 类型: {request.session_type}")
+            logger.info(f"v4：已自动关闭用户的旧会话（如果存在）")
             return _build_session_response(created_session)
 
         except FocusException:

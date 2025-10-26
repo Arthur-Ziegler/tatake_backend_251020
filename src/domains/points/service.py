@@ -138,8 +138,7 @@ class PointsService:
 
   
             self.session.add(transaction)
-            self.session.flush()  # 获取ID
-            self.session.commit()  # 立即提交事务确保积分记录持久化
+            self.session.flush()  # 获取ID，但不提交事务
 
             self.logger.info(f"Added {amount} points transaction for user {user_id_str}, transaction ID: {transaction.id}")
 

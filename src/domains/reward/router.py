@@ -1,6 +1,7 @@
 """Reward领域API路由"""
 
 import logging
+from datetime import datetime
 from typing import Dict, Any
 from uuid import UUID
 
@@ -18,12 +19,11 @@ from .schemas import (
     PointsTransactionsResponse,
     RedeemRecipeRequest,
     RedeemRecipeResponse,
-    UserMaterial,
-    UserMaterialsResponse,
     AvailableRecipe,
     AvailableRecipesResponse,
     RecipeMaterial,
-    RecipeReward
+    RecipeReward,
+    RewardTransactionsResponse
 )
 from src.domains.auth.schemas import UnifiedResponse
 from .exceptions import RewardException
@@ -83,6 +83,43 @@ async def get_my_rewards(
         return UnifiedResponse(code=500, data=None, message="获取我的奖品失败")
 
 
+@router.get("/my-rewards/transactions", response_model=UnifiedResponse[RewardTransactionsResponse], summary="获取奖品流水", description="获取当前用户的奖品获得和消耗流水记录，支持分页查询。")
+async def get_reward_transactions(
+    session: SessionDep,
+    user_id: UUID = Depends(get_current_user_id),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(50, ge=1, le=100, description="每页数量")
+) -> UnifiedResponse[RewardTransactionsResponse]:
+    """获取当前用户的奖品流水记录"""
+    try:
+        points_service = PointsService(session)
+        service = RewardService(session, points_service)
+        
+        # 获取流水记录
+        offset = (page - 1) * page_size
+        transactions = service.get_reward_transactions(user_id, limit=page_size, offset=offset)
+        
+        # 计算各奖品余额汇总
+        balance_summary = {}
+        for transaction in transactions:
+            reward_id = transaction.get("reward_id")
+            quantity = transaction.get("quantity", 0)
+            if reward_id and reward_id != "points":
+                balance_summary[reward_id] = balance_summary.get(reward_id, 0) + quantity
+        
+        # 构建响应数据
+        response_data = RewardTransactionsResponse(
+            transactions=transactions,
+            total_count=len(transactions),  # 简化实现，实际应该查询总数
+            balance_summary=balance_summary
+        )
+
+        return UnifiedResponse(code=200, data=response_data, message="success")
+    except Exception as e:
+        logger.error(f"获取奖品流水失败: {e}")
+        return UnifiedResponse(code=500, data=None, message="获取奖品流水失败")
+
+
 @router.post("/exchange/{reward_id}", response_model=UnifiedResponse[RewardRedeemResponse], summary="积分兑换奖品")
 async def exchange_reward_with_points(
     reward_id: str,
@@ -124,9 +161,9 @@ async def get_points_balance_my_points(
         balance = points_service.get_balance(str(user_id))
 
         # 计算统计数据
-        transactions = points_service.get_transactions(user_id, limit=1000)
-        total_earned = sum(t.amount for t in transactions if t.amount > 0)
-        total_spent = abs(sum(t.amount for t in transactions if t.amount < 0))
+        transactions = points_service.get_transactions(str(user_id), limit=1000)
+        total_earned = sum(t['amount'] for t in transactions if t['amount'] > 0)
+        total_spent = abs(sum(t['amount'] for t in transactions if t['amount'] < 0))
 
         return {
             "code": 200,
@@ -162,11 +199,11 @@ async def get_points_transactions(
         transaction_responses = []
         for transaction in transactions:
             transaction_responses.append({
-                "id": transaction.id,
-                "amount": transaction.amount,
-                "source": transaction.source_type,
-                "related_task_id": transaction.source_id,
-                "created_at": transaction.created_at.isoformat()
+                "id": transaction["id"],
+                "amount": transaction["amount"],
+                "source": transaction["source_type"],
+                "related_task_id": transaction["source_id"],
+                "created_at": transaction["created_at"].isoformat() if isinstance(transaction["created_at"], datetime) else transaction["created_at"]
             })
 
         transactions_data = PointsTransactionsResponse(
@@ -187,65 +224,6 @@ async def get_points_transactions(
         return StandardResponse.server_error("获取积分流水失败")
 
 
-# ===== 配方合成API =====
-
-@router.get("/materials", response_model=UnifiedResponse[UserMaterialsResponse], summary="获取我的材料")
-async def get_user_materials(
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[UserMaterialsResponse]:
-    """
-    获取用户拥有的所有材料（奖品）
-
-    返回用户当前拥有的所有奖品及其数量，用于配方合成。
-
-    Args:
-        user_id (UUID): 当前用户ID（从JWT token中获取）
-        session (Session): 数据库会话
-
-    Returns:
-        UnifiedResponse[UserMaterialsResponse]: 用户材料列表响应
-    """
-    try:
-        logger.info(f"获取用户材料: user_id={user_id}")
-
-        # 创建奖励服务
-        points_service = PointsService(session)
-        reward_service = RewardService(session, points_service)
-
-        # 获取用户材料
-        materials_data = reward_service.get_user_materials(str(user_id))
-
-        # 构建响应数据
-        user_materials = [
-            UserMaterial(
-                reward_id=material["reward_id"],
-                reward_name=material["reward_name"],
-                image_url=material["image_url"],
-                quantity=material["quantity"]
-            )
-            for material in materials_data
-        ]
-
-        response_data = UserMaterialsResponse(
-            materials=user_materials,
-            total_types=len(user_materials)
-        )
-
-        # 返回成功响应
-        return UnifiedResponse(
-            code=200,
-            data=response_data,
-            message="获取用户材料成功"
-        )
-
-    except Exception as e:
-        logger.error(f"获取用户材料失败: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="获取用户材料失败"
-        )
 
 
 @router.get("/recipes", response_model=UnifiedResponse[AvailableRecipesResponse], summary="获取可用配方")

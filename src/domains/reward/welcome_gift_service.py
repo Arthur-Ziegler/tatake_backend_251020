@@ -89,7 +89,7 @@ class WelcomeGiftService:
             SQLAlchemyError: 数据库操作失败
         """
         # 使用UUID工具确保类型安全
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = UUIDConverter.ensure_string(user_id)
 
         try:
             # 生成事务组ID，用于关联本次礼包发放的所有操作
@@ -198,30 +198,29 @@ class WelcomeGiftService:
 
     def _get_reward_id_by_name(self, reward_name: str) -> str:
         """
-        根据奖励名称获取奖励ID
+        根据奖励名称从rewards表中获取真实的奖励ID
 
-        这里使用固定ID映射，确保测试和实际运行的一致性。
-        在实际部署时，这些ID应该通过数据库查询或配置文件获取。
+        实现方案A：修改欢迎礼包服务依赖rewards表
+        通过数据库查询获取真实存在的奖品ID，确保数据一致性。
 
         Args:
             reward_name: 奖励名称
 
         Returns:
-            奖励ID
+            奖励ID（UUID字符串）
+
+        Raises:
+            ValueError: 奖品不存在时抛出异常
         """
-        # 固定的奖励ID映射表
-        reward_id_mapping = {
-            "积分加成卡": "points_bonus_card",
-            "专注道具": "focus_item",
-            "时间管理券": "time_management_coupon"
-        }
-
-        reward_id = reward_id_mapping.get(reward_name)
-        if not reward_id:
-            # 如果映射表中没有，生成一个基于名称的ID
-            reward_id = f"reward_{reward_name.lower().replace(' ', '_')}"
-
-        return reward_id
+        try:
+            # 使用database.py中的get_reward_by_name函数查询真实奖品ID
+            from src.domains.reward.database import get_reward_by_name
+            reward = get_reward_by_name(self.session, reward_name)
+            return reward.id
+        except ValueError as e:
+            # 如果奖品不存在，抛出明确的错误信息
+            self.logger.error(f"欢迎礼包奖品不存在: {reward_name}")
+            raise ValueError(f"欢迎礼包奖品 '{reward_name}' 不存在，请先在rewards表中创建该奖品") from e
 
     def get_user_gift_history(self, user_id: Union[str, UUID], limit: int = 10) -> List[Dict[str, Any]]:
         """
@@ -234,7 +233,7 @@ class WelcomeGiftService:
         Returns:
             礼包领取历史列表
         """
-        user_id_str = UUIDConverter.to_string(user_id)
+        user_id_str = UUIDConverter.ensure_string(user_id)
         try:
             # 查询积分流水记录
             points_query = select(PointsTransaction).where(

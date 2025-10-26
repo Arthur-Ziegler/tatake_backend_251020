@@ -27,13 +27,39 @@ class RewardRepository:
         statement = select(Reward)
         return list(self.session.execute(statement).scalars().all())
 
-    def get_reward_by_id(self, reward_id: UUID) -> Optional[Reward]:
-        """根据ID获取奖品"""
-        return self.session.get(Reward, reward_id)
+    def get_reward_by_id(self, reward_id: str) -> Optional[Dict[str, Any]]:
+        """根据ID获取奖品（返回字典格式）"""
+        from sqlalchemy import text
+
+        try:
+            result = self.session.execute(
+                text("""
+                    SELECT id, name, description, image_url, category, points_value, is_active
+                    FROM rewards
+                    WHERE id = :reward_id
+                """),
+                {"reward_id": reward_id}
+            ).first()
+
+            if not result:
+                return None
+
+            return {
+                "id": str(result[0]),
+                "name": result[1],
+                "description": result[2],
+                "image_url": result[3],
+                "category": result[4],
+                "points_value": result[5],
+                "is_active": bool(result[6])
+            }
+
+        except Exception as e:
+            raise Exception(f"获取奖品详情失败: {e}")
 
     def get_random_reward(self) -> Optional[Reward]:
-        """随机获取一个可兑换的奖品"""
-        statement = select(Reward).where(Reward.is_exchangeable == True)
+        """随机获取一个可兑换的奖品（v4：所有奖品都可兑换）"""
+        statement = select(Reward).where(Reward.is_active == True)
         rewards = list(self.session.execute(statement).scalars().all())
         return random.choice(rewards) if rewards else None
 
@@ -60,70 +86,7 @@ class RewardRepository:
 
         return result or 0
 
-    def get_user_materials(self, user_id: str) -> List[Dict[str, Any]]:
-        """
-        获取用户拥有的所有材料（奖品）及其数量
-
-        用于配方合成验证，聚合查询用户的所有奖品余额。
-
-        Args:
-            user_id (str): 用户ID
-
-        Returns:
-            List[Dict[str, Any]]: 用户材料列表，包含reward_id和quantity
-
-        Example:
-            [
-                {
-                    "reward_id": "uuid1",
-                    "reward_name": "奖品A",
-                    "quantity": 3,
-                    "image_url": "http://example.com/image.jpg"
-                },
-                {
-                    "reward_id": "uuid2",
-                    "reward_name": "奖品B",
-                    "quantity": 1,
-                    "image_url": "http://example.com/image2.jpg"
-                }
-            ]
-        """
-        from sqlalchemy import text
-
-        try:
-            result = self.session.execute(
-                text("""
-                    SELECT
-                        rt.reward_id,
-                        r.name as reward_name,
-                        r.image_url,
-                        COALESCE(SUM(rt.quantity), 0) as quantity
-                    FROM reward_transactions rt
-                    JOIN rewards r ON rt.reward_id = r.id
-                    WHERE rt.user_id = :user_id
-                    AND rt.quantity > 0  -- 只计算获得的奖品
-                    GROUP BY rt.reward_id, r.name, r.image_url
-                    HAVING COALESCE(SUM(rt.quantity), 0) > 0  -- 只返回有数量的奖品
-                    ORDER BY r.name
-                """),
-                {"user_id": user_id}
-            ).fetchall()
-
-            materials = [
-                {
-                    "reward_id": str(row[0]),
-                    "reward_name": row[1],
-                    "image_url": row[2],
-                    "quantity": int(row[3])
-                }
-                for row in result
-            ]
-
-            return materials
-
-        except Exception as e:
-            raise Exception(f"获取用户材料失败: {e}")
-
+    
 
 
 class RecipeRepository:

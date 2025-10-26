@@ -39,10 +39,10 @@ from src.domains.focus.models import SessionType
 from src.domains.reward.schemas import (
     RewardResponse, RewardCatalogResponse, RewardRedeemRequest,
     RewardRedeemResponse, PointsBalanceResponse, PointsTransactionResponse,
-    PointsTransactionsResponse, UserMaterialsResponse, AvailableRecipesResponse,
+    PointsTransactionsResponse, AvailableRecipesResponse,
     RedeemRecipeRequest, RedeemRecipeResponse, MyRewardsResponse,
     LotteryResult, TaskCompleteResponse, RecipeMaterial,
-    RecipeReward, UserMaterial, AvailableRecipe
+    RecipeReward, AvailableRecipe
 )
 
 from src.domains.top3.schemas import (
@@ -107,7 +107,6 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "PointsBalanceResponse": PointsBalanceResponse,
     "PointsTransactionResponse": PointsTransactionResponse,
     "PointsTransactionsResponse": PointsTransactionsResponse,
-    "UserMaterialsResponse": UserMaterialsResponse,
     "AvailableRecipesResponse": AvailableRecipesResponse,
     "RedeemRecipeRequest": RedeemRecipeRequest,
     "RedeemRecipeResponse": RedeemRecipeResponse,
@@ -116,7 +115,6 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "TaskCompleteResponse": TaskCompleteResponse,
     "RecipeMaterial": RecipeMaterial,
     "RecipeReward": RecipeReward,
-    "UserMaterial": UserMaterial,
     "AvailableRecipe": AvailableRecipe,
 
     # Top3管理

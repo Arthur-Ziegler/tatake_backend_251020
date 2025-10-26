@@ -117,11 +117,38 @@ class TaskCompletionService:
 
             # 4. 如果需要，触发奖励分发（只有Top3任务才触发抽奖）
             lottery_result = None
-            # 只有当任务是新完成的情况下才触发抽奖，排除重复完成的情况
-            if (result.get("success") and
-                is_top3 and
-                result.get("reward_type") != "task_already_completed"):
-                lottery_result = self.reward_service.top3_lottery(str(user_id))
+            reward_earned = None
+
+            # 构建reward_earned结构（v3规范）
+            if result.get("success"):
+                if is_top3 and result.get("reward_type") != "task_already_completed":
+                    # Top3任务：触发抽奖
+                    lottery_result = self.reward_service.top3_lottery(str(user_id))
+                    if lottery_result:
+                        if lottery_result["type"] == "reward":
+                            # 中奖获得奖品
+                            reward_earned = {
+                                "type": "reward",
+                                "transaction_id": lottery_result.get("transaction_group"),
+                                "reward_id": lottery_result["reward"]["id"],
+                                "amount": 1  # 获得1个奖品
+                            }
+                        else:
+                            # 获得积分安慰奖
+                            reward_earned = {
+                                "type": "points",
+                                "transaction_id": lottery_result.get("transaction_group"),
+                                "reward_id": None,
+                                "amount": lottery_result["amount"]
+                            }
+                else:
+                    # 普通任务：获得积分
+                    reward_earned = {
+                        "type": "points",
+                        "transaction_id": None,  # 普通任务积分没有transaction_group
+                        "reward_id": None,
+                        "amount": result.get("points_awarded", 2)  # 默认2积分
+                    }
 
             # 5. 重新获取更新后的任务对象
             updated_task = self.task_service.get_task(task_id, user_id)
@@ -130,14 +157,8 @@ class TaskCompletionService:
                 "code": 200,
                 "data": {
                     "task": updated_task,
-                    "completion_result": {
-                        "success": result.get("success", True),
-                        "task_id": result.get("task_id", str(task_id)),
-                        "points_awarded": result.get("points_awarded", 0),
-                        "reward_type": result.get("reward_type", "unknown"),
-                        "message": result.get("message", "任务完成")
-                    },
-                    "lottery_result": lottery_result if lottery_result else None,
+                    "reward_earned": reward_earned,
+                    "lottery_result": lottery_result if lottery_result else None,  # 保留向后兼容
                     "message": "任务完成成功"
                 },
                 "message": "success"

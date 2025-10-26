@@ -78,23 +78,25 @@ class UUIDConverter:
             raise ValueError(f"Failed to convert string to UUID: {uuid_str}, error: {e}")
 
     @classmethod
-    def ensure_string(cls, value: Union[UUID, str]) -> str:
+    def ensure_string(cls, value: Union[UUID, str, None]) -> Optional[str]:
         """
         确保值是字符串格式
 
-        智能转换：如果是UUID对象则转换为字符串，如果是字符串则验证格式。
+        智能转换：如果是UUID对象则转换为字符串，如果是字符串则验证格式，如果是None则返回None。
 
         Args:
-            value: UUID对象或字符串
+            value: UUID对象、字符串或None
 
         Returns:
-            str: UUID字符串格式
+            Optional[str]: UUID字符串格式或None
 
         Raises:
             TypeError: 当值类型无效时
             ValueError: 当字符串格式不正确时
         """
-        if isinstance(value, UUID):
+        if value is None:
+            return None
+        elif isinstance(value, UUID):
             return cls.to_string(value)
         elif isinstance(value, str):
             # 验证字符串格式是否正确
@@ -102,31 +104,33 @@ class UUIDConverter:
                 raise ValueError(f"Invalid UUID string format: {value}")
             return value
         else:
-            raise TypeError(f"Expected UUID or string, got {type(value)}")
+            raise TypeError(f"Expected UUID, string, or None, got {type(value)}")
 
     @classmethod
-    def ensure_uuid(cls, value: Union[UUID, str]) -> UUID:
+    def ensure_uuid(cls, value: Union[UUID, str, None]) -> Optional[UUID]:
         """
         确保值是UUID对象
 
-        智能转换：如果是字符串则转换为UUID对象，如果是UUID对象则直接返回。
+        智能转换：如果是字符串则转换为UUID对象，如果是UUID对象则直接返回，如果是None则返回None。
 
         Args:
-            value: UUID对象或字符串
+            value: UUID对象、字符串或None
 
         Returns:
-            UUID: UUID对象
+            Optional[UUID]: UUID对象或None
 
         Raises:
             TypeError: 当值类型无效时
             ValueError: 当字符串格式不正确时
         """
-        if isinstance(value, UUID):
+        if value is None:
+            return None
+        elif isinstance(value, UUID):
             return value
         elif isinstance(value, str):
             return cls.to_uuid(value)
         else:
-            raise TypeError(f"Expected UUID or string, got {type(value)}")
+            raise TypeError(f"Expected UUID, string, or None, got {type(value)}")
 
     @classmethod
     def batch_to_string(cls, uuid_list: List[UUID]) -> List[str]:

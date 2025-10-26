@@ -160,23 +160,6 @@ class RedeemRecipeResponse(BaseModel):
         example="配方合成成功", description="操作结果描述")
 
 
-class UserMaterial(BaseModel):
-    """用户材料"""
-    reward_id: str = Field(...,
-        example="550e8400-e29b-41d4-a716-446655440000", description="奖品ID")
-    reward_name: str = Field(...,
-        example="魔法药剂", description="奖品名称")
-    image_url: Optional[str] = Field(None,
-        example="https://example.com/potion.jpg", description="奖品图片URL")
-    quantity: int = Field(..., ge=0, example=5, description="拥有数量")
-
-
-class UserMaterialsResponse(BaseModel):
-    """用户材料列表响应"""
-    materials: List[UserMaterial] = Field(...,
-        description="用户材料列表")
-    total_types: int = Field(...,
-        example=15, description="材料种类总数")
 
 
 class AvailableRecipe(BaseModel):
@@ -203,5 +186,26 @@ class AvailableRecipesResponse(BaseModel):
         description="可用配方列表")
     total_count: int = Field(...,
         example=25, description="可用配方总数")
+
+
+# ===== 奖品流水相关 =====
+
+class RewardTransactionResponse(BaseModel):
+    """奖品流水响应"""
+    id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440000", description="流水ID")
+    reward_id: str = Field(..., example="550e8400-e29b-41d4-a716-446655440001", description="奖品ID")
+    reward_name: str = Field(..., example="积分加成卡", description="奖品名称")
+    source_type: str = Field(..., example="welcome_gift", description="来源类型")
+    source_id: Optional[str] = Field(None, example="550e8400-e29b-41d4-a716-446655440002", description="来源ID")
+    quantity: int = Field(..., example=3, description="数量（正数获得，负数消耗）")
+    transaction_group: Optional[str] = Field(None, example="txn_group_12345", description="事务组ID")
+    created_at: datetime = Field(..., example="2024-01-15T10:30:00Z", description="创建时间")
+
+
+class RewardTransactionsResponse(BaseModel):
+    """奖品流水列表响应"""
+    transactions: List[RewardTransactionResponse] = Field(..., description="奖品流水列表")
+    total_count: int = Field(..., example=50, description="总记录数")
+    balance_summary: Dict[str, int] = Field(..., description="各奖品余额汇总，key为奖品ID，value为剩余数量")
 
 

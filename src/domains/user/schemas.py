@@ -1,7 +1,7 @@
 """User领域Schema定义"""
 
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class UserProfileResponse(BaseModel):
@@ -15,8 +15,7 @@ class UserProfileResponse(BaseModel):
     created_at: str = Field(..., description="创建时间")
     last_login_at: Optional[str] = Field(None, description="最后登录时间")
 
-    class Config:
-        """Pydantic配置 - 使用json_schema_extra提供示例"""
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -29,6 +28,7 @@ class UserProfileResponse(BaseModel):
                 "last_login_at": "2025-01-20T15:45:00Z"
             }
         }
+    )
 
 
 class UpdateProfileRequest(BaseModel):
@@ -37,8 +37,7 @@ class UpdateProfileRequest(BaseModel):
     avatar_url: Optional[str] = Field(None, description="头像URL")
     bio: Optional[str] = Field(None, description="用户简介")
 
-    class Config:
-        """Pydantic配置 - 使用json_schema_extra提供示例"""
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "nickname": "新昵称",
@@ -46,6 +45,7 @@ class UpdateProfileRequest(BaseModel):
                 "bio": "这是我的新简介"
             }
         }
+    )
 
 
 # ===== 响应模型 =====
