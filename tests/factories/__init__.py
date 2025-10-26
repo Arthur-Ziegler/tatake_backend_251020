@@ -13,7 +13,7 @@
 from .base import BaseFactory
 from .users import UserFactory, AuthLogFactory
 from .tasks import TaskFactory, TaskCompletionFactory
-from .rewards import RewardFactory, RecipeFactory
+from .rewards import RewardFactory, UserRewardFactory, RecipeFactory
 from .focus import FocusSessionFactory, FocusOperationFactory
 from .top3 import Top3TaskFactory
 from .points import PointsTransactionFactory
@@ -32,6 +32,7 @@ __all__ = [
 
     # 奖励相关工厂
     "RewardFactory",
+    "UserRewardFactory",
     "RecipeFactory",
 
     # 专注系统工厂

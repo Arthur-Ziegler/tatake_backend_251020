@@ -64,7 +64,47 @@ class RewardFactory(BaseFactory):
         return reward_data
 
 
+@register_factory("user_reward")
+class UserRewardFactory(BaseFactory):
+    """用户奖励工厂"""
 
+    DEFAULTS = {
+        "id": "",
+        "user_id": "",
+        "reward_id": "",
+        "redeemed_at": None,
+        "status": "pending",
+        "points_used": 0,
+        "delivery_address": "",
+        "tracking_number": "",
+        "notes": "",
+    }
+
+    REQUIRED_FIELDS = ["user_id", "reward_id", "points_used"]
+
+    STATUSES = ["pending", "processing", "delivered", "cancelled"]
+
+    @classmethod
+    def create(cls, **overrides: Any) -> Dict[str, Any]:
+        """创建用户奖励数据"""
+        user_reward_id = str(uuid.uuid4())
+        timestamp = datetime.now(timezone.utc)
+
+        defaults = cls._merge_data(cls.DEFAULTS, {
+            "id": user_reward_id,
+            "user_id": overrides.get("user_id", f"user_{uuid.uuid4().hex[:8]}"),
+            "reward_id": overrides.get("reward_id", str(uuid.uuid4())),
+            "redeemed_at": timestamp,
+            "status": cls._generate_choice(cls.STATUSES),
+            "points_used": overrides.get("points_used", cls._generate_int(10, 1000)),
+            "delivery_address": f"测试地址_{user_reward_id[:8]}",
+            "tracking_number": f"TN{user_reward_id[:12].upper()}",
+            "notes": f"兑换备注_{user_reward_id[:8]}",
+        })
+
+        user_reward_data = cls._merge_data(defaults, overrides)
+        cls.validate_data(user_reward_data)
+        return user_reward_data
 
 
 @register_factory("recipe")
