@@ -535,8 +535,8 @@ class TestSchemaRegistryEdgeCases:
         """测试包含特殊字符的Schema"""
         class SpecialCharSchema(BaseModel):
             special_field: str  # 包含下划线
-            "field-with-dashes": str  # 包含连字符（通过Field别名）
-            "field.with.dots": str  # 包含点（通过Field别名）
+            field_with_dashes: str  # 包含连字符（通过Field别名）
+            field_with_dots: str  # 包含点（通过Field别名）
 
             class Config:
                 allow_population_by_field_name = True

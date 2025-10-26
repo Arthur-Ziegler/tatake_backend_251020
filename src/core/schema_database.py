@@ -51,8 +51,7 @@ class SchemaDatabaseSettings(BaseSettings):
     multi_tenant_enabled: bool = False
     tenant_schema_pattern: str = "{tenant}_domain"
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 class SchemaDatabaseManager:

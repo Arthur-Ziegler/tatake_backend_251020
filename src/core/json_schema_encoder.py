@@ -8,7 +8,7 @@
 
 import json
 from enum import Enum
-from typing import Any, TypeVar, get_origin
+from typing import Any, Type, TypeVar, get_origin
 from pydantic.json_schema import GenerateJsonSchema
 from pydantic._internal._generate_schema import GenerateSchema
 

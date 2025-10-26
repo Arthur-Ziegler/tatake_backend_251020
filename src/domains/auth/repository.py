@@ -20,9 +20,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlmodel import select, update
+from sqlmodel import select, update, Session
 from sqlalchemy import and_, desc
-from sqlmodel import Session
 
 from .models import Auth, AuthLog
 from src.core.uuid_converter import UUIDConverter
@@ -125,14 +124,16 @@ class AuthRepository:
             logger.debug(f"Querying user by ID: {user_id_str}")
 
             statement = select(Auth).where(Auth.id == user_id_str)
-            result = self.session.exec(statement).first()
+            row_result = self.session.execute(statement).first()
 
-            if result:
+            if row_result:
+                # 从Row对象中提取Auth实体
+                result = row_result[0]  # 或者使用 row_result.Auth
                 logger.debug(f"Found user: {result.id}")
+                return result
             else:
                 logger.debug(f"User not found: {user_id_str}")
-
-            return result
+                return None
         except TypeError as te:
             logger.error(f"Type error in get_by_id: {te}")
             raise  # 重新抛出类型错误
@@ -152,8 +153,12 @@ class AuthRepository:
         """
         try:
             statement = select(Auth).where(Auth.wechat_openid == wechat_openid)
-            result = self.session.exec(statement).first()
-            return result
+            row_result = self.session.execute(statement).first()
+
+            if row_result:
+                return row_result[0]  # 从Row对象中提取Auth实体
+            else:
+                return None
         except Exception as e:
             logger.error(f"Failed to get user by wechat_openid {wechat_openid}: {e}")
             return None
@@ -187,7 +192,7 @@ class AuthRepository:
                 )
             )
 
-            self.session.exec(statement)
+            self.session.execute(statement)
             self.session.commit()
 
             # 返回更新后的用户
@@ -197,12 +202,13 @@ class AuthRepository:
             self.session.rollback()
             return None
 
-    def update_last_login(self, user_id: UUID) -> bool:
+    def update_last_login(self, user_id: UUID, login_time: Optional[datetime] = None) -> bool:
         """
         更新用户最后登录时间
 
         Args:
             user_id: 用户ID（UUID对象）
+            login_time: 登录时间（可选，默认为当前时间）
 
         Returns:
             bool: 更新是否成功
@@ -210,16 +216,21 @@ class AuthRepository:
         try:
             # 使用UUIDConverter进行类型转换
             user_id_str = UUIDConverter.to_string(user_id)
+
+            # 如果没有提供登录时间，使用当前时间
+            if login_time is None:
+                login_time = datetime.now(timezone.utc)
+
             statement = (
                 update(Auth)
                 .where(Auth.id == user_id_str)
                 .values(
-                    last_login_at=datetime.now(timezone.utc),
+                    last_login_at=login_time,
                     updated_at=datetime.now(timezone.utc)
                 )
             )
 
-            self.session.exec(statement)
+            self.session.execute(statement)
             self.session.commit()
             return True
         except Exception as e:

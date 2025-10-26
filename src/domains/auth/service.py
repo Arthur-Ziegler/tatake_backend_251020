@@ -253,7 +253,7 @@ class AuthService:
 
                 # 3. 立即升级为正式用户
                 user = auth_repo.upgrade_guest_account(
-                    user_id=guest.id,
+                    user_id=UUID(guest.id),  # 转换字符串为UUID对象
                     wechat_openid=request.wechat_openid
                 )
 
@@ -317,7 +317,7 @@ class AuthService:
                     raise UserNotFoundException("用户不存在，请先注册")
 
                 # 更新最后登录时间
-                auth_repo.update_last_login(user.id)
+                auth_repo.update_last_login(UUID(user.id))  # 转换字符串为UUID对象
 
                 # 生成JWT令牌
                 user_data = {
