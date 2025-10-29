@@ -118,10 +118,10 @@ class Task(SQLModel, table=True):
     __tablename__ = "tasks"
 
     # === 基础字段 ===
-    id: UUID = Field(
-        default_factory=uuid4,
-        primary_key=True,
-        description="主键ID（UUID对象）"
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        sa_column=Column(String(36), primary_key=True),
+        description="主键ID（UUID字符串）"
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -133,9 +133,9 @@ class Task(SQLModel, table=True):
     )
 
     # === 用户关联字段 ===
-    user_id: UUID = Field(
+    user_id: str = Field(
         ...,
-        index=True,
+        sa_column=Column(String(36), index=True),
         description="用户ID，关联到认证表"
     )
 
@@ -153,9 +153,9 @@ class Task(SQLModel, table=True):
     )
 
     # === 层级结构 ===
-    parent_id: Optional[UUID] = Field(
+    parent_id: Optional[str] = Field(
         default=None,
-        index=True,
+        sa_column=Column(String(36), index=True),
         description="父任务ID，支持任务树结构"
     )
 
@@ -198,7 +198,7 @@ class Task(SQLModel, table=True):
     )
 
     # === 服务关联（占位字段，后续AI匹配） ===
-    service_ids: Optional[List[UUID]] = Field(
+    service_ids: Optional[List[str]] = Field(
         default=[],
         sa_column=Column(JSON),
         description="关联服务ID列表，JSON格式存储。占位字段，后续通过AI匹配任务与服务。示例: ['service-001', 'service-002']"

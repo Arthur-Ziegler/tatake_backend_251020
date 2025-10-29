@@ -140,7 +140,7 @@ def parse_query_params(
     page_size: Optional[int] = Query(None, description="每页大小", ge=10, le=50),
     status: Optional[str] = Query(None, description="任务状态筛选", enum=["pending", "completed", "cancelled"]),
     parent_id: Optional[str] = Query(None, description="父任务ID筛选"),
-    priority: Optional[str] = Query(None, description="优先级筛选", enum=["low", "medium", "high"]
+    priority: Optional[str] = Query(None, description="优先级筛选", enum=["low", "medium", "high"])
 ):
     """解析查询参数"""
     return {
@@ -196,7 +196,7 @@ async def get_tasks(
             created_at=task.created_at,
             updated_at=task.updated_at,
             tags=task.tags,
-            points_rewarded=task.points_rewarded
+            points_rewarded=task.points_rewarded,
             last_claimed_date=task.last_claimed_date
         ) for task in tasks
     ]
@@ -246,7 +246,6 @@ async def get_task(
 @router.post("/{task_id}/complete", response_model=TaskCompletionResponse, status_code=status.HTTP_200_OK)
 async def complete_task(
     task_id: str,
-    task_service: TaskService = Depends(get_task_service)
     completion_request: Optional[CreateTaskRequest] = None,
     task_service: TaskService = Depends(get_task_service)
 ):
@@ -259,9 +258,13 @@ async def complete_task(
     if completion_request is None:
         try:
             request_body = await request.json()
-        title = request_body.get("title", "")
-        description = request_body.get("description", "")
-        priority = request_body.get("priority", "medium")
+            title = request_body.get("title", "")
+            description = request_body.get("description", "")
+            priority = request_body.get("priority", "medium")
+        except Exception:
+            title = ""
+            description = ""
+            priority = "medium"
     else:
         title = completion_request.title
         description = completion_request.description

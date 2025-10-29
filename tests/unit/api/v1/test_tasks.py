@@ -243,8 +243,13 @@ class TestTaskServiceIntegration:
             with patch('src.domains.task.service.TaskService') as mock_task_cls:
                 task_service = mock_task_cls.return_value
 
+                # 导入并调用 get_task_service 函数
+                from src.api.v1.tasks import get_task_service
+                result = get_task_service(mock_session)
+
                 # 验证TaskService被正确创建
                 mock_task_cls.assert_called_once_with(mock_session, mock_points_service)
+                assert result == task_service
 
     @pytest.mark.asyncio
     async def test_get_tasks_endpoint_logic(self):

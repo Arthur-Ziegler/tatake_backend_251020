@@ -358,7 +358,7 @@ class TaskService:
 
                 task_data = {
                     "id": str(row[0]),
-                    # ❌ 不返回user_id到前端
+                    "user_id": str(row[1]),  # ✅ 返回user_id到前端，保持API一致性
                     "title": row[2],
                     "description": row[3],
                     "status": row[4],
@@ -545,18 +545,18 @@ class TaskService:
             from .models import Task
             from datetime import datetime, timezone
 
-            # 创建任务对象，直接使用字符串值兼容SQLite
+            # 创建任务对象，使用字符串UUID格式确保一致性
             # 注意：request中的status和priority已经是字符串格式，不需要额外转换
             task = Task(
-                id=str(uuid4()),  # 确保ID生成
-                user_id=str(user_id),
+                id=str(uuid4()),  # 使用字符串格式的UUID
+                user_id=str(user_id),  # ✅ 转换为字符串格式，模型要求字符串类型
                 title=request.title,
                 description=request.description,
                 status=str(request.status) if request.status else TaskStatusConst.PENDING,  # 强制转换为字符串
                 priority=str(request.priority) if request.priority else TaskPriorityConst.MEDIUM,  # 强制转换为字符串
-                parent_id=str(request.parent_id) if request.parent_id else None,
+                parent_id=str(UUID(request.parent_id)) if request.parent_id else None,  # 转换为字符串格式
                 tags=request.tags or [],  # 新增
-                service_ids=request.service_ids or [],  # 新增
+                service_ids=[str(UUID(sid)) for sid in (request.service_ids or [])],  # 确保service_ids是字符串列表
                 due_date=request.due_date,  # 新增
                 planned_start_time=request.planned_start_time,  # 新增
                 planned_end_time=request.planned_end_time,  # 新增
