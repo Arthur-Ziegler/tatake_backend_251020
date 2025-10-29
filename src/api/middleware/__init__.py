@@ -5,7 +5,6 @@ API中间件模块
 """
 
 from .auth import AuthMiddleware
-from .cors import CORSMiddleware
 from .exception_handler import ExceptionHandlerMiddleware
 from .logging import LoggingMiddleware
 from .rate_limit import RateLimitMiddleware
@@ -13,7 +12,6 @@ from .security import SecurityMiddleware
 
 __all__ = [
     "AuthMiddleware",
-    "CORSMiddleware",
     "ExceptionHandlerMiddleware",
     "LoggingMiddleware",
     "RateLimitMiddleware",
