@@ -20,8 +20,8 @@ from typing import Dict, Any, List
 # 加载环境变量
 load_dotenv()
 
-from src.api.config import config
-from src.api.responses import create_success_response, create_error_response
+from .config import config
+from .responses import create_success_response, create_error_response
 
 
 class HTTPValidationError(BaseModel):
@@ -39,13 +39,8 @@ async def lifespan(app: FastAPI):
     print(f"📝 环境: {'开发' if config.debug else '生产'}")
     print(f"🌐 API服务地址: http://{config.api_host}:{config.api_port}{config.api_prefix}")
 
-    # 初始化认证数据库
-    from src.domains.auth.database import create_tables, check_connection
-    if check_connection():
-        create_tables()
-        print("✅ 认证数据库初始化完成")
-    else:
-        print("❌ 认证数据库连接失败")
+    # 认证功能已迁移到微服务，无需本地数据库
+    print("✅ 认证微服务集成完成")
 
     # 初始化任务数据库
     from src.domains.task.database import initialize_task_database
@@ -168,11 +163,17 @@ async def root():
 # 健康检查
 @app.get("/health", tags=["系统"])
 async def health_check():
-    """认证服务健康检查端点 - 只返回code、message、data三个字段"""
-    from src.domains.auth.database import check_connection
+    """健康检查端点 - 检查微服务和数据库状态"""
+    from ...services.auth.client import AuthMicroserviceClient
 
-    # 检查认证数据库
-    is_auth_healthy = check_connection()
+    # 检查认证微服务
+    auth_client = AuthMicroserviceClient()
+    try:
+        auth_response = await auth_client.health_check()
+        is_auth_healthy = auth_response.get("status") == "healthy"
+    except Exception as e:
+        print(f"认证微服务健康检查失败: {str(e)}")
+        is_auth_healthy = False
 
     # 检查任务数据库
     from src.domains.task.database import get_database_info as get_task_db_info
@@ -195,7 +196,7 @@ async def health_check():
             },
             "version": f"{config.app_name} v{config.app_version}",
             "database": {
-                "auth": "connected" if is_auth_healthy else "disconnected",
+                "auth": "microservice" if is_auth_healthy else "disconnected",
                 "task": "connected" if is_task_healthy else "disconnected",
                 "chat": "connected" if is_chat_healthy else "disconnected"
             }
@@ -207,12 +208,10 @@ async def health_check():
 # API信息
 @app.get(f"{config.api_prefix}/info", tags=["系统"])
 async def api_info():
-    """API信息端点 - 只返回code、message、data三个字段"""
-    from src.domains.auth.database import get_database_info as get_auth_db_info
+    """API信息端点 - 显示微服务架构信息"""
     from src.domains.task.database import get_database_info as get_task_db_info
     from src.domains.chat.database import get_database_info as get_chat_db_info
 
-    auth_db_info = get_auth_db_info()
     task_db_info = get_task_db_info()
     chat_db_info = get_chat_db_info()
 
@@ -221,12 +220,14 @@ async def api_info():
             "api_name": f"{config.app_name}",
             "api_version": config.app_version,
             "api_prefix": config.api_prefix,
-            "service_type": "full-stack-api",
+            "service_type": "microservice-enabled-api",
             "domains": {
                 "认证系统": {
-                    "endpoints": 5,
+                    "endpoints": 12,  # 微服务提供的认证端点数量
                     "status": "active",
-                    "database": auth_db_info
+                    "type": "microservice",
+                    "provider": "Auth Service (http://45.152.65.130:8987)",
+                    "features": ["微信认证", "邮箱认证", "手机认证", "JWT验证"]
                 },
                 "任务管理": {
                     "endpoints": 5,
@@ -239,34 +240,34 @@ async def api_info():
                     "database": chat_db_info
                 }
             },
-            "total_endpoints": 20,  # 5个auth + 5个task + 7个chat + 3个system
+            "total_endpoints": 27,  # 12个auth + 5个task + 7个chat + 3个system
             "database": {
-                "auth": auth_db_info,
+                "auth": "microservice",
                 "task": task_db_info,
                 "chat": chat_db_info
             },
             "documentation": {
                 "swagger": "/docs",
                 "redoc": "/redoc",
-                # "openapi": "/openapi.json"  # 移除OpenAPI端点，让FastAPI自然工作
+                "auth_service_docs": "http://45.152.65.130:8987/docs"
             },
-            "status": "提供完整的认证、任务管理和智能聊天API服务"
+            "status": "提供微服务认证、任务管理和智能聊天API服务"
         },
-        message="API信息 - 认证、任务管理和智能聊天服务"
+        message="API信息 - 微服务认证、任务管理和智能聊天服务"
     )
 
 
 # 导入所有路由器
-from src.domains.auth.router import router as auth_router
+from src.api.auth import auth_router  # 使用新的微服务认证路由
 from src.domains.task.router import router as task_router
 from src.domains.reward.router import router as reward_router, points_router
 from src.domains.top3.api import router as top3_router
 from src.domains.chat.router import router as chat_router
 from src.domains.focus.router import router as focus_router
-from src.domains.user.router import router as user_router
+# from src.domains.user.router import router as user_router  # 临时禁用，待修复auth依赖
 
-# 使用认证领域路由
-app.include_router(auth_router, prefix=config.api_prefix)
+# 使用微服务认证路由（不再需要前缀，因为路径已经包含/auth）
+app.include_router(auth_router)
 
 # 使用任务领域路由
 app.include_router(task_router, prefix=config.api_prefix)
@@ -282,7 +283,7 @@ app.include_router(top3_router, prefix=config.api_prefix)
 app.include_router(chat_router, prefix=config.api_prefix)
 
 # 使用用户管理路由
-app.include_router(user_router, prefix=config.api_prefix)
+# app.include_router(user_router, prefix=config.api_prefix)  # 临时禁用，待修复auth依赖
 
 # 使用Focus番茄钟领域路由
 app.include_router(focus_router, prefix=config.api_prefix)

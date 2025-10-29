@@ -25,7 +25,7 @@ from .schemas import (
     RecipeReward,
     RewardTransactionsResponse
 )
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 from .exceptions import RewardException
 from src.api.dependencies import get_current_user_id
 from src.database import SessionDep

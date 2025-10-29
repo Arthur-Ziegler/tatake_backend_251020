@@ -9,10 +9,11 @@ from typing import Dict, Any, Type
 from pydantic import BaseModel
 
 # 手动导入所有域的Schema，确保它们被Python解释器加载
-from src.domains.auth.schemas import (
-    UnifiedResponse, AuthTokenResponse, AuthTokenData,
-    GuestInitRequest, WeChatRegisterRequest, WeChatLoginRequest,
-    GuestUpgradeRequest, TokenRefreshRequest
+# 认证模块已迁移到微服务，新的认证模型在 src.api.auth 中定义
+from src.api.auth import (
+    UnifiedResponse, GuestInitRequest, WeChatRegisterRequest, WeChatLoginRequest,
+    GuestUpgradeRequest, TokenRefreshRequest, EmailSendRequest, EmailRegisterRequest,
+    EmailLoginRequest, EmailBindRequest, SMSSendRequest, SMSVerifyRequest
 )
 
 from src.domains.task.schemas import (
@@ -55,15 +56,19 @@ from src.domains.user.schemas import (
 
 # 所有需要注册的Schema模型
 ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
-    # 认证系统
+    # 认证系统（微服务模式）
     "UnifiedResponse": UnifiedResponse,
-    "AuthTokenResponse": AuthTokenResponse,
-    "AuthTokenData": AuthTokenData,
     "GuestInitRequest": GuestInitRequest,
     "WeChatRegisterRequest": WeChatRegisterRequest,
     "WeChatLoginRequest": WeChatLoginRequest,
     "GuestUpgradeRequest": GuestUpgradeRequest,
     "TokenRefreshRequest": TokenRefreshRequest,
+    "EmailSendRequest": EmailSendRequest,
+    "EmailRegisterRequest": EmailRegisterRequest,
+    "EmailLoginRequest": EmailLoginRequest,
+    "EmailBindRequest": EmailBindRequest,
+    "SMSSendRequest": SMSSendRequest,
+    "SMSVerifyRequest": SMSVerifyRequest,
 
     # 任务管理
     "CreateTaskRequest": CreateTaskRequest,

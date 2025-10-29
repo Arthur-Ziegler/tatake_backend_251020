@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import List, Optional, Any
 from pydantic import BaseModel, Field, field_validator
 
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 
 
 # ========== 请求模型 ==========

@@ -36,7 +36,7 @@ from pydantic_core import ValidationError
 # 导入相关模型
 from .models import TaskStatusConst, TaskPriorityConst
 from src.core.types import TaskStatus, TaskPriority
-from src.domains.auth.schemas import UnifiedResponse
+# 认证模块已迁移到微服务，使用共用的UnifiedResponse
 
 # TaskStatus和TaskPriority现在从src.core.types导入
 

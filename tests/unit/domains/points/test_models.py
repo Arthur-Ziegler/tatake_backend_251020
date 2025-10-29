@@ -19,8 +19,7 @@ from uuid import uuid4
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlmodel.pool import StaticPool
 
-from src.domains.points.models import PointsTransaction
-from src.domains.auth.models import BaseModel
+from src.domains.points.models import PointsTransaction, BaseModel
 
 
 @pytest.mark.unit

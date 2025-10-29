@@ -40,12 +40,25 @@ from sqlalchemy import Index, ForeignKey, event
 from sqlalchemy.orm import relationship
 import json
 
-# 导入基础模型
-try:
-    from src.domains.auth.models import BaseModel
-except ImportError:
-    # 相对导入作为备选方案
-    from ...auth.models import BaseModel
+# 使用SQLModel基础模型（认证模块已迁移到微服务）
+from sqlmodel import SQLModel
+
+class BaseModel(SQLModel):
+    """基础模型类，提供通用字段"""
+
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        primary_key=True,
+        description="主键ID"
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="创建时间"
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="更新时间"
+    )
 
 # UUID JSON序列化处理器
 class UUIDEncoder(json.JSONEncoder):

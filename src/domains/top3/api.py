@@ -19,7 +19,7 @@ from .service import Top3Service
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from src.database import SessionDep
 from src.api.dependencies import get_current_user_id
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 
 logger = logging.getLogger(__name__)
 

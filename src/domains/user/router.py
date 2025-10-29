@@ -19,7 +19,7 @@ from .schemas import (
     WelcomeGiftHistoryResponse,
     WelcomeGiftHistoryItem
 )
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 from src.database import get_db_session
 from src.api.dependencies import get_current_user_id
 from src.domains.user.repository import UserRepository

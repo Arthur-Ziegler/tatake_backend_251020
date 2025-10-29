@@ -29,7 +29,7 @@ from .schemas import StartFocusRequest, FocusSessionResponse, FocusSessionListRe
 from .exceptions import FocusException
 from .database import get_focus_session
 from src.api.dependencies import get_current_user_id
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 
 # 配置日志
 logger = logging.getLogger(__name__)

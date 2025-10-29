@@ -14,7 +14,7 @@ from src.domains.points.service import PointsService
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from .exceptions import Top3Exception
 from .database import get_top3_session
-from src.domains.auth.schemas import UnifiedResponse
+from src.api.schemas import UnifiedResponse
 
 from src.api.dependencies import get_current_user_id
 

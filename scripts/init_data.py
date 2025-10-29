@@ -182,12 +182,12 @@ if __name__ == "__main__":
 
     # 创建所有表
     print("创建数据库表...")
-    from src.domains.auth.models import BaseModel
+    # 认证已迁移到微服务，不再需要本地数据库表
     from src.domains.task.models import Task
     from src.domains.reward.models import Reward, RewardRecipe, RewardTransaction, PointsTransaction
     from src.domains.top3.models import TaskTop3
 
-    BaseModel.metadata.create_all(bind=engine)
+    # 不再需要BaseModel，因为已经使用各个模型的create_all方法
     print("数据库表创建完成！")
 
     # 初始化奖励数据

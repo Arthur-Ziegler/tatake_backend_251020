@@ -62,7 +62,8 @@ from .schemas import (
     UncompleteTaskResponse,
     PaginationInfo
 )
-from src.domains.auth.schemas import UnifiedResponse
+# 认证模块已迁移到微服务，使用共用的统一响应格式
+from src.api.schemas import UnifiedResponse
 from .exceptions import (
     TaskException,
     TaskNotFoundException,
@@ -72,8 +73,7 @@ from .exceptions import (
     TaskValidationException,
     TaskDatabaseException
 )
-# 导入认证依赖
-from src.domains.auth.service import AuthService
+# 导入认证依赖（认证模块已迁移到微服务）
 from src.api.dependencies import get_current_user_id
 
 # 导入优化后的数据库依赖
