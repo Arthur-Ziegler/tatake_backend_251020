@@ -644,7 +644,7 @@ class TestRealWorldScenarios:
         phases = [
             {"title": "需求分析", "description": "收集和分析用户需求"},
             {"title": "系统设计", "description": "设计系统架构和数据库"},
-            {"title": "前端开发", "description": "开发用户界面"},
+            {"title": "界面开发", "description": "开发用户交互界面"},
             {"title": "后端开发", "description": "开发API和业务逻辑"},
             {"title": "测试部署", "description": "系统测试和部署上线"}
         ]

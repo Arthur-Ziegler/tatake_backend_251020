@@ -20,4 +20,4 @@ echo "   ENVIRONMENT=$ENVIRONMENT"
 
 # 启动服务
 echo "启动FastAPI服务..."
-uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn src.api.main:app --host 0.0.0.0 --port 8001 --reload

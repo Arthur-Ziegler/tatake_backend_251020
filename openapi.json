@@ -2798,7 +2798,7 @@
           "task_id"
         ],
         "title": "StartFocusRequest",
-        "description": "开始专注会话请求模型\n\n极简设计，只需要任务ID和会话类型：\n- task_id: 必须关联一个有效任务\n- session_type: 支持多种会话类型\n\n设计说明：\n- 不包含计划时长，由前端控制\n- 不包含备注等非必要字段\n- 所有会话（包括暂停）都使用同一个请求模型"
+        "description": "开始专注会话请求模型\n\n极简设计，只需要任务ID和会话类型：\n- task_id: 必须关联一个有效任务\n- session_type: 支持多种会话类型\n\n设计说明：\n- 不包含计划时长，由客户端控制\n- 不包含备注等非必要字段\n- 所有会话（包括暂停）都使用同一个请求模型"
       },
       "TaskCompleteResponseWrapper": {
         "properties": {
