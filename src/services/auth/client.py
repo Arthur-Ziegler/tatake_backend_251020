@@ -45,7 +45,7 @@ class AuthMicroserviceClient:
             project: 项目标识，默认从环境变量读取
         """
         self.base_url = (base_url or
-                        os.getenv("AUTH_MICROSERVICE_URL", "http://45.152.65.130:8987")).rstrip('/')
+                        os.getenv("AUTH_MICROSERVICE_URL", "http://localhost:8987")).rstrip('/')
 
         self.project = project or os.getenv("AUTH_PROJECT", "tatake_backend")
 
@@ -435,11 +435,102 @@ class AuthMicroserviceClient:
         健康检查
 
         检查认证微服务的健康状态。
+        支持多种响应格式以兼容不同的服务版本。
 
         Returns:
             包含健康状态信息的响应数据
         """
-        return await self._make_request("GET", "/health")
+        # 使用特殊的健康检查处理
+        url = f"{self.base_url}/health"
+
+        # 设置默认请求头
+        request_headers = {
+            "Accept": "application/json",
+            "User-Agent": "TaKeKe-Backend/1.0.0"
+        }
+
+        # 创建HTTP客户端
+        async with httpx.AsyncClient(**self.client_config) as client:
+            try:
+                print(f"[AuthMicroserviceClient] 发起健康检查: GET {url}")
+
+                # 发起HTTP请求
+                response = await client.request(
+                    method="GET",
+                    url=url,
+                    headers=request_headers
+                )
+
+                print(f"[AuthMicroserviceClient] 健康检查响应状态: {response.status_code}")
+
+                # 检查HTTP状态码
+                if response.status_code >= 400:
+                    error_msg = f"认证微服务健康检查失败: HTTP {response.status_code}"
+                    raise HTTPException(
+                        status_code=response.status_code,
+                        detail=error_msg
+                    )
+
+                # 解析JSON响应
+                try:
+                    response_data = response.json()
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        detail=f"认证微服务返回无效JSON: {str(e)}"
+                    )
+
+                # 处理不同的响应格式
+                if "code" in response_data:
+                    # 标准格式: {"code": 200, "message": "ok", "data": {...}}
+                    print(f"[AuthMicroserviceClient] 健康检查响应(标准格式): {response_data}")
+                    return response_data
+                elif "status" in response_data:
+                    # 简单格式: {"status": "healthy", "service": "Auth Service"}
+                    # 转换为标准格式
+                    standard_response = {
+                        "code": 200,
+                        "message": "Health check passed",
+                        "data": {
+                            "status": response_data.get("status"),
+                            "service": response_data.get("service", "Auth Service")
+                        }
+                    }
+                    print(f"[AuthMicroserviceClient] 健康检查响应(转换格式): {standard_response}")
+                    return standard_response
+                else:
+                    # 未知格式，尽力转换
+                    standard_response = {
+                        "code": 200,
+                        "message": "Health check response format unknown but service responded",
+                        "data": response_data
+                    }
+                    print(f"[AuthMicroserviceClient] 健康检查响应(通用格式): {standard_response}")
+                    return standard_response
+
+            except httpx.TimeoutException as e:
+                raise HTTPException(
+                    status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                    detail=f"认证微服务健康检查超时: {str(e)}"
+                )
+            except httpx.ConnectError as e:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"无法连接到认证微服务进行健康检查: {str(e)}"
+                )
+            except httpx.HTTPError as e:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"认证微服务健康检查通信错误: {str(e)}"
+                )
+            except HTTPException:
+                # 重新抛出HTTP异常
+                raise
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"认证微服务健康检查内部错误: {str(e)}"
+                )
 
 
 # 全局客户端实例（单例模式）

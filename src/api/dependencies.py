@@ -2,6 +2,7 @@
 认证API依赖注入系统
 
 使用微服务JWT token验证机制，确保所有API都有正确的用户认证。
+支持开发环境的特殊验证模式。
 """
 
 import os
@@ -12,7 +13,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-from src.services.auth.jwt_validator import validate_jwt_token
+from src.services.auth.jwt_validator import validate_jwt_token_simple, validate_jwt_token, TokenValidationResult
 
 # HTTP Bearer认证方案
 security = HTTPBearer(auto_error=False)
@@ -36,8 +37,18 @@ async def get_current_user_id(
         )
 
     try:
-        # 使用微服务JWT验证器验证令牌
-        payload = await validate_jwt_token(credentials.credentials)
+        # 根据环境选择验证器
+        is_development = os.getenv("ENVIRONMENT", "development").lower() == "development"
+
+        if is_development and os.getenv("JWT_SKIP_SIGNATURE", "false").lower() == "true":
+            # 开发环境使用开发验证器
+            from src.services.auth.dev_jwt_validator import validate_jwt_token_dev_result
+            result = await validate_jwt_token_dev_result(credentials.credentials)
+        else:
+            # 生产环境使用标准验证器
+            result = await validate_jwt_token(credentials.credentials)
+
+        payload = result.payload
 
         # 验证令牌类型
         if payload.get("token_type") != "access":
@@ -84,8 +95,18 @@ async def get_current_user_id_optional(
         return None
 
     try:
-        # 使用微服务JWT验证器验证令牌
-        payload = await validate_jwt_token(credentials.credentials)
+        # 根据环境选择验证器
+        is_development = os.getenv("ENVIRONMENT", "development").lower() == "development"
+
+        if is_development and os.getenv("JWT_SKIP_SIGNATURE", "false").lower() == "true":
+            # 开发环境使用开发验证器
+            from src.services.auth.dev_jwt_validator import validate_jwt_token_dev_result
+            result = await validate_jwt_token_dev_result(credentials.credentials)
+        else:
+            # 生产环境使用标准验证器
+            result = await validate_jwt_token(credentials.credentials)
+
+        payload = result.payload
 
         # 验证令牌类型
         if payload.get("token_type") != "access":
@@ -113,6 +134,70 @@ async def get_optional_current_user(
     try:
         return await get_current_user_id(credentials)
     except HTTPException:
+        return None
+
+
+async def get_current_user_info(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> TokenValidationResult:
+    """
+    获取当前用户的完整验证信息（包括缓存信息）
+
+    Returns:
+        TokenValidationResult: 包含payload和用户信息的完整验证结果
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="缺少认证令牌",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        # 使用增强的JWT验证器获取完整用户信息
+        result = await validate_jwt_token(credentials.credentials)
+
+        # 验证令牌类型
+        if result.payload.get("token_type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="令牌类型错误"
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"认证失败: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
+async def get_current_user_info_optional(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> TokenValidationResult | None:
+    """
+    获取当前用户的完整验证信息（可选）
+
+    Returns:
+        TokenValidationResult | None: 包含payload和用户信息的完整验证结果，或None
+    """
+    if not credentials:
+        return None
+
+    try:
+        result = await validate_jwt_token(credentials.credentials)
+
+        # 验证令牌类型
+        if result.payload.get("token_type") != "access":
+            return None
+
+        return result
+
+    except Exception:
         return None
 
 
