@@ -14,6 +14,5 @@ wheels/
 *.db-shm
 *.db-wal
 *.backup
-openspec
 prompts
 .DS_Store

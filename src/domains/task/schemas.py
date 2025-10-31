@@ -34,11 +34,19 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator, model_valida
 from pydantic_core import ValidationError
 
 # 导入相关模型
-from .models import TaskStatusConst, TaskPriorityConst
 from src.core.types import TaskStatus, TaskPriority
 # 认证模块已迁移到微服务，使用共用的UnifiedResponse
 
-# TaskStatus和TaskPriority现在从src.core.types导入
+# 定义常量（原来在models.py中）
+class TaskStatusConst:
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+class TaskPriorityConst:
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 # ===== 请求Schema =====

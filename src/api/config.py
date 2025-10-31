@@ -29,8 +29,8 @@ class APIConfig(BaseSettings):
 
     # API配置
     api_prefix: str = Field(default="", description="API路径前缀")
-    api_host: str = Field(default="0.0.0.0", description="API主机地址")
-    api_port: int = Field(default=8001, description="API端口")
+    api_host: str = Field(default="0.0.0.0", description="API主机地址", env="API_HOST")
+    api_port: int = Field(default=8001, description="API端口", env="API_PORT")
 
     # 数据库配置
     database_url: str = Field(
@@ -107,6 +107,16 @@ class APIConfig(BaseSettings):
     # 性能配置
     request_timeout: int = Field(default=30, description="请求超时时间(秒)")
     max_concurrent_requests: int = Field(default=1000, description="最大并发请求数")
+
+    # Task微服务配置
+    task_service_url: str = Field(
+        default="http://127.0.0.1:20252/api/v1",
+        description="Task微服务URL"
+    )
+    task_service_timeout: int = Field(
+        default=30,
+        description="Task微服务调用超时时间(秒)"
+    )
 
 
 # 全局配置实例

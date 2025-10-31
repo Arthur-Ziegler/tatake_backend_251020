@@ -37,7 +37,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # 导入数据库连接和服务
 from src.database.connection import get_engine
-from src.domains.task.service import TaskService
+from src.services.task_microservice_client import get_task_microservice_client
 from src.domains.points.service import PointsService
 
 # 配置日志
@@ -49,19 +49,19 @@ def get_task_service_context() -> Generator[Dict[str, Any], None, None]:
     """
     获取任务服务上下文管理器
 
-    创建和管理数据库Session，注入TaskService和PointsService实例，
+    创建和管理数据库Session，注入Task微服务客户端和PointsService实例，
     确保资源正确释放和事务管理。
 
     功能特性：
     - 自动创建数据库Session
-    - 注入TaskService和PointsService
+    - 注入Task微服务客户端和PointsService
     - 异常时自动回滚事务
     - 确保Session正确关闭
 
     Yields:
         Dict[str, Any]: 包含以下键的上下文字典：
             - 'session': 数据库Session实例
-            - 'task_service': TaskService实例
+            - 'task_client': Task微服务客户端实例
             - 'points_service': PointsService实例
 
     Raises:
@@ -70,7 +70,7 @@ def get_task_service_context() -> Generator[Dict[str, Any], None, None]:
 
     Example:
         >>> with get_task_service_context() as ctx:
-        ...     task_service = ctx['task_service']
+        ...     task_client = ctx['task_client']
         ...     points_service = ctx['points_service']
         ...     session = ctx['session']
         ...     # 执行业务逻辑
@@ -88,13 +88,13 @@ def get_task_service_context() -> Generator[Dict[str, Any], None, None]:
         # 创建PointsService实例
         points_service = PointsService(session)
 
-        # 创建TaskService实例，注入PointsService
-        task_service = TaskService(session, points_service)
+        # 创建Task微服务客户端实例
+        task_client = get_task_microservice_client()
 
         # 构建上下文字典
         context = {
             'session': session,
-            'task_service': task_service,
+            'task_client': task_client,
             'points_service': points_service
         }
 

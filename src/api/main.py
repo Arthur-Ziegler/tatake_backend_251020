@@ -38,17 +38,13 @@ async def lifespan(app: FastAPI):
     print(f"🚀 {config.app_name} v{config.app_version} 正在启动...")
     print(f"📝 环境: {'开发' if config.debug else '生产'}")
     print(f"🌐 API服务地址: http://{config.api_host}:{config.api_port}{config.api_prefix}")
+    print(f"⚙️ 端口配置来源: {('环境变量' if os.getenv('API_PORT') else '默认配置')}")
 
     # 认证功能已迁移到微服务，无需本地数据库
     print("✅ 认证微服务集成完成")
 
-    # 初始化任务数据库
-    from src.domains.task.database import initialize_task_database
-    try:
-        initialize_task_database()
-        print("✅ 任务数据库初始化完成")
-    except Exception as e:
-        print(f"❌ 任务数据库初始化失败: {e}")
+    # Task数据库已迁移到微服务，无需本地初始化
+    print("✅ Task微服务集成完成")
 
     # 初始化奖励数据库
     from src.domains.reward.database import initialize_reward_database
@@ -65,16 +61,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"❌ 奖励数据库初始化失败: {e}")
 
-    # 初始化聊天数据库
-    from src.domains.chat.database import create_tables, check_connection
-    try:
-        if check_connection():
-            create_tables()
-            print("✅ 聊天数据库初始化完成")
-        else:
-            print("❌ 聊天数据库连接失败")
-    except Exception as e:
-        print(f"❌ 聊天数据库初始化失败: {e}")
+    # 聊天功能暂时禁用，依赖Task服务重构
+    print("✅ 聊天功能暂时禁用（依赖Task微服务迁移）")
 
     # 初始化Focus数据库
     from src.domains.focus.database import create_focus_tables
@@ -164,27 +152,33 @@ async def root():
 @app.get("/health", tags=["系统"])
 async def health_check():
     """健康检查端点 - 检查微服务和数据库状态"""
-    from ...services.auth.client import AuthMicroserviceClient
+    from src.services.auth.client import AuthMicroserviceClient
 
     # 检查认证微服务
     auth_client = AuthMicroserviceClient()
     try:
         auth_response = await auth_client.health_check()
-        is_auth_healthy = auth_response.get("status") == "healthy"
+        is_auth_healthy = auth_response.get("data", {}).get("status") == "healthy"
     except Exception as e:
         print(f"认证微服务健康检查失败: {str(e)}")
         is_auth_healthy = False
 
-    # 检查任务数据库
-    from src.domains.task.database import get_database_info as get_task_db_info
-    task_db_info = get_task_db_info()
-    is_task_healthy = task_db_info.get("status") == "healthy"
+    # 检查Task微服务
+    from src.services.task_microservice_client import get_task_microservice_client
+    task_client = get_task_microservice_client()
+    try:
+        is_task_healthy = await task_client.health_check()
+    except Exception as e:
+        print(f"Task微服务健康检查失败: {str(e)}")
+        is_task_healthy = False
+        task_db_info = {"status": "unhealthy", "type": "microservice"}
+    else:
+        task_db_info = {"status": "healthy", "type": "microservice"}
 
-    # 检查聊天数据库
-    from src.domains.chat.database import check_connection as check_chat_connection
-    is_chat_healthy = check_chat_connection()
+    # 聊天功能暂时禁用
+    is_chat_healthy = False
 
-    overall_healthy = is_auth_healthy and is_task_healthy and is_chat_healthy
+    overall_healthy = is_auth_healthy and is_task_healthy  # 聊天功能暂时禁用
 
     return create_success_response(
         data={
@@ -197,7 +191,7 @@ async def health_check():
             "version": f"{config.app_name} v{config.app_version}",
             "database": {
                 "auth": "microservice" if is_auth_healthy else "disconnected",
-                "task": "connected" if is_task_healthy else "disconnected",
+                "task": "microservice" if is_task_healthy else "disconnected",
                 "chat": "connected" if is_chat_healthy else "disconnected"
             }
         },
@@ -209,11 +203,10 @@ async def health_check():
 @app.get(f"{config.api_prefix}/info", tags=["系统"])
 async def api_info():
     """API信息端点 - 显示微服务架构信息"""
-    from src.domains.task.database import get_database_info as get_task_db_info
-    from src.domains.chat.database import get_database_info as get_chat_db_info
-
-    task_db_info = get_task_db_info()
-    chat_db_info = get_chat_db_info()
+    # Task数据库已迁移到微服务
+    task_db_info = {"status": "migrated", "type": "microservice", "provider": "Task Service (http://127.0.0.1:20252)"}
+    # 聊天功能暂时禁用
+    chat_db_info = {"status": "disabled", "reason": "Task microservice migration dependency"}
 
     return create_success_response(
         data={
@@ -261,9 +254,9 @@ async def api_info():
 from src.api.auth import auth_router  # 使用新的微服务认证路由
 from src.domains.task.router import router as task_router
 from src.domains.reward.router import router as reward_router, points_router
-from src.domains.top3.api import router as top3_router
-from src.domains.chat.router import router as chat_router
-from src.domains.focus.router import router as focus_router
+from src.domains.top3.router import router as top3_router
+# from src.domains.chat.router import router as chat_router  # 临时禁用，依赖已删除的task.service
+# from src.domains.focus.router import router as focus_router  # 临时禁用
 # from src.domains.user.router import router as user_router  # 临时禁用，待修复auth依赖
 
 # 使用微服务认证路由（不再需要前缀，因为路径已经包含/auth）
@@ -280,13 +273,13 @@ app.include_router(points_router, prefix=config.api_prefix)
 app.include_router(top3_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
-app.include_router(chat_router, prefix=config.api_prefix)
+# app.include_router(chat_router, prefix=config.api_prefix)  # 临时禁用，依赖已删除的task.service
 
 # 使用用户管理路由
 # app.include_router(user_router, prefix=config.api_prefix)  # 临时禁用，待修复auth依赖
 
 # 使用Focus番茄钟领域路由
-app.include_router(focus_router, prefix=config.api_prefix)
+# app.include_router(focus_router, prefix=config.api_prefix)  # 临时禁用
 
 # CORS 测试端点 - 验证 CORS 配置
 @app.get("/test-cors", tags=["系统"])

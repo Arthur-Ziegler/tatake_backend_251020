@@ -95,7 +95,6 @@ class SMSVerifyRequest(BaseModel):
     phone: str = Field(..., pattern=r'^1[3-9]\d{9}$', description="手机号")
     code: str = Field(..., pattern=r'^\d{6}$', description="验证码")
     scene: str = Field(..., pattern=r'^(register|login|bind)$', description="使用场景")
-    wechat_openid: Optional[str] = Field(None, max_length=100, description="微信OpenID（可选）")
 
 
 # ==================== 路由配置 ====================
@@ -400,7 +399,6 @@ async def phone_send_code(
 @router.post("/phone/verify", response_model=UnifiedResponse, summary="手机验证码验证")
 async def phone_verify(
     request: SMSVerifyRequest,
-    current_user_id: Optional[str] = Depends(get_current_user_id),
     auth_client: AuthMicroserviceClient = Depends(get_auth_client),
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> UnifiedResponse:
@@ -408,11 +406,25 @@ async def phone_verify(
     验证短信验证码
 
     验证短信验证码，支持手机注册、手机登录、手机绑定三种业务场景。
+
+    认证逻辑：
+    - register/login场景：无需认证
+    - bind场景：需要JWT认证
     """
     try:
-        token = credentials.credentials if credentials and request.scene == "bind" else None
+        # 只有bind场景需要认证
+        if request.scene == "bind":
+            if not credentials:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="绑定场景需要认证令牌"
+                )
+            token = credentials.credentials
+        else:
+            token = None
+
         response = await auth_client.phone_verify(
-            request.phone, request.code, request.scene, token, request.wechat_openid
+            request.phone, request.code, request.scene, token
         )
         return UnifiedResponse(**response)
     except HTTPException:
