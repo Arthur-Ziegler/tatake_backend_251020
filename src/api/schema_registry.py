@@ -25,8 +25,7 @@ from src.core.types import TaskStatus, TaskPriority
 
 from src.domains.chat.schemas import (
     ChatMessageRequest, ChatHistoryResponse,
-    DeleteSessionResponse, ChatHealthResponse,
-    SessionListItem, ChatHistoryMessage
+    DeleteSessionResponse, SessionListItem, ChatHistoryMessage
 )
 
 from src.domains.focus.schemas import (
