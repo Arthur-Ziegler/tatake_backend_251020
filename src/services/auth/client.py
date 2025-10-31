@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 
 import httpx
 from fastapi import HTTPException, status
+from dotenv import load_dotenv
 
 from src.api.config import config
 
@@ -44,6 +45,9 @@ class AuthMicroserviceClient:
             base_url: 微服务基础URL，默认从环境变量读取
             project: 项目标识，默认从环境变量读取
         """
+        # 强制重新加载.env文件，确保获取最新配置
+        load_dotenv(override=True)
+
         self.base_url = (base_url or
                         os.getenv("AUTH_MICROSERVICE_URL", "http://localhost:8987")).rstrip('/')
 
@@ -130,6 +134,13 @@ class AuthMicroserviceClient:
 
                 # 检查HTTP状态码
                 if response.status_code >= 400:
+                    # 对429错误（请求过于频繁）提供更友好的错误提示
+                    if response.status_code == 429:
+                        raise HTTPException(
+                            status_code=429,
+                            detail="发送验证码过于频繁，请稍后再试。通常需要等待60秒后才能重新发送。"
+                        )
+
                     error_msg = f"认证微服务请求失败: HTTP {response.status_code}"
                     try:
                         error_detail = response.json()
@@ -218,7 +229,8 @@ class AuthMicroserviceClient:
             包含认证令牌的响应数据
         """
         return await self._make_request("POST", "/auth/wechat/register", {
-            "wechat_openid": wechat_openid
+            "wechat_openid": wechat_openid,
+            "project": self.project
         })
 
     async def wechat_login(self, wechat_openid: str) -> Dict[str, Any]:
@@ -234,7 +246,8 @@ class AuthMicroserviceClient:
             包含认证令牌的响应数据
         """
         return await self._make_request("POST", "/auth/wechat/login", {
-            "wechat_openid": wechat_openid
+            "wechat_openid": wechat_openid,
+            "project": self.project
         })
 
     async def wechat_bind(self, wechat_openid: str, token: str) -> Dict[str, Any]:
@@ -359,7 +372,8 @@ class AuthMicroserviceClient:
 
         return await self._make_request("POST", "/auth/phone/send-code", {
             "phone": phone,
-            "scene": scene
+            "scene": scene,
+            "project": self.project
         }, headers=headers)
 
     async def phone_verify(
@@ -392,7 +406,8 @@ class AuthMicroserviceClient:
         data = {
             "phone": phone,
             "code": code,
-            "scene": scene
+            "scene": scene,
+            "project": self.project
         }
         if wechat_openid:
             data["wechat_openid"] = wechat_openid

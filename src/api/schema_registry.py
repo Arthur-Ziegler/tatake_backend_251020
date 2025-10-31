@@ -9,11 +9,10 @@ from typing import Dict, Any, Type
 from pydantic import BaseModel
 
 # 手动导入所有域的Schema，确保它们被Python解释器加载
-# 认证模块已迁移到微服务，新的认证模型在 src.api.auth 中定义
+# 认证模块已简化为4个核心接口，模型在 src.api.auth 中定义
 from src.api.auth import (
-    UnifiedResponse, GuestInitRequest, WeChatRegisterRequest, WeChatLoginRequest,
-    GuestUpgradeRequest, TokenRefreshRequest, EmailSendRequest, EmailRegisterRequest,
-    EmailLoginRequest, EmailBindRequest, SMSSendRequest, SMSVerifyRequest
+    UnifiedResponse, WeChatLoginRequest, TokenRefreshRequest,
+    SMSSendRequest, SMSVerifyRequest
 )
 
 from src.domains.task.schemas import (
@@ -56,17 +55,10 @@ from src.domains.user.schemas import (
 
 # 所有需要注册的Schema模型
 ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
-    # 认证系统（微服务模式）
+    # 认证系统（简化版 - 4个核心接口）
     "UnifiedResponse": UnifiedResponse,
-    "GuestInitRequest": GuestInitRequest,
-    "WeChatRegisterRequest": WeChatRegisterRequest,
     "WeChatLoginRequest": WeChatLoginRequest,
-    "GuestUpgradeRequest": GuestUpgradeRequest,
     "TokenRefreshRequest": TokenRefreshRequest,
-    "EmailSendRequest": EmailSendRequest,
-    "EmailRegisterRequest": EmailRegisterRequest,
-    "EmailLoginRequest": EmailLoginRequest,
-    "EmailBindRequest": EmailBindRequest,
     "SMSSendRequest": SMSSendRequest,
     "SMSVerifyRequest": SMSVerifyRequest,
 
