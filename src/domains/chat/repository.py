@@ -35,13 +35,14 @@ class ChatRepository:
         """
         self.session = db_session or get_session()
 
-    def create_session(self, user_id: str, title: Optional[str] = None) -> ChatSession:
+    def create_session(self, user_id: str, title: Optional[str] = None, session_id: Optional[str] = None) -> ChatSession:
         """
         创建新会话
 
         Args:
             user_id: 用户ID
             title: 会话标题，如果为None则使用默认标题
+            session_id: 会话ID，如果为None则自动生成
 
         Returns:
             ChatSession: 创建的会话对象
@@ -50,8 +51,9 @@ class ChatRepository:
             Exception: 创建失败时抛出异常
         """
         try:
-            # 生成session_id
-            session_id = generate_session_id()
+            # 使用指定的session_id或生成新的
+            if session_id is None:
+                session_id = generate_session_id()
 
             # 如果没有标题，使用默认标题
             if not title:

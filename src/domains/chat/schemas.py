@@ -69,12 +69,3 @@ class DeleteSessionResponse(BaseModel):
     """删除会话响应"""
 
     success: bool = Field(..., description="删除是否成功", example=True)
-
-
-class ChatHealthResponse(BaseModel):
-    """聊天服务健康检查响应"""
-
-    status: str = Field(..., description="服务状态", example="healthy")
-    database: Dict[str, Any] = Field(..., description="数据库状态")
-    graph_initialized: bool = Field(..., description="图数据库是否已初始化", example=True)
-    timestamp: str = Field(..., description="时间戳", example="2025-11-01T05:17:04Z")

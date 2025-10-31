@@ -169,21 +169,24 @@ class ChatMicroserviceClient:
                 # 逐行读取流式响应
                 async for line in response.aiter_lines():
                     if line.strip():
-                        try:
-                            # 尝试解析JSON行
-                            data = json.loads(line)
-                            if isinstance(data, dict) and "content" in data:
-                                # 如果是包含content的JSON，提取content字段
-                                yield data["content"]
-                            elif isinstance(data, str):
-                                # 如果是纯字符串，直接返回
-                                yield data
-                        except json.JSONDecodeError:
-                            # 如果不是JSON，直接返回字符串
+                        # 处理SSE格式: data: {"type":"token","content":"我"}
+                        if line.startswith('data: '):
+                            json_str = line[6:]  # 去掉 'data: ' 前缀
+                            try:
+                                data = json.loads(json_str)
+                                if isinstance(data, dict):
+                                    if data.get('type') == 'token' and 'content' in data:
+                                        # 提取token的content字段
+                                        yield data['content']
+                                    elif data.get('type') == 'done':
+                                        # 流式结束，停止生成
+                                        break
+                            except json.JSONDecodeError:
+                                # 如果不是JSON，直接返回字符串
+                                yield json_str
+                        else:
+                            # 非SSE格式，直接返回
                             yield line
-                        except Exception as e:
-                            self.logger.warning(f"解析流式响应行失败: {line}, error: {e}")
-                            continue
 
         except httpx.RequestError as e:
             error_msg = f"流式聊天网络请求失败: {e}"

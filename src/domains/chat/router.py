@@ -36,8 +36,7 @@ from .schemas import (
     ChatHistoryResponse,
     ChatHistoryMessage,
     ChatMessageRequest,
-    DeleteSessionResponse,
-    ChatHealthResponse
+    DeleteSessionResponse
 )
 from src.api.dependencies import get_current_user_id
 from src.api.schemas import UnifiedResponse
@@ -245,7 +244,7 @@ async def chat_stream(
         if not session:
             from .utils import generate_default_title
             default_title = generate_default_title()
-            session = repository.create_session(str(user_id), default_title)
+            session = repository.create_session(str(user_id), default_title, session_id)
             logger.info(f"自动创建新会话: session_id={session_id}, user_id={user_id}, title={default_title}")
         else:
             # 更新会话时间戳
@@ -293,44 +292,4 @@ async def chat_stream(
         return StreamingResponse(
             error_stream(),
             media_type="text/plain; charset=utf-8"
-        )
-
-
-@router.get("/health", response_model=UnifiedResponse[ChatHealthResponse], summary="聊天服务健康检查")
-async def chat_health_check() -> UnifiedResponse[ChatHealthResponse]:
-    """聊天服务健康检查"""
-    try:
-        from datetime import datetime, timezone
-
-        # 检查数据库连接
-        database_status = {"status": "connected"}
-        try:
-            repository = ChatRepository()
-            # 尝试执行一个简单查询来验证数据库连接
-            sessions = repository.get_user_sessions("health_check_test")
-            database_status["connected"] = True
-        except Exception as db_error:
-            logger.warning(f"数据库连接检查失败: {db_error}")
-            database_status = {"status": "disconnected", "error": str(db_error)}
-
-        # 构造健康检查响应
-        health_response = ChatHealthResponse(
-            status="healthy",
-            database=database_status,
-            graph_initialized=True,  # 简化版本，总是返回True
-            timestamp=datetime.now(timezone.utc).isoformat()
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=health_response,
-            message="聊天服务健康"
-        )
-
-    except Exception as e:
-        logger.error(f"健康检查失败: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="健康检查失败"
         )

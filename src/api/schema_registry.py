@@ -79,7 +79,6 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "ChatMessageRequest": ChatMessageRequest,
     "ChatHistoryResponse": ChatHistoryResponse,
     "DeleteSessionResponse": DeleteSessionResponse,
-    "ChatHealthResponse": ChatHealthResponse,
     "SessionListItem": SessionListItem,
     "ChatHistoryMessage": ChatHistoryMessage,
 
