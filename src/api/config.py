@@ -118,6 +118,37 @@ class APIConfig(BaseSettings):
         description="Task微服务调用超时时间(秒)"
     )
 
+    # 聊天微服务配置
+    chat_service_url: str = Field(
+        default="http://45.152.65.130:20252",
+        description="聊天微服务URL"
+    )
+    chat_service_timeout: int = Field(
+        default=30,
+        description="聊天微服务调用超时时间(秒)"
+    )
+
 
 # 全局配置实例
 config = APIConfig()
+
+
+# 配置访问方法
+def get_chat_service_url() -> str:
+    """获取聊天微服务URL"""
+    return config.chat_service_url
+
+
+def get_chat_service_timeout() -> str:
+    """获取聊天微服务超时时间"""
+    return str(config.chat_service_timeout)
+
+
+def get_task_service_url() -> str:
+    """获取Task微服务URL"""
+    return config.task_service_url
+
+
+def get_task_service_timeout() -> str:
+    """获取Task微服务超时时间"""
+    return str(config.task_service_timeout)

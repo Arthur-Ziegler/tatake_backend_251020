@@ -24,10 +24,9 @@ from src.domains.task.schemas import (
 from src.core.types import TaskStatus, TaskPriority
 
 from src.domains.chat.schemas import (
-    SendMessageRequest, MessageResponse, ChatHistoryResponse,
-    CreateSessionRequest, ChatSessionResponse, SessionListResponse,
-    SessionInfoResponse, DeleteSessionResponse, ChatHealthResponse,
-    ChatMessageItem, ChatSessionItem
+    ChatMessageRequest, ChatHistoryResponse,
+    DeleteSessionResponse, ChatHealthResponse,
+    SessionListItem, ChatHistoryMessage
 )
 
 from src.domains.focus.schemas import (
@@ -77,17 +76,12 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     # 枚举类型已经集成在各自的Schema中，无需单独注册
 
     # 聊天系统
-    "SendMessageRequest": SendMessageRequest,
-    "MessageResponse": MessageResponse,
+    "ChatMessageRequest": ChatMessageRequest,
     "ChatHistoryResponse": ChatHistoryResponse,
-    "CreateSessionRequest": CreateSessionRequest,
-    "ChatSessionResponse": ChatSessionResponse,
-    "SessionListResponse": SessionListResponse,
-    "SessionInfoResponse": SessionInfoResponse,
     "DeleteSessionResponse": DeleteSessionResponse,
     "ChatHealthResponse": ChatHealthResponse,
-    "ChatMessageItem": ChatMessageItem,
-    "ChatSessionItem": ChatSessionItem,
+    "SessionListItem": SessionListItem,
+    "ChatHistoryMessage": ChatHistoryMessage,
 
     # 番茄钟系统
     "StartFocusRequest": StartFocusRequest,

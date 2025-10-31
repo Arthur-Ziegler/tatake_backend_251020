@@ -61,8 +61,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"❌ 奖励数据库初始化失败: {e}")
 
-    # 聊天功能暂时禁用，依赖Task服务重构
-    print("✅ 聊天功能暂时禁用（依赖Task微服务迁移）")
+    # 聊天功能已启用，基于本地LLM实现
+    print("✅ 聊天功能已启用（本地LLM实现）")
 
     # 初始化Focus数据库
     from src.domains.focus.database import create_focus_tables
@@ -175,10 +175,10 @@ async def health_check():
     else:
         task_db_info = {"status": "healthy", "type": "microservice"}
 
-    # 聊天功能暂时禁用
-    is_chat_healthy = False
+    # 聊天功能已启用
+    is_chat_healthy = True
 
-    overall_healthy = is_auth_healthy and is_task_healthy  # 聊天功能暂时禁用
+    overall_healthy = is_auth_healthy and is_task_healthy and is_chat_healthy
 
     return create_success_response(
         data={
@@ -382,7 +382,7 @@ from src.api.auth import auth_router  # 使用新的微服务认证路由
 from src.domains.task.router import router as task_router
 from src.domains.reward.router import router as reward_router, points_router
 from src.domains.top3.router import router as top3_router
-# from src.domains.chat.router import router as chat_router  # 临时禁用，依赖已删除的task.service
+from src.domains.chat.router import router as chat_router
 from src.domains.focus.router import router as focus_router
 # from src.domains.user.router import router as user_router  # 临时禁用，待修复auth依赖
 
@@ -400,7 +400,7 @@ app.include_router(points_router, prefix=config.api_prefix)
 app.include_router(top3_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
-# app.include_router(chat_router, prefix=config.api_prefix)  # 临时禁用，依赖已删除的task.service
+app.include_router(chat_router, prefix=config.api_prefix)
 
 # 使用用户管理路由
 # app.include_router(user_router, prefix=config.api_prefix)  # 临时禁用，待修复auth依赖

@@ -1,487 +1,336 @@
 """
 Chat领域API路由
 
-提供基于LangGraph的聊天功能的HTTP API端点，实现RESTful接口设计。
+提供简化版聊天功能的4个核心HTTP API端点。
 
-API端点设计：
-1. POST /chat/sessions - 创建聊天会话
-2. POST /chat/sessions/{session_id}/messages - 发送消息
-3. GET /chat/sessions/{session_id}/messages - 获取聊天历史
-4. GET /chat/sessions/{session_id} - 获取会话信息
-5. GET /chat/sessions - 获取会话列表
+核心接口设计：
+1. GET /chat/sessions - 查询所有会话列表
+2. GET /chat/sessions/{session_id}/messages - 查询聊天记录
+3. DELETE /chat/sessions/{session_id} - 删除会话
+4. POST /chat/sessions/{session_id}/chat - 聊天接口（流式）
 
 设计原则：
-1. RESTful设计：遵循REST API设计规范
-2. 统一响应格式：所有API返回统一格式
-3. 详细参数验证：使用Pydantic进行请求验证
-4. 完整错误处理：提供详细的错误信息
-5. 自动文档生成：支持FastAPI自动文档
-
-权限控制：
-- 所有API都需要JWT认证
-- 用户只能操作自己的聊天会话
-- 自动从JWT token中提取用户ID
-
-响应格式：
-{
-    "code": 200,
-    "data": {...},
-    "message": "success"
-}
+1. 极简化：只包含必要的功能
+2. 统一响应：UnifiedResponse包装（除流式外）
+3. 本地存储：SQLite存储会话信息
+4. 流式响应：长连接保持5分钟
+5. 自动创建session：聊天时自动创建会话
 
 作者：TaKeKe团队
-版本：1.0.0
+版本：2.0.0 - 简化版本
 """
 
 import logging
-from typing import Dict, Any, Optional
+import os
+import json
+from typing import List, Dict, Any
 from uuid import UUID
+from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.responses import StreamingResponse
+from starlette.responses import Response
 
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-
-from .service_separated import SeparatedChatService
-
-# 创建分离的聊天服务实例
-chat_service = SeparatedChatService()
-
+from .models import init_chat_database, ChatSession
+from .repository import ChatRepository
 from .schemas import (
-    CreateSessionRequest,
-    SendMessageRequest,
-    ChatSessionResponse,
-    MessageResponse,
-    SessionInfoResponse,
-    SessionListResponse,
+    SessionListItem,
     ChatHistoryResponse,
-    ChatMessageItem,
-    ChatSessionItem,
+    ChatHistoryMessage,
+    ChatMessageRequest,
     DeleteSessionResponse,
-    ChatHealthResponse,
-    UnifiedResponse
+    ChatHealthResponse
 )
-
 from src.api.dependencies import get_current_user_id
-from src.utils.api_validators import SessionId
+from src.api.schemas import UnifiedResponse
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
 # 创建路由器
-router = APIRouter(prefix="/chat", tags=["智能聊天"])
+router = APIRouter(prefix="/chat", tags=["聊天系统"])
+
+# 初始化聊天数据库
+try:
+    init_chat_database()
+    logger.info("聊天数据库初始化成功")
+except Exception as e:
+    logger.error(f"聊天数据库初始化失败: {e}")
 
 
-@router.post("/sessions", response_model=UnifiedResponse[ChatSessionResponse], summary="创建聊天会话")
-async def create_chat_session(
-    request: CreateSessionRequest,
+@router.get("/sessions", response_model=UnifiedResponse[List[SessionListItem]], summary="查询所有会话列表")
+async def get_sessions(
     user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[ChatSessionResponse]:
+) -> UnifiedResponse[List[SessionListItem]]:
     """
-    创建新的聊天会话
+    查询所有会话列表
 
-    Args:
-        request: 创建会话请求
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[ChatSessionResponse]: 会话创建结果
-
-    Raises:
-        HTTPException: 创建失败时抛出
+    - 输入：token（带有userid信息）
+    - 过程：从token解析出userid，查询这个用户的所有会话session
+    - 输出：一个列表，包含会话id，会话标题，只有两个东西
     """
     try:
-        logger.info(f"创建聊天会话请求: user_id={user_id}, title={request.title}")
+        repository = ChatRepository()
+        sessions = repository.get_user_sessions(str(user_id))
 
-        # 调用分离的聊天服务创建会话（将UUID转换为字符串）
-        result = chat_service.create_session(
-            user_id=str(user_id),
-            title=request.title
-        )
-
-        logger.info(f"聊天会话创建成功: user_id={user_id}, session_id={result['session_id']}")
-
-        # 构造响应数据模型（适配SeparatedChatService返回格式）
-        session_response = ChatSessionResponse(
-            session_id=result["session_id"],
-            title=result["title"],
-            created_at=result["created_at"],
-            welcome_message="",  # SeparatedChatService不返回welcome_message
-            status=result.get("status", "success")
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=session_response,
-            message="聊天会话创建成功"
-        )
-
-    except Exception as e:
-        logger.error(f"创建聊天会话失败: user_id={user_id}, error={e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message=f"创建会话失败: {str(e)}"
-        )
-
-
-@router.post("/sessions/{session_id}/send", response_model=UnifiedResponse[MessageResponse], summary="发送消息")
-async def send_chat_message(
-    session_id: SessionId,
-    request: SendMessageRequest,
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[MessageResponse]:
-    """
-    发送消息到聊天会话
-
-    Args:
-        session_id: 会话ID
-        request: 发送消息请求
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[MessageResponse]: 消息处理结果
-
-    Raises:
-        HTTPException: 发送失败时抛出
-    """
-    try:
-        logger.info(f"发送聊天消息请求: user_id={user_id}, session_id={session_id}")
-
-        # 调用聊天服务发送消息（将UUID转换为字符串）
-        result = chat_service.send_message(
-            user_id=str(user_id),
-            session_id=session_id,
-            message=request.message
-        )
-
-        logger.info(f"聊天消息发送成功: user_id={user_id}, session_id={session_id}")
-
-        # 构造响应数据模型
-        message_response = MessageResponse(
-            session_id=result["session_id"],
-            user_message=result["user_message"],
-            ai_response=result["ai_response"],
-            timestamp=result["timestamp"],
-            status=result.get("status", "success")
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=message_response,
-            message="消息发送成功"
-        )
-
-    except ValueError as e:
-        logger.warning(f"消息验证失败: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=400,
-            data=None,
-            message=str(e)
-        )
-    except Exception as e:
-        logger.error(f"发送聊天消息失败: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message=f"发送消息失败: {str(e)}"
-        )
-
-
-@router.get("/sessions/{session_id}/messages", response_model=UnifiedResponse[ChatHistoryResponse], summary="获取聊天历史记录")
-async def get_chat_history(
-    session_id: SessionId,
-    limit: int = Query(default=50, ge=1, le=1000, description="返回消息数量限制"),
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[ChatHistoryResponse]:
-    """
-    获取聊天历史记录
-
-    注意：SeparatedChatService暂时不支持聊天历史查询功能
-    该功能将在后续版本中实现，或通过LangGraph的checkpoint系统直接查询
-
-    Args:
-        session_id: 会话ID
-        limit: 返回消息数量限制
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[ChatHistoryResponse]: 消息历史记录
-
-    Raises:
-        HTTPException: 获取失败时抛出
-    """
-    try:
-        logger.info(f"获取聊天历史请求: user_id={user_id}, session_id={session_id}, limit={limit}")
-
-        # TODO: SeparatedChatService暂时不支持聊天历史查询
-        # 可以通过LangGraph的checkpoint系统实现，但需要额外的开发工作
-        # 目前返回空的历史记录
-
-        # 验证会话是否存在
-        session_result = chat_service.get_session_info(session_id)
-        if session_result["session"]["user_id"] != str(user_id):
-            return UnifiedResponse(
-                code=403,
-                data=None,
-                message="无权限访问该会话"
+        # 转换为简化的响应格式
+        session_list = [
+            SessionListItem(
+                session_id=session.session_id,
+                title=session.title
             )
+            for session in sessions
+        ]
 
-        # 构造空的响应数据模型
-        history_response = ChatHistoryResponse(
-            session_id=session_id,
-            messages=[],  # 暂时返回空列表
-            total_count=0,
-            limit=limit,
-            timestamp=session_result["session"]["updated_at"],
-            status="success",
-            note="聊天历史功能将在后续版本中实现"
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=history_response,
-            message="聊天历史获取成功（暂时返回空记录）"
-        )
-
-    except ValueError as e:
-        logger.warning(f"会话不存在: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=404,
-            data=None,
-            message=str(e)
-        )
-    except Exception as e:
-        logger.error(f"获取聊天历史失败: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message=f"获取聊天历史失败: {str(e)}"
-        )
-
-
-@router.get("/sessions/{session_id}", response_model=UnifiedResponse[SessionInfoResponse], summary="获取聊天会话信息")
-async def get_chat_session_info(
-    session_id: SessionId,
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[SessionInfoResponse]:
-    """
-    获取聊天会话信息
-
-    Args:
-        session_id: 会话ID
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[SessionInfoResponse]: 会话信息
-
-    Raises:
-        HTTPException: 获取失败时抛出
-    """
-    try:
-        logger.info(f"获取会话信息请求: user_id={user_id}, session_id={session_id}")
-
-        # 调用分离的聊天服务获取会话信息（将UUID转换为字符串）
-        result = chat_service.get_session_info(session_id)
-
-        logger.info(f"会话信息获取成功: user_id={user_id}, session_id={session_id}")
-
-        # 验证用户权限
-        if result["session"]["user_id"] != str(user_id):
-            return UnifiedResponse(
-                code=403,
-                data=None,
-                message="无权限访问该会话"
-            )
-
-        # 构造响应数据模型（适配SeparatedChatService返回格式）
-        session_info = SessionInfoResponse(
-            session_id=result["session"]["session_id"],
-            title=result["session"]["title"],
-            message_count=result["session"]["message_count"],
-            created_at=result["session"]["created_at"],
-            updated_at=result["session"]["updated_at"],
-            status=result.get("status", "success")
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=session_info,
-            message="会话信息获取成功"
-        )
-
-    except ValueError as e:
-        logger.warning(f"会话不存在: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=404,
-            data=None,
-            message=str(e)
-        )
-    except Exception as e:
-        logger.error(f"获取会话信息失败: user_id={user_id}, session_id={session_id}, error={e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message=f"获取会话信息失败: {str(e)}"
-        )
-
-
-@router.get("/sessions", response_model=UnifiedResponse[SessionListResponse], summary="获取用户的聊天会话列表")
-async def list_chat_sessions(
-    limit: int = Query(default=20, ge=1, le=100, description="返回会话数量限制"),
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[SessionListResponse]:
-    """
-    获取用户的聊天会话列表
-
-    Args:
-        limit: 返回会话数量限制
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[SessionListResponse]: 会话列表
-
-    Raises:
-        HTTPException: 获取失败时抛出
-    """
-    try:
-        logger.info(f"获取会话列表请求: user_id={user_id}, limit={limit}")
-
-        # 调用分离的聊天服务获取会话列表（将UUID转换为字符串）
-        result = chat_service.get_sessions(
-            user_id=str(user_id),
-            limit=limit
-        )
-
-        logger.info(f"会话列表获取成功: user_id={user_id}, count={result['total']}")
-
-        # 构造会话列表
-        sessions = []
-        for session in result["sessions"]:
-            sessions.append(ChatSessionItem(
-                session_id=session["session_id"],
-                title=session["title"],
-                message_count=session["message_count"],
-                created_at=session["created_at"],
-                updated_at=session["updated_at"]
-            ))
-
-        # 构造响应数据模型（适配SeparatedChatService返回格式）
-        session_list = SessionListResponse(
-            user_id=str(user_id),
-            sessions=sessions,
-            total_count=result["total"],
-            limit=result["limit"],
-            timestamp="",  # SeparatedChatService不返回timestamp
-            status=result["status"],
-            note=""
-        )
-
+        logger.info(f"获取用户会话列表成功: user_id={user_id}, count={len(session_list)}")
         return UnifiedResponse(
             code=200,
             data=session_list,
-            message="会话列表获取成功"
+            message="获取会话列表成功"
         )
 
     except Exception as e:
         logger.error(f"获取会话列表失败: user_id={user_id}, error={e}")
         return UnifiedResponse(
             code=500,
-            data=None,
-            message=f"获取会话列表失败: {str(e)}"
+            data=[],
+            message="获取会话列表失败"
         )
 
 
-@router.delete("/sessions/{session_id}", response_model=UnifiedResponse[DeleteSessionResponse], summary="删除聊天会话")
-async def delete_chat_session(
-    session_id: SessionId,
+@router.get("/sessions/{session_id}/messages", response_model=UnifiedResponse[ChatHistoryResponse], summary="查询聊天记录")
+async def get_chat_history(
+    session_id: str,
     user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[DeleteSessionResponse]:
+) -> UnifiedResponse[ChatHistoryResponse]:
     """
-    删除聊天会话
+    查询聊天记录
 
-    Args:
-        session_id: 会话ID
-        user_id: 当前用户ID
-
-    Returns:
-        UnifiedResponse[DeleteSessionResponse]: 删除结果
-
-    Raises:
-        HTTPException: 删除失败时抛出
+    - 输入：token，sessionid
+    - 过程：先验证userid是不是这个session的主人，如果是，就返回这个session的消息列表
+    - 输出：一个json，包含：sessionid，session标题，session所有聊天记录；聊天记录是一个列表，分别是role，content和time。其中role只有assistant和human，time是UTC标准时间，context就是字符串。
     """
     try:
-        logger.info(f"删除会话请求: user_id={user_id}, session_id={session_id}")
+        repository = ChatRepository()
 
-        # 调用分离的聊天服务删除会话（SeparatedChatService不需要user_id参数）
-        result = chat_service.delete_session(session_id)
+        # 验证会话是否存在且属于该用户
+        session = repository.get_session_by_id(session_id, str(user_id))
+        if not session:
+            logger.warning(f"访问不存在的会话: session_id={session_id}, user_id={user_id}")
+            return UnifiedResponse(
+                code=404,
+                data=None,
+                message="会话不存在或无权限访问"
+            )
 
-        logger.info(f"会话删除成功: user_id={user_id}, session_id={session_id}")
+        # 从微服务获取聊天记录
+        from src.services.chat_microservice_client import get_chat_microservice_client
+        client = get_chat_microservice_client()
 
-        # 构造响应数据模型（适配SeparatedChatService返回格式）
-        delete_response = DeleteSessionResponse(
-            session_id=result["session_id"],
-            status=result["status"],
-            timestamp=result.get("deleted_at", ""),
-            note="会话已软删除"
-        )
+        try:
+            # 调用微服务获取消息历史
+            response = await client.get_session_messages(session_id=session_id)
 
-        return UnifiedResponse(
-            code=200,
-            data=delete_response,
-            message="会话删除成功"
-        )
+            # 转换微服务响应格式为本地格式
+            if response.get("code") == 200 and "data" in response:
+                microservice_data = response["data"]
+
+                # 转换消息格式
+                messages = []
+                for msg in microservice_data.get("messages", []):
+                    messages.append(ChatHistoryMessage(
+                        role=msg["role"],  # human/assistant
+                        content=msg["content"],
+                        time=msg["created_at"]  # UTC时间
+                    ))
+
+                chat_history = ChatHistoryResponse(
+                    session_id=session_id,
+                    title=session.title,
+                    messages=messages
+                )
+
+                logger.info(f"获取聊天记录成功: session_id={session_id}, user_id={user_id}, 消息数量={len(messages)}")
+                return UnifiedResponse(
+                    code=200,
+                    data=chat_history,
+                    message="获取聊天记录成功"
+                )
+            else:
+                error_msg = response.get("message", "未知错误")
+                logger.error(f"微服务获取聊天记录失败: {error_msg}")
+                return UnifiedResponse(
+                    code=response.get("code", 500),
+                    data=None,
+                    message=f"获取聊天记录失败: {error_msg}"
+                )
+
+        except Exception as e:
+            logger.error(f"调用聊天微服务失败: session_id={session_id}, error={e}")
+            return UnifiedResponse(
+                code=500,
+                data=None,
+                message="聊天微服务暂时不可用"
+            )
 
     except Exception as e:
-        logger.error(f"删除会话失败: user_id={user_id}, session_id={session_id}, error={e}")
+        logger.error(f"获取聊天记录失败: session_id={session_id}, user_id={user_id}, error={e}")
         return UnifiedResponse(
             code=500,
             data=None,
-            message=f"删除会话失败: {str(e)}"
+            message="获取聊天记录失败"
+        )
+
+
+@router.delete("/sessions/{session_id}", response_model=UnifiedResponse[DeleteSessionResponse], summary="删除会话")
+async def delete_session(
+    session_id: str,
+    user_id: UUID = Depends(get_current_user_id)
+) -> UnifiedResponse[DeleteSessionResponse]:
+    """
+    删除会话
+
+    - 输入：token，session id
+    - 过程：把这个session对应的session表信息与message信息全删掉
+    - 结果：删除成功返回
+    """
+    try:
+        repository = ChatRepository()
+
+        # 删除本地会话记录
+        success = repository.delete_session(session_id, str(user_id))
+
+        if success:
+            logger.info(f"删除会话成功: session_id={session_id}, user_id={user_id}")
+            return UnifiedResponse(
+                code=200,
+                data=DeleteSessionResponse(success=True),
+                message="删除会话成功"
+            )
+        else:
+            logger.warning(f"删除会话失败，会话不存在: session_id={session_id}, user_id={user_id}")
+            return UnifiedResponse(
+                code=404,
+                data=DeleteSessionResponse(success=False),
+                message="会话不存在或无权限删除"
+            )
+
+    except Exception as e:
+        logger.error(f"删除会话失败: session_id={session_id}, user_id={user_id}, error={e}")
+        return UnifiedResponse(
+            code=500,
+            data=DeleteSessionResponse(success=False),
+            message="删除会话失败"
+        )
+
+
+@router.post("/sessions/{session_id}/chat", summary="聊天接口（流式）")
+async def chat_stream(
+    session_id: str,
+    request: ChatMessageRequest,
+    user_id: UUID = Depends(get_current_user_id)
+) -> StreamingResponse:
+    """
+    聊天接口（流式）
+
+    - 输入：token，session id，message（字符串）
+    - 过程：如果session不存在，就先创建一个session，标题用会话+时间占位。如果存在，就接着这个session开始聊天。
+    - 输出：流式输出AI的返回结果，每一次就只有单纯的字符串，没有任何其他内容
+    """
+    try:
+        repository = ChatRepository()
+
+        # 检查会话是否存在
+        session = repository.get_session_by_id(session_id, str(user_id))
+
+        # 如果会话不存在，创建新会话
+        if not session:
+            from .utils import generate_default_title
+            default_title = generate_default_title()
+            session = repository.create_session(str(user_id), default_title)
+            logger.info(f"自动创建新会话: session_id={session_id}, user_id={user_id}, title={default_title}")
+        else:
+            # 更新会话时间戳
+            repository.update_session_timestamp(session_id, str(user_id))
+
+        # 调用微服务的聊天功能
+        from src.services.chat_microservice_client import get_chat_microservice_client
+        client = get_chat_microservice_client()
+
+        async def generate_stream():
+            """生成流式响应"""
+            try:
+                # 调用微服务流式聊天
+                async for token in client.stream_chat(
+                    session_id=session_id,
+                    message=request.message
+                ):
+                    # 直接返回微服务的token
+                    yield token
+
+            except Exception as e:
+                logger.error(f"流式聊天微服务调用失败: {e}")
+                yield "抱歉，聊天服务暂时不可用。"
+
+        logger.info(f"开始流式聊天: session_id={session_id}, user_id={user_id}, message={request.message[:50]}...")
+
+        # 返回流式响应，保持5分钟连接
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/plain; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"  # 禁用nginx缓冲
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"聊天接口失败: session_id={session_id}, user_id={user_id}, error={e}")
+
+        # 返回错误响应
+        async def error_stream():
+            yield "抱歉，聊天服务暂时不可用。"
+
+        return StreamingResponse(
+            error_stream(),
+            media_type="text/plain; charset=utf-8"
         )
 
 
 @router.get("/health", response_model=UnifiedResponse[ChatHealthResponse], summary="聊天服务健康检查")
 async def chat_health_check() -> UnifiedResponse[ChatHealthResponse]:
-    """
-    聊天服务健康检查
-
-    Returns:
-        UnifiedResponse[ChatHealthResponse]: 健康检查结果
-    """
+    """聊天服务健康检查"""
     try:
-        # SeparatedChatService简单健康检查
         from datetime import datetime, timezone
 
-        # 验证服务是否可以正常创建
-        service_status = "healthy"
-        database_status = "connected"
-
-        # 尝试获取SessionStore实例来验证数据库连接
+        # 检查数据库连接
+        database_status = {"status": "connected"}
         try:
-            from .session_store import get_session_store
-            session_store = get_session_store()
-            # 如果没有异常，认为数据库连接正常
+            repository = ChatRepository()
+            # 尝试执行一个简单查询来验证数据库连接
+            sessions = repository.get_user_sessions("health_check_test")
+            database_status["connected"] = True
         except Exception as db_error:
             logger.warning(f"数据库连接检查失败: {db_error}")
-            database_status = "disconnected"
-            service_status = "degraded"
+            database_status = {"status": "disconnected", "error": str(db_error)}
 
-        # 构造响应数据模型
+        # 构造健康检查响应
         health_response = ChatHealthResponse(
-            status=service_status,
+            status="healthy",
             database=database_status,
-            graph_initialized=True,  # SeparatedChatService使用简化的图初始化
+            graph_initialized=True,  # 简化版本，总是返回True
             timestamp=datetime.now(timezone.utc).isoformat()
         )
 
         return UnifiedResponse(
             code=200,
             data=health_response,
-            message="聊天服务健康检查成功"
+            message="聊天服务健康"
         )
 
     except Exception as e:
-        logger.error(f"聊天服务健康检查失败: {e}")
+        logger.error(f"健康检查失败: {e}")
         return UnifiedResponse(
             code=500,
             data=None,
-            message=f"聊天服务健康检查失败: {str(e)}"
+            message="健康检查失败"
         )
