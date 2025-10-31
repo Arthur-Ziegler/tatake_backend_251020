@@ -25,7 +25,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from .service import FocusService
-from .schemas import StartFocusRequest, FocusSessionResponse, FocusSessionListResponse, FocusOperationResponse
+from .schemas import StartFocusRequest, FocusSessionResponse, FocusSessionListResponse, FocusOperationResponse, PomodoroCountResponse
 from .exceptions import FocusException
 from .database import get_focus_session
 from src.api.dependencies import get_current_user_id
@@ -60,7 +60,7 @@ async def start_focus(
     """
     try:
         service = FocusService(session)
-        result = service.start_focus(user_id, request)  # 直接传入UUID对象
+        result = await service.start_focus(user_id, request)  # 直接传入UUID对象
         response_data = FocusOperationResponse(session=result)
         return UnifiedResponse(
             code=200,
@@ -236,4 +236,40 @@ async def get_focus_sessions(
             code=500,
             data=None,
             message="获取专注会话失败"
+        )
+
+
+@router.get("/pomodoro-count", response_model=UnifiedResponse[PomodoroCountResponse], summary="查看我的番茄数量")
+async def get_pomodoro_count(
+    user_id: UUID = Depends(get_current_user_id),
+    session: Session = Depends(get_focus_session)
+) -> UnifiedResponse[PomodoroCountResponse]:
+    """
+    查看我的番茄数量
+
+    统计用户完整番茄的数量：
+    - 计算规则：一个番茄是从focus开始到end之间的时间长度
+    - 时间超过25分钟就算一个完整的番茄
+    - pause不打断计时器（pause会话被忽略）
+
+    返回用户的所有完整番茄数量统计。
+
+    权限要求：需要登录
+    """
+    try:
+        service = FocusService(session)
+        pomodoro_count = service.get_pomodoro_count(user_id)
+
+        response_data = PomodoroCountResponse(pomodoro_count=pomodoro_count)
+        return UnifiedResponse(
+            code=200,
+            data=response_data,
+            message="获取番茄数量成功"
+        )
+    except Exception as e:
+        logger.error(f"获取番茄数量失败: {e}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="获取番茄数量失败"
         )

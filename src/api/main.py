@@ -216,37 +216,164 @@ async def api_info():
             "service_type": "microservice-enabled-api",
             "domains": {
                 "认证系统": {
-                    "endpoints": 12,  # 微服务提供的认证端点数量
+                    "endpoints": 4,  # 简化后的认证端点数量
                     "status": "active",
                     "type": "microservice",
-                    "provider": "Auth Service (http://45.152.65.130:8987)",
-                    "features": ["微信认证", "邮箱认证", "手机认证", "JWT验证"]
+                    "provider": "Auth Service (http://45.152.65.130:20251)",
+                    "features": ["微信认证", "手机认证", "智能检测", "自动注册", "JWT验证"]
                 },
                 "任务管理": {
-                    "endpoints": 5,
+                    "endpoints": 8,  # task微服务 + 本地接口
                     "status": "active",
                     "database": task_db_info
                 },
-                "智能聊天": {
-                    "endpoints": 7,
+                "番茄钟系统": {
+                    "endpoints": 6,
                     "status": "active",
-                    "database": chat_db_info
+                    "features": ["专注会话管理", "番茄统计", "状态追踪"]
+                },
+                "Top3管理": {
+                    "endpoints": 2,
+                    "status": "active",
+                    "features": ["设置Top3", "查看Top3"]
+                },
+                "奖励系统": {
+                    "endpoints": 4,
+                    "status": "active",
+                    "features": ["积分管理", "奖品兑换", "统计查询"]
                 }
             },
-            "total_endpoints": 27,  # 12个auth + 5个task + 7个chat + 3个system
+            "total_endpoints": 24,  # 4个auth + 8个task + 6个focus + 2个top3 + 4个reward
             "database": {
                 "auth": "microservice",
                 "task": task_db_info,
-                "chat": chat_db_info
+                "focus": "local",
+                "top3": "local",
+                "reward": "local"
             },
             "documentation": {
                 "swagger": "/docs",
                 "redoc": "/redoc",
-                "auth_service_docs": "http://45.152.65.130:8987/docs"
+                "auth_service_docs": "http://45.152.65.130:20251/docs"
             },
-            "status": "提供微服务认证、任务管理和智能聊天API服务"
+            "status": "提供微服务认证、任务管理、番茄钟和奖励系统API服务"
         },
-        message="API信息 - 微服务认证、任务管理和智能聊天服务"
+        message="API信息 - 微服务认证、任务管理、番茄钟和奖励系统服务"
+    )
+
+
+# API文档接口
+@app.get(f"{config.api_prefix}/docs", tags=["系统"])
+async def api_docs():
+    """API文档接口 - 返回微服务所有自动生成的详细API文档信息"""
+    return create_success_response(
+        data={
+            "title": f"{config.app_name} API文档",
+            "version": config.app_version,
+            "description": "完整的API文档，包含所有微服务接口的详细信息",
+            "documentation_urls": {
+                "swagger_ui": "/docs",
+                "redoc": "/redoc",
+                "openapi_json": "/openapi.json"
+            },
+            "api_domains": {
+                "认证系统": {
+                    "base_url": "/auth",
+                    "endpoints": [
+                        {
+                            "path": "/auth/wechat/login",
+                            "method": "POST",
+                            "summary": "微信登录（自动注册）",
+                            "description": "通过微信OpenID登录，自动处理新用户注册"
+                        },
+                        {
+                            "path": "/auth/phone/send-code",
+                            "method": "POST",
+                            "summary": "发送手机验证码（智能检测）",
+                            "description": "智能检测用户状态，自动选择登录或注册场景"
+                        },
+                        {
+                            "path": "/auth/phone/verify",
+                            "method": "POST",
+                            "summary": "手机验证码登录（智能检测）",
+                            "description": "智能检测用户状态，自动处理登录或注册"
+                        },
+                        {
+                            "path": "/auth/token/refresh",
+                            "method": "POST",
+                            "summary": "刷新访问令牌",
+                            "description": "使用刷新令牌获取新的访问令牌"
+                        }
+                    ],
+                    "features": ["智能检测", "自动注册", "统一响应格式", "错误优化"]
+                },
+                "任务管理": {
+                    "base_url": f"{config.api_prefix}/tasks",
+                    "endpoints": [
+                        {"path": "/tasks", "method": "POST", "summary": "创建任务"},
+                        {"path": "/tasks/{{task_id}}", "method": "GET", "summary": "获取任务详情"},
+                        {"path": "/tasks/{{task_id}}", "method": "PUT", "summary": "更新任务"},
+                        {"path": "/tasks/{{task_id}}", "method": "DELETE", "summary": "删除任务"},
+                        {"path": "/tasks", "method": "GET", "summary": "获取任务列表"},
+                        {"path": "/tasks/{{task_id}}/complete", "method": "POST", "summary": "完成任务"},
+                        {"path": "/tasks/{{task_id}}/uncomplete", "method": "POST", "summary": "取消完成任务"},
+                        {"path": "/tasks/statistics", "method": "GET", "summary": "获取任务统计"}
+                    ],
+                    "type": "微服务代理"
+                },
+                "番茄钟系统": {
+                    "base_url": f"{config.api_prefix}/focus",
+                    "endpoints": [
+                        {"path": "/focus/sessions", "method": "POST", "summary": "开始专注会话"},
+                        {"path": "/focus/sessions/{{session_id}}/pause", "method": "POST", "summary": "暂停专注会话"},
+                        {"path": "/focus/sessions/{{session_id}}/resume", "method": "POST", "summary": "恢复专注会话"},
+                        {"path": "/focus/sessions/{{session_id}}/complete", "method": "POST", "summary": "完成专注会话"},
+                        {"path": "/focus/sessions", "method": "GET", "summary": "获取专注会话列表"},
+                        {"path": "/focus/pomodoro-count", "method": "GET", "summary": "查看我的番茄数量"}
+                    ],
+                    "features": ["会话管理", "状态追踪", "番茄统计", "25分钟规则"]
+                },
+                "Top3管理": {
+                    "base_url": f"{config.api_prefix}/top3",
+                    "endpoints": [
+                        {"path": "/top3", "method": "POST", "summary": "设置某日Top3"},
+                        {"path": "/top3/{{date}}", "method": "GET", "summary": "查看某日Top3"}
+                    ],
+                    "features": ["日期管理", "排名设置", "免费设置"]
+                },
+                "奖励系统": {
+                    "base_url": f"{config.api_prefix}/rewards",
+                    "endpoints": [
+                        {"path": "/rewards", "method": "GET", "summary": "获取奖励列表"},
+                        {"path": "/rewards/{{reward_id}}/redeem", "method": "POST", "summary": "兑换奖励"},
+                        {"path": "/points", "method": "GET", "summary": "获取积分余额"},
+                        {"path": "/points/transactions", "method": "GET", "summary": "获取积分流水"}
+                    ],
+                    "features": ["积分系统", "奖品兑换", "流水记录"]
+                }
+            },
+            "authentication": {
+                "type": "JWT Bearer Token",
+                "header": "Authorization: Bearer <token>",
+                "description": "所有需要认证的接口都需要在请求头中携带有效的JWT令牌"
+            },
+            "response_format": {
+                "format": "UnifiedResponse",
+                "structure": {
+                    "code": "HTTP状态码或业务状态码",
+                    "message": "响应消息",
+                    "data": "响应数据"
+                }
+            },
+            "usage_notes": [
+                "所有POST/PUT/DELETE操作都需要携带有效的JWT令牌",
+                "认证系统提供智能检测功能，自动处理用户注册流程",
+                "番茄统计规则：focus会话时长超过25分钟算一个完整番茄",
+                "Top3设置不消耗积分，每日可免费设置",
+                "任务完成会根据规则自动分发积分或奖品"
+            ]
+        },
+        message="API文档信息 - 完整的微服务接口文档"
     )
 
 
@@ -256,7 +383,7 @@ from src.domains.task.router import router as task_router
 from src.domains.reward.router import router as reward_router, points_router
 from src.domains.top3.router import router as top3_router
 # from src.domains.chat.router import router as chat_router  # 临时禁用，依赖已删除的task.service
-# from src.domains.focus.router import router as focus_router  # 临时禁用
+from src.domains.focus.router import router as focus_router
 # from src.domains.user.router import router as user_router  # 临时禁用，待修复auth依赖
 
 # 使用微服务认证路由（不再需要前缀，因为路径已经包含/auth）
@@ -279,7 +406,7 @@ app.include_router(top3_router, prefix=config.api_prefix)
 # app.include_router(user_router, prefix=config.api_prefix)  # 临时禁用，待修复auth依赖
 
 # 使用Focus番茄钟领域路由
-# app.include_router(focus_router, prefix=config.api_prefix)  # 临时禁用
+app.include_router(focus_router, prefix=config.api_prefix)
 
 # CORS 测试端点 - 验证 CORS 配置
 @app.get("/test-cors", tags=["系统"])

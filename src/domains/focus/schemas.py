@@ -144,3 +144,26 @@ class FocusSessionListResponse(BaseModel):
             datetime: lambda v: v.isoformat() if v else None
         }
     )
+
+
+class PomodoroCountResponse(BaseModel):
+    """
+    番茄数量统计响应模型
+
+    返回用户完整番茄的数量统计：
+    - 完整番茄数量：时间超过25分钟的focus会话
+
+    设计说明：
+    - 简洁的数据结构，只包含必要信息
+    - 计算规则：focus开始到end时间超过25分钟算一个番茄
+    - pause不打断计时器，只统计focus类型会话
+    """
+    pomodoro_count: int = Field(
+        ...,
+        example=15,
+        description="完整番茄数量（时间超过25分钟）"
+    )
+    calculation_rule: str = Field(
+        default="番茄时长超过25分钟算一个完整番茄，pause不打断计时器",
+        description="番茄计算规则说明"
+    )

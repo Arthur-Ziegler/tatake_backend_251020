@@ -120,7 +120,6 @@ class FocusRepository(UUIDRepositoryMixin):
             logger.error(f"创建会话失败: {e}")
             raise
 
-    @convert_uuid_params_decorator(['session_id'])
     def get_by_id(self, session_id: str) -> Optional[FocusSession]:
         """
         根据ID获取会话
@@ -272,4 +271,31 @@ class FocusRepository(UUIDRepositoryMixin):
 
         except Exception as e:
             logger.error(f"查询任务会话失败 {user_id}/{task_id}: {e}")
+            return []
+
+    def get_user_completed_focus_sessions(self, user_id: str) -> List[FocusSession]:
+        """
+        获取用户所有已完成的focus类型会话
+
+        用于番茄统计计算，只返回已完成的focus会话。
+
+        Args:
+            user_id: 用户ID
+
+        Returns:
+            已完成的focus会话列表
+        """
+        try:
+            statement = select(FocusSession).where(
+                and_(
+                    FocusSession.user_id == user_id,
+                    FocusSession.session_type == "focus",
+                    FocusSession.end_time.is_not(None)
+                )
+            ).order_by(desc(FocusSession.start_time))
+            sessions = self.session.execute(statement).scalars().all()
+            return list(sessions)
+
+        except Exception as e:
+            logger.error(f"查询用户已完成focus会话失败 {user_id}: {e}")
             return []
