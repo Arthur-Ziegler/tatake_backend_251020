@@ -300,6 +300,7 @@ class EnhancedTaskMicroserviceClient:
 
             # Top3管理
             ("POST", "tasks/top3/query"): ("GET", "tasks/top3/{user_id}/{date}"),
+            ("POST", "tasks/special/top3"): ("POST", "tasks/top3"),
 
             # 专注和番茄钟
             ("POST", "tasks/focus-status"): ("POST", "focus/sessions"),
