@@ -1,41 +1,53 @@
 """
-Task领域API路由 - 混合模式（微服务+本地实现）
+Task领域API路由 - 纯微服务代理模式
 
-实现9个核心接口，微服务支持的接口使用代理，不支持的接口使用本地实现。
+完全重构为纯代理模式，所有9个核心接口都通过增强版微服务客户端调用。
+移除所有本地业务逻辑和数据库操作，实现智能路径映射和错误处理。
 
 9个核心接口：
-1. POST /tasks - 创建任务（微服务）
-2. GET /tasks - 查询所有任务（微服务，前端过滤）
-3. PUT /tasks/{task_id} - 修改任务（微服务）
-4. DELETE /tasks/{task_id} - 删除任务（本地实现）
-5. POST /tasks/special/top3 - 设置Top3（本地实现）
-6. GET /tasks/special/top3/{date} - 查看Top3（本地实现）
-7. POST /tasks/{task_id}/complete - 任务完成按钮（本地实现）
-8. POST /tasks/focus-status - 发送专注状态（本地实现）
-9. GET /tasks/pomodoro-count - 查看番茄钟计数（本地实现）
+1. POST /tasks - 创建任务（微服务代理）
+2. POST /tasks/query - 查询任务列表（微服务代理，路径重写）
+3. PUT /tasks/{task_id} - 修改任务（微服务代理）
+4. DELETE /tasks/{task_id} - 删除任务（微服务代理）
+5. POST /tasks/special/top3 - 设置Top3（微服务代理）
+6. GET /tasks/special/top3/{date} - 查看Top3（微服务代理）
+7. POST /tasks/{task_id}/complete - 任务完成（微服务代理）
+8. POST /tasks/focus-status - 专注状态（微服务代理）
+9. GET /tasks/pomodoro-count - 番茄钟计数（微服务代理）
+
+路径映射策略：
+- POST /tasks/query → GET /api/v1/tasks/{user_id}
+- PUT /tasks/{task_id} → PUT /api/v1/tasks/{user_id}/{task_id}
+- DELETE /tasks/{task_id} → DELETE /api/v1/tasks/{user_id}/{task_id}
+- POST /tasks/{task_id}/complete → POST /api/v1/tasks/{user_id}/{task_id}/complete
+- POST /tasks/top3/query → GET /api/v1/tasks/top3/{user_id}/{date}
+- POST /tasks/focus-status → POST /api/v1/focus/sessions
+- GET /tasks/pomodoro-count → GET /api/v1/pomodoros/count
 
 作者：TaKeKe团队
-版本：4.0.0（混合模式）
+版本：5.0.0（纯微服务代理）
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from uuid import UUID
+from datetime import date, datetime
 
-from fastapi import APIRouter, HTTPException, Depends, Body, Query
+from fastapi import APIRouter, HTTPException, Depends, Body, Query, Path
 from fastapi import status
+from pydantic import BaseModel, Field
 
-from sqlmodel import Session
-
-# 导入微服务客户端
-from src.services.task_microservice_client import (
+# 导入增强版微服务客户端
+from src.services.enhanced_task_microservice_client import (
+    EnhancedTaskMicroserviceClient,
     TaskMicroserviceError,
-    get_all_tasks, create_task, update_task, delete_task,
-    set_top3, get_top3, complete_task
+    get_enhanced_task_microservice_client
 )
 
-# 导入本地服务
-from .service_local import TaskLocalService
+# 导入认证依赖
+from src.api.dependencies import get_current_user_id
+
+# 导入响应模型
 from .schemas import (
     CreateTaskRequest,
     UpdateTaskRequest,
@@ -45,20 +57,34 @@ from .schemas import (
     TaskDeleteResponse,
     PaginationInfo
 )
-# 认证模块已迁移到微服务，使用共用的统一响应格式
 from src.api.schemas import UnifiedResponse
-
-# 导入认证依赖（认证模块已迁移到微服务）
-from src.api.dependencies import get_current_user_id
-
-# 导入优化后的数据库依赖
-from src.database import SessionDep, get_db_session
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
 # 创建路由器
 router = APIRouter(prefix="/tasks", tags=["任务管理"])
+
+
+class TaskQueryRequest(BaseModel):
+    """任务查询请求模型"""
+    page: int = Field(1, ge=1, description="页码，从1开始")
+    page_size: int = Field(20, ge=1, le=100, description="每页大小，1-100")
+    status: Optional[str] = Field(None, description="任务状态筛选")
+    priority: Optional[str] = Field(None, description="优先级筛选")
+
+
+class Top3SetRequest(BaseModel):
+    """Top3设置请求模型"""
+    date: str = Field(..., description="日期，格式：YYYY-MM-DD")
+    task_ids: List[str] = Field(..., description="任务ID列表，最多3个")
+
+
+class FocusStatusRequest(BaseModel):
+    """专注状态请求模型"""
+    focus_status: str = Field(..., description="专注状态")
+    duration_minutes: int = Field(..., gt=0, description="专注时长（分钟）")
+    task_id: Optional[str] = Field(None, description="关联的任务ID")
 
 
 def create_error_response(status_code: int, message: str) -> UnifiedResponse:
@@ -70,9 +96,9 @@ def create_error_response(status_code: int, message: str) -> UnifiedResponse:
     )
 
 
-def adapt_response_from_microservice(microservice_data: Dict[str, Any]) -> Dict[str, Any]:
+def adapt_microservice_response_to_client(microservice_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    适配微服务响应数据为本地格式
+    适配微服务响应数据为客户端格式
 
     Args:
         microservice_data (Dict[str, Any]): 微服务响应数据
@@ -80,16 +106,59 @@ def adapt_response_from_microservice(microservice_data: Dict[str, Any]) -> Dict[
     Returns:
         Dict[str, Any]: 适配后的响应数据
     """
-    # 微服务缺失字段返回null
-    missing_fields = {
-        'parent_id': None,
-        'tags': [],
-        'service_ids': [],
-        'planned_start_time': None,
-        'planned_end_time': None,
-        'last_claimed_date': None,
-        'completion_percentage': 0.0,
-        'is_deleted': False
+    # 微服务响应格式已经是标准格式，直接透传
+    # 但需要确保包含必要字段
+    if not isinstance(microservice_data, dict):
+        return microservice_data
+
+    # 确保响应包含必要的字段
+    adapted_data = microservice_data.copy()
+
+    # 处理任务列表响应的分页信息
+    if "data" in adapted_data and isinstance(adapted_data["data"], list):
+        # 微服务返回的是任务数组，需要包装成分页格式
+        tasks_array = adapted_data["data"]
+        # 适配每个任务的数据格式
+        adapted_tasks = []
+        for task in tasks_array:
+            adapted_task = adapt_single_task_data(task)
+            adapted_tasks.append(adapted_task)
+
+        adapted_data["data"] = {
+            "tasks": adapted_tasks,
+            "pagination": {
+                "current_page": 1,
+                "page_size": len(adapted_tasks),
+                "total_count": len(adapted_tasks),
+                "total_pages": 1,
+                "has_next": False,
+                "has_prev": False
+            }
+        }
+    elif "data" in adapted_data and isinstance(adapted_data["data"], dict):
+        # 单个任务对象，适配数据格式
+        adapted_data["data"] = adapt_single_task_data(adapted_data["data"])
+
+    return adapted_data
+
+
+def adapt_single_task_data(task_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    适配单个任务数据格式
+
+    Args:
+        task_data (Dict[str, Any]): 原始任务数据
+
+    Returns:
+        Dict[str, Any]: 适配后的任务数据
+    """
+    adapted_task = task_data.copy()
+
+    # 优先级映射：微服务(首字母大写) -> 本地(小写)
+    priority_mapping = {
+        'Low': 'low',
+        'Medium': 'medium',
+        'High': 'high'
     }
 
     # 状态映射：微服务 -> 本地
@@ -99,33 +168,33 @@ def adapt_response_from_microservice(microservice_data: Dict[str, Any]) -> Dict[
         'completed': 'completed'
     }
 
-    # Priority映射：微服务(首字母大写) -> 本地(小写)
-    priority_mapping = {
-        'Low': 'low',
-        'Medium': 'medium',
-        'High': 'high'
-    }
-
-    # 复制数据以避免修改原始数据
-    microservice_data = microservice_data.copy()
+    # 映射优先级字段
+    if 'priority' in adapted_task and adapted_task['priority'] in priority_mapping:
+        adapted_task['priority'] = priority_mapping[adapted_task['priority']]
 
     # 映射状态字段
-    if 'status' in microservice_data:
-        microservice_data['status'] = status_mapping.get(
-            microservice_data['status'],
-            microservice_data['status']  # 如果没有映射，保持原值
-        )
+    if 'status' in adapted_task and adapted_task['status'] in status_mapping:
+        adapted_task['status'] = status_mapping[adapted_task['status']]
 
-    # 映射priority字段
-    if 'priority' in microservice_data:
-        microservice_data['priority'] = priority_mapping.get(
-            microservice_data['priority'],
-            microservice_data['priority']  # 如果没有映射，保持原值
-        )
+    # 添加缺失的必需字段（如果不存在）
+    required_fields = {
+        'parent_id': None,
+        'tags': [],
+        'service_ids': [],
+        'planned_start_time': None,
+        'planned_end_time': None,
+        'last_claimed_date': None,
+        'is_deleted': False,
+        'created_at': datetime.now().isoformat(),
+        'updated_at': datetime.now().isoformat(),
+        'completion_percentage': 0.0
+    }
 
-    # 合并微服务数据和缺失字段
-    adapted_data = {**missing_fields, **microservice_data}
-    return adapted_data
+    for field, default_value in required_fields.items():
+        if field not in adapted_task:
+            adapted_task[field] = default_value
+
+    return adapted_task
 
 
 # ===================
@@ -135,46 +204,59 @@ def adapt_response_from_microservice(microservice_data: Dict[str, Any]) -> Dict[
 @router.post("/", response_model=UnifiedResponse[TaskResponse], summary="创建新任务")
 async def create_task_endpoint(
     request: CreateTaskRequest,
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[TaskResponse]:
     """
-    1. 创建任务 - 微服务代理
+    创建任务 - 微服务代理
+
+    Args:
+        request: 创建任务请求
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[TaskResponse]: 创建的任务响应
     """
     try:
         logger.info(f"创建任务API调用: user_id={user_id}, title={request.title}")
 
-        # 处理priority格式：确保首字母大写（微服务要求）
-        priority_value = request.priority or "medium"
-        if priority_value:
-            priority_value = priority_value.capitalize()  # 确保首字母大写
+        # 准备请求数据
+        task_data = {
+            "title": request.title,
+            "description": request.description or "",
+            "priority": request.priority.capitalize() if request.priority else "Medium",  # 确保首字母大写
+            "due_date": request.due_date.isoformat() if request.due_date else None,
+            "user_id": str(user_id)
+        }
 
-        # 调用微服务便捷方法
-        microservice_response = await create_task(
+        # 调用微服务
+        response = await client.call_microservice(
+            method="POST",
+            path="tasks",
             user_id=str(user_id),
-            title=request.title,
-            description=request.description,
-            priority=priority_value,
-            due_date=request.due_date.isoformat() if request.due_date else None
+            data=task_data
         )
-
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200 and microservice_response["code"] != 201:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
 
         # 适配响应数据
-        task_data_dict = adapt_response_from_microservice(microservice_response["data"])
-        task_data = TaskResponse(**task_data_dict)
+        adapted_response = adapt_microservice_response_to_client(response)
 
-        return UnifiedResponse(
-            code=201,
-            data=task_data,
-            message="任务创建成功"
-        )
+        # 构造TaskResponse对象
+        if adapted_response.get("success") and adapted_response.get("data"):
+            task_data = adapted_response["data"]
+            task_response = TaskResponse(**task_data)
+
+            return UnifiedResponse(
+                code=adapted_response.get("code", 201),
+                data=task_response,
+                message=adapted_response.get("message", "任务创建成功")
+            )
+        else:
+            return UnifiedResponse(
+                code=adapted_response.get("code", 500),
+                data=None,
+                message=adapted_response.get("message", "任务创建失败")
+            )
 
     except TaskMicroserviceError as e:
         logger.error(f"微服务调用失败: {e}")
@@ -192,84 +274,96 @@ async def create_task_endpoint(
         )
 
 
-@router.get("/", response_model=UnifiedResponse[TaskListResponse], summary="获取任务列表")
-async def get_task_list(
-    session: SessionDep,
+@router.post("/query", response_model=UnifiedResponse[TaskListResponse], summary="查询任务列表")
+async def query_tasks_endpoint(
+    request: TaskQueryRequest,
     user_id: UUID = Depends(get_current_user_id),
-    page: int = Query(1, ge=1, description="页码，从1开始"),
-    page_size: int = Query(20, ge=1, le=100, description="每页大小，1-100")
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[TaskListResponse]:
     """
-    2. 查询所有任务（前端过滤） - 微服务代理
+    查询任务列表 - 微服务代理（路径重写）
+
+    Args:
+        request: 查询请求
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[TaskListResponse]: 任务列表响应
     """
     try:
-        logger.debug(f"获取任务列表API调用: user_id={user_id}, page={page}")
+        print(f"🔍 QUERY_TASKS_ENDPOINT 被调用: user_id={user_id}, page={request.page}")
+        logger.info(f"查询任务列表API调用: user_id={user_id}, page={request.page}")
+        print(f"🚀 即将调用增强版微服务客户端...")
 
-        # 调用微服务便捷方法
-        microservice_response = await get_all_tasks(
-            user_id=str(user_id),
-            page=page,
-            page_size=page_size
-        )
+        # 准备查询参数
+        query_params = {
+            "page": request.page,
+            "page_size": request.page_size
+        }
 
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
+        if request.status:
+            query_params["status"] = request.status
+        if request.priority:
+            query_params["priority"] = request.priority
+
+        # 调用微服务（路径会被重写为 GET /api/v1/tasks/{user_id}）
+        print(f"📡 准备调用微服务客户端: client={client}")
+        print(f"📋 调用参数: method=POST, path=tasks/query, user_id={str(user_id)}, data={query_params}")
+
+        try:
+            response = await client.call_microservice(
+                method="POST",
+                path="tasks/query",
+                user_id=str(user_id),
+                data=query_params
+            )
+            print(f"✅ 微服务调用完成: response={response}")
+        except Exception as e:
+            print(f"❌ 微服务调用异常: {type(e).__name__}: {e}")
+            raise
+
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
+
+        # 构造TaskListResponse对象
+        if adapted_response.get("success") and adapted_response.get("data"):
+            list_data = adapted_response["data"]
+
+            # 处理分页信息
+            if "pagination" in list_data:
+                pagination_info = PaginationInfo(**list_data["pagination"])
+            else:
+                # 如果没有分页信息，使用默认值
+                tasks_count = len(list_data.get("tasks", []))
+                pagination_info = PaginationInfo(
+                    current_page=request.page,
+                    page_size=request.page_size,
+                    total_count=tasks_count,
+                    total_pages=1,
+                    has_next=False,
+                    has_prev=False
+                )
+
+            # 转换任务数据
+            tasks = [TaskResponse(**task_data) for task_data in list_data.get("tasks", [])]
+
+            task_list_response = TaskListResponse(
+                tasks=tasks,
+                pagination=pagination_info
             )
 
-        # 处理微服务响应数据
-        # 微服务可能返回直接的数组或包含分页信息的对象
-        if isinstance(microservice_response["data"], list):
-            # 直接返回任务数组
-            tasks_array = microservice_response["data"]
-            # 简单分页逻辑：基于数组长度和请求参数计算
-            total_count = len(tasks_array)
-            total_pages = (total_count + page_size - 1) // page_size  # 向上取整
-
-            # 构造分页信息
-            pagination_info = PaginationInfo(
-                current_page=page,
-                page_size=page_size,
-                total_count=total_count,
-                total_pages=total_pages,
-                has_next=page < total_pages,
-                has_prev=page > 1
+            return UnifiedResponse(
+                code=adapted_response.get("code", 200),
+                data=task_list_response,
+                message=adapted_response.get("message", "查询成功")
             )
         else:
-            # 返回包含分页信息的对象
-            list_data = microservice_response["data"]
-            tasks_array = list_data.get("tasks", [])
-
-            # 构造分页信息
-            pagination_info = PaginationInfo(
-                current_page=list_data.get("current_page", page),
-                page_size=list_data.get("page_size", page_size),
-                total_count=list_data.get("total_count", 0),
-                total_pages=list_data.get("total_pages", 0),
-                has_next=list_data.get("has_next", False),
-                has_prev=list_data.get("has_prev", False)
+            return UnifiedResponse(
+                code=adapted_response.get("code", 500),
+                data=None,
+                message=adapted_response.get("message", "查询失败")
             )
-
-        # 适配任务列表数据
-        tasks = []
-        for task_dict in tasks_array:
-            adapted_task_dict = adapt_response_from_microservice(task_dict)
-            tasks.append(TaskResponse(**adapted_task_dict))
-
-        # 构造TaskListResponse
-        task_list_response = TaskListResponse(
-            tasks=tasks,
-            pagination=pagination_info
-        )
-
-        return UnifiedResponse(
-            code=200,
-            data=task_list_response,
-            message="获取任务列表成功"
-        )
 
     except TaskMicroserviceError as e:
         logger.error(f"微服务调用失败: {e}")
@@ -279,7 +373,7 @@ async def get_task_list(
             message=e.message
         )
     except Exception as e:
-        logger.error(f"获取任务列表异常: {e}")
+        logger.error(f"查询任务列表异常: {e}")
         return UnifiedResponse(
             code=500,
             data=None,
@@ -287,47 +381,65 @@ async def get_task_list(
         )
 
 
-@router.put("/{task_id}", response_model=UnifiedResponse[TaskResponse], summary="更新任务信息")
+@router.put("/{task_id}", response_model=UnifiedResponse[TaskResponse], summary="更新任务")
 async def update_task_endpoint(
-    task_id: UUID,
-    request: UpdateTaskRequest,
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
+    task_id: str = Path(..., description="任务ID"),
+    request: UpdateTaskRequest = Body(...),
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[TaskResponse]:
     """
-    3. 修改任务 - 微服务代理
+    更新任务 - 微服务代理（路径重写）
+
+    Args:
+        task_id: 任务ID
+        request: 更新请求
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[TaskResponse]: 更新后的任务响应
     """
     try:
-        logger.info(f"更新任务API调用: task_id={task_id}, user_id={user_id}")
+        logger.info(f"更新任务API调用: user_id={user_id}, task_id={task_id}")
 
-        # 调用微服务便捷方法
-        microservice_response = await update_task(
+        # 准备更新数据
+        update_data = {
+            "title": request.title,
+            "description": request.description,
+            "priority": request.priority.capitalize() if request.priority else "Medium",
+            "due_date": request.due_date.isoformat() if request.due_date else None,
+            "user_id": str(user_id)
+        }
+
+        # 调用微服务（路径会被重写为 PUT /api/v1/tasks/{user_id}/{task_id}）
+        response = await client.call_microservice(
+            method="PUT",
+            path="tasks/{task_id}",
             user_id=str(user_id),
-            task_id=str(task_id),
-            title=request.title,
-            description=request.description,
-            priority=request.priority,
-            status=request.status,
-            due_date=request.due_date.isoformat() if request.due_date else None
+            data=update_data,
+            task_id=task_id
         )
-
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
 
         # 适配响应数据
-        task_data_dict = adapt_response_from_microservice(microservice_response["data"])
-        task_data = TaskResponse(**task_data_dict)
+        adapted_response = adapt_microservice_response_to_client(response)
 
-        return UnifiedResponse(
-            code=200,
-            data=task_data,
-            message="任务更新成功"
-        )
+        # 构造TaskResponse对象
+        if adapted_response.get("success") and adapted_response.get("data"):
+            task_data = adapted_response["data"]
+            task_response = TaskResponse(**task_data)
+
+            return UnifiedResponse(
+                code=adapted_response.get("code", 200),
+                data=task_response,
+                message=adapted_response.get("message", "任务更新成功")
+            )
+        else:
+            return UnifiedResponse(
+                code=adapted_response.get("code", 500),
+                data=None,
+                message=adapted_response.get("message", "任务更新失败")
+            )
 
     except TaskMicroserviceError as e:
         logger.error(f"微服务调用失败: {e}")
@@ -347,155 +459,69 @@ async def update_task_endpoint(
 
 @router.delete("/{task_id}", response_model=UnifiedResponse[TaskDeleteResponse], summary="删除任务")
 async def delete_task_endpoint(
-    task_id: UUID,
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
+    task_id: str = Path(..., description="任务ID"),
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[TaskDeleteResponse]:
     """
-    4. 删除任务 - 微服务代理
+    删除任务 - 微服务代理（路径重写）
+
+    Args:
+        task_id: 任务ID
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[TaskDeleteResponse]: 删除结果响应
     """
     try:
-        logger.info(f"删除任务API调用: task_id={task_id}, user_id={user_id}")
+        logger.info(f"删除任务API调用: user_id={user_id}, task_id={task_id}")
 
-        # 调用微服务便捷方法
-        microservice_response = await delete_task(
+        # 调用微服务（路径会被重写为 DELETE /api/v1/tasks/{user_id}/{task_id}）
+        response = await client.call_microservice(
+            method="DELETE",
+            path="tasks/{task_id}",
             user_id=str(user_id),
-            task_id=str(task_id)
+            task_id=task_id
         )
 
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
 
-        # 构造删除响应数据
-        delete_data = TaskDeleteResponse(
-            deleted_task_id=str(task_id),
-            deleted_count=1,
+        # 构造TaskDeleteResponse对象
+        delete_response = TaskDeleteResponse(
+            deleted_task_id=task_id,
+            deleted_count=1 if adapted_response.get("success", False) else 0,
             cascade_deleted=False
         )
 
         return UnifiedResponse(
-            code=200,
-            data=delete_data,
-            message="任务删除成功"
+            code=adapted_response.get("code", 200),
+            data=delete_response,
+            message=adapted_response.get("message", "任务删除成功")
         )
 
     except TaskMicroserviceError as e:
         logger.error(f"微服务调用失败: {e}")
         return UnifiedResponse(
             code=e.status_code,
-            data=None,
+            data=TaskDeleteResponse(
+                deleted_task_id=task_id,
+                deleted_count=0,
+                cascade_deleted=False
+            ),
             message=e.message
         )
     except Exception as e:
         logger.error(f"删除任务异常: {e}")
         return UnifiedResponse(
             code=500,
-            data=None,
+            data=TaskDeleteResponse(
+                deleted_task_id=task_id,
+                deleted_count=0,
+                cascade_deleted=False
+            ),
             message="内部服务器错误"
-        )
-
-
-# ===================
-# Top3管理接口 (2个)
-# ===================
-
-@router.post("/special/top3", response_model=UnifiedResponse[Dict[str, Any]], summary="设置Top3任务")
-async def set_top3_endpoint(
-    request: Dict[str, Any],
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[Dict[str, Any]]:
-    """
-    5. 设置Top3（无积分消耗） - 微服务代理
-    """
-    try:
-        logger.info(f"设置Top3 API调用: user_id={user_id}")
-
-        # 调用微服务便捷方法
-        microservice_response = await set_top3(
-            user_id=str(user_id),
-            date=request.get("date"),
-            task_ids=request.get("task_ids", [])
-        )
-
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
-
-        return UnifiedResponse(
-            code=200,
-            data=microservice_response["data"],
-            message="success"
-        )
-
-    except TaskMicroserviceError as e:
-        logger.error(f"微服务调用失败: {e}")
-        return UnifiedResponse(
-            code=e.status_code,
-            data=None,
-            message=e.message
-        )
-    except Exception as e:
-        logger.error(f"设置Top3异常: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="设置Top3失败"
-        )
-
-
-@router.get("/special/top3/{date}", response_model=UnifiedResponse[Dict[str, Any]], summary="获取Top3任务")
-async def get_top3_endpoint(
-    date: str,
-    user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[Dict[str, Any]]:
-    """
-    6. 查看Top3 - 微服务代理
-    """
-    try:
-        logger.info(f"获取Top3 API调用: user_id={user_id}, date={date}")
-
-        # 调用微服务便捷方法
-        microservice_response = await get_top3(
-            user_id=str(user_id),
-            date=date
-        )
-
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
-
-        return UnifiedResponse(
-            code=200,
-            data=microservice_response["data"],
-            message="success"
-        )
-
-    except TaskMicroserviceError as e:
-        logger.error(f"微服务调用失败: {e}")
-        return UnifiedResponse(
-            code=e.status_code,
-            data=None,
-            message=e.message
-        )
-    except Exception as e:
-        logger.error(f"获取Top3失败: {e}")
-        return UnifiedResponse(
-            code=500,
-            data=None,
-            message="获取Top3失败"
         )
 
 
@@ -505,35 +531,47 @@ async def get_top3_endpoint(
 
 @router.post("/{task_id}/complete", response_model=UnifiedResponse[Dict[str, Any]], summary="完成任务")
 async def complete_task_endpoint(
-    task_id: UUID,
-    request: Optional[Dict[str, Any]] = Body(None),
-    user_id: UUID = Depends(get_current_user_id)
+    task_id: str = Path(..., description="任务ID"),
+    completion_data: Optional[Dict[str, Any]] = Body(None),
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[Dict[str, Any]]:
     """
-    7. 任务完成按钮（含奖励） - 微服务代理
+    完成任务 - 微服务代理（路径重写）
+
+    Args:
+        task_id: 任务ID
+        completion_data: 完成数据（可选）
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: 完成结果响应（包含奖励信息）
     """
     try:
-        logger.info(f"完成任务API调用: task_id={task_id}, user_id={user_id}")
+        logger.info(f"完成任务API调用: user_id={user_id}, task_id={task_id}")
 
-        # 调用微服务便捷方法
-        microservice_response = await complete_task(
+        # 准备完成数据
+        complete_data = completion_data or {}
+        complete_data["user_id"] = str(user_id)
+        complete_data["task_id"] = task_id
+
+        # 调用微服务（路径会被重写为 POST /api/v1/tasks/{user_id}/{task_id}/complete）
+        response = await client.call_microservice(
+            method="POST",
+            path="tasks/{task_id}/complete",
             user_id=str(user_id),
-            task_id=str(task_id),
-            completion_data=request or {}
+            data=complete_data,
+            task_id=task_id
         )
 
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
 
         return UnifiedResponse(
-            code=200,
-            data=microservice_response["data"],
-            message="任务完成成功"
+            code=adapted_response.get("code", 200),
+            data=adapted_response.get("data", {}),
+            message=adapted_response.get("message", "任务完成成功")
         )
 
     except TaskMicroserviceError as e:
@@ -553,51 +591,62 @@ async def complete_task_endpoint(
 
 
 # ===================
-# 专注和番茄钟接口 (2个)
+# Top3管理接口 (2个)
 # ===================
 
-@router.post("/focus-status", response_model=UnifiedResponse[Dict[str, Any]], summary="发送专注状态")
-async def send_focus_status_endpoint(
-    request: Dict[str, Any],
-    session: SessionDep,
-    user_id: UUID = Depends(get_current_user_id)
+@router.post("/special/top3", response_model=UnifiedResponse[Dict[str, Any]], summary="设置Top3任务")
+async def set_top3_endpoint(
+    request: Top3SetRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[Dict[str, Any]]:
     """
-    8. 发送专注状态 - 本地实现
+    设置Top3任务 - 微服务代理
+
+    Args:
+        request: Top3设置请求
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: 设置结果响应
     """
     try:
-        logger.info(f"发送专注状态API调用: user_id={user_id}")
+        logger.info(f"设置Top3 API调用: user_id={user_id}, date={request.date}")
 
-        # 创建本地服务实例
-        local_service = TaskLocalService(session)
-
-        # 记录专注状态
-        focus_record = local_service.record_focus_status(
-            user_id=user_id,
-            focus_status=request.get("focus_status"),
-            task_id=request.get("task_id"),
-            duration_minutes=request.get("duration_minutes"),
-            status_data=request.get("status_data", {})
-        )
-
-        # 构造响应数据
-        response_data = {
-            "id": focus_record.id,
-            "user_id": str(focus_record.user_id),
-            "focus_status": focus_record.focus_status,
-            "task_id": focus_record.task_id,
-            "duration_minutes": focus_record.duration_minutes,
-            "created_at": focus_record.created_at.isoformat() if focus_record.created_at else None
+        # 准备Top3数据
+        top3_data = {
+            "user_id": str(user_id),
+            "date": request.date,
+            "task_ids": request.task_ids[:3]  # 最多3个任务
         }
 
-        return UnifiedResponse(
-            code=200,
-            data=response_data,
-            message="专注状态记录成功"
+        # 调用微服务
+        response = await client.call_microservice(
+            method="POST",
+            path="tasks/special/top3",
+            user_id=str(user_id),
+            data=top3_data
         )
 
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
+
+        return UnifiedResponse(
+            code=adapted_response.get("code", 200),
+            data=adapted_response.get("data", {}),
+            message=adapted_response.get("message", "Top3设置成功")
+        )
+
+    except TaskMicroserviceError as e:
+        logger.error(f"微服务调用失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=e.message
+        )
     except Exception as e:
-        logger.error(f"发送专注状态异常: {e}")
+        logger.error(f"设置Top3异常: {e}")
         return UnifiedResponse(
             code=500,
             data=None,
@@ -605,44 +654,222 @@ async def send_focus_status_endpoint(
         )
 
 
-@router.get("/pomodoro-count", response_model=UnifiedResponse[Dict[str, Any]], summary="查看番茄钟计数")
-async def get_pomodoro_count_endpoint(
-    session: SessionDep,
+@router.get("/special/top3/{query_date}", response_model=UnifiedResponse[Dict[str, Any]], summary="获取Top3任务")
+async def get_top3_endpoint(
+    query_date: str = Path(..., description="查询日期，格式：YYYY-MM-DD"),
     user_id: UUID = Depends(get_current_user_id),
-    date_filter: Optional[str] = Query("today", description="时间过滤: today, week, month")
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
 ) -> UnifiedResponse[Dict[str, Any]]:
     """
-    9. 查看番茄钟计数 - 本地实现
+    获取Top3任务 - 微服务代理（路径重写）
+
+    Args:
+        query_date: 查询日期
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: Top3任务响应
+    """
+    try:
+        logger.info(f"获取Top3 API调用: user_id={user_id}, date={query_date}")
+
+        # 调用微服务（路径会被重写为 GET /api/v1/tasks/top3/{user_id}/{date}）
+        response = await client.call_microservice(
+            method="POST",
+            path="tasks/top3/query",
+            user_id=str(user_id),
+            date=query_date
+        )
+
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
+
+        return UnifiedResponse(
+            code=adapted_response.get("code", 200),
+            data=adapted_response.get("data", {}),
+            message=adapted_response.get("message", "Top3查询成功")
+        )
+
+    except TaskMicroserviceError as e:
+        logger.error(f"微服务调用失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=e.message
+        )
+    except Exception as e:
+        logger.error(f"获取Top3异常: {e}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
+        )
+
+
+# ===================
+# 专注和番茄钟接口 (2个)
+# ===================
+
+@router.post("/focus-status", response_model=UnifiedResponse[Dict[str, Any]], summary="记录专注状态")
+async def record_focus_status_endpoint(
+    request: FocusStatusRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
+) -> UnifiedResponse[Dict[str, Any]]:
+    """
+    记录专注状态 - 微服务代理（路径重写）
+
+    Args:
+        request: 专注状态请求
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: 记录结果响应
+    """
+    try:
+        logger.info(f"记录专注状态API调用: user_id={user_id}, status={request.focus_status}")
+
+        # 准备专注状态数据
+        focus_data = {
+            "user_id": str(user_id),
+            "focus_status": request.focus_status,
+            "duration_minutes": request.duration_minutes,
+            "task_id": request.task_id
+        }
+
+        # 调用微服务（路径会被重写为 POST /api/v1/focus/sessions）
+        response = await client.call_microservice(
+            method="POST",
+            path="tasks/focus-status",
+            user_id=str(user_id),
+            data=focus_data
+        )
+
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
+
+        return UnifiedResponse(
+            code=adapted_response.get("code", 200),
+            data=adapted_response.get("data", {}),
+            message=adapted_response.get("message", "专注状态记录成功")
+        )
+
+    except TaskMicroserviceError as e:
+        logger.error(f"微服务调用失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=e.message
+        )
+    except Exception as e:
+        logger.error(f"记录专注状态异常: {e}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="内部服务器错误"
+        )
+
+
+@router.get("/pomodoro-count", response_model=UnifiedResponse[Dict[str, Any]], summary="获取番茄钟计数")
+async def get_pomodoro_count_endpoint(
+    date_filter: str = Query("today", description="日期筛选：today, week, month"),
+    user_id: UUID = Depends(get_current_user_id),
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
+) -> UnifiedResponse[Dict[str, Any]]:
+    """
+    获取番茄钟计数 - 微服务代理（路径重写）
+
+    Args:
+        date_filter: 日期筛选条件
+        user_id: 用户ID（从JWT token提取）
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: 番茄钟计数响应
     """
     try:
         logger.info(f"获取番茄钟计数API调用: user_id={user_id}, filter={date_filter}")
 
-        # 创建本地服务实例
-        local_service = TaskLocalService(session)
-
-        # 获取番茄钟计数
-        pomodoro_record = local_service.get_pomodoro_count(
-            user_id=user_id,
-            date_filter=date_filter
-        )
-
-        # 构造响应数据
-        response_data = {
+        # 准备查询参数
+        params = {
             "date_filter": date_filter,
-            "count": pomodoro_record.count,
-            "last_updated": pomodoro_record.last_updated.isoformat() if pomodoro_record.last_updated else None
+            "user_id": str(user_id)
         }
 
-        return UnifiedResponse(
-            code=200,
-            data=response_data,
-            message="获取番茄钟统计成功"
+        # 调用微服务（路径会被重写为 GET /api/v1/pomodoros/count）
+        response = await client.call_microservice(
+            method="GET",
+            path="tasks/pomodoro-count",
+            user_id=str(user_id),
+            params=params
         )
 
+        # 适配响应数据
+        adapted_response = adapt_microservice_response_to_client(response)
+
+        return UnifiedResponse(
+            code=adapted_response.get("code", 200),
+            data=adapted_response.get("data", {}),
+            message=adapted_response.get("message", "番茄钟计数查询成功")
+        )
+
+    except TaskMicroserviceError as e:
+        logger.error(f"微服务调用失败: {e}")
+        return UnifiedResponse(
+            code=e.status_code,
+            data=None,
+            message=e.message
+        )
     except Exception as e:
         logger.error(f"获取番茄钟计数异常: {e}")
         return UnifiedResponse(
             code=500,
             data=None,
             message="内部服务器错误"
+        )
+
+
+# ===================
+# 健康检查接口
+# ===================
+
+@router.get("/health", response_model=UnifiedResponse[Dict[str, Any]], summary="微服务健康检查")
+async def health_check_endpoint(
+    client: EnhancedTaskMicroserviceClient = Depends(get_enhanced_task_microservice_client)
+) -> UnifiedResponse[Dict[str, Any]]:
+    """
+    微服务健康检查
+
+    Args:
+        client: 增强版微服务客户端
+
+    Returns:
+        UnifiedResponse[Dict[str, Any]]: 健康状态响应
+    """
+    try:
+        is_healthy = await client.health_check()
+
+        return UnifiedResponse(
+            code=200,
+            data={
+                "healthy": is_healthy,
+                "timestamp": datetime.now().isoformat(),
+                "service": "task-microservice-proxy"
+            },
+            message="健康" if is_healthy else "不健康"
+        )
+
+    except Exception as e:
+        logger.error(f"健康检查异常: {e}")
+        return UnifiedResponse(
+            code=500,
+            data={
+                "healthy": False,
+                "timestamp": datetime.now().isoformat(),
+                "service": "task-microservice-proxy",
+                "error": str(e)
+            },
+            message="健康检查失败"
         )
