@@ -7,6 +7,10 @@
 import pytest
 import sys
 from pathlib import Path
+from uuid import uuid4
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel, Session
 
 # 添加src目录到Python路径
 src_path = Path(__file__).parent.parent / "src"
@@ -42,3 +46,27 @@ def test_config():
         "timeout": 30,
         "retry_attempts": 3
     }
+
+
+@pytest.fixture(scope="function")
+def db_session():
+    """数据库测试会话fixture"""
+    # 使用内存数据库
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+
+    # 创建所有表
+    SQLModel.metadata.create_all(engine)
+
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    session = SessionLocal()
+
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def sample_user_id():
+    """示例用户ID fixture"""
+    return uuid4()

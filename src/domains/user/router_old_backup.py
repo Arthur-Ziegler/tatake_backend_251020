@@ -13,18 +13,26 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select
 
 from .schemas import (
+    UserProfileResponse,
+    UpdateProfileRequest,
+    UpdateProfileResponse,
     EnhancedUserProfileResponse,
     EnhancedUpdateProfileRequest
 )
 from src.api.schemas import UnifiedResponse
 from src.database import get_db_session
 from src.api.dependencies import get_current_user_id
+from src.domains.user.repository import UserRepository
 from src.domains.user.models import User, UserSettings, UserStats
 from src.services.rewards_integration_service import get_rewards_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/user", tags=["用户管理"])
+
+
+# User领域服务层 - 使用Repository模式
+# 所有类型转换都在Repository层处理，Service层只使用UUID对象
 
 
 @router.get("/profile", summary="获取用户信息")
@@ -39,11 +47,8 @@ async def get_user_profile(
     直接查询主数据库，确保用户数据可以正确获取。
     """
     try:
-        # 转换UUID格式（去掉连字符）以匹配数据库中的格式
-        user_id_str = str(user_id).replace('-', '')
-
         # 直接查询用户数据
-        user_stmt = select(User).where(User.user_id == user_id_str)
+        user_stmt = select(User).where(User.user_id == user_id)
         user = business_session.exec(user_stmt).first()
 
         if not user:
@@ -53,15 +58,12 @@ async def get_user_profile(
                 message="用户不存在"
             )
 
-        # 自动创建缺失的profile相关记录
-        await _ensure_user_profile_exists(business_session, user_id_str, user)
-
         # 查询用户设置
-        settings_stmt = select(UserSettings).where(UserSettings.user_id == user_id_str)
+        settings_stmt = select(UserSettings).where(UserSettings.user_id == user_id)
         user_settings = business_session.exec(settings_stmt).first()
 
         # 查询用户统计
-        stats_stmt = select(UserStats).where(UserStats.user_id == user_id_str)
+        stats_stmt = select(UserStats).where(UserStats.user_id == user_id)
         user_stats = business_session.exec(stats_stmt).first()
 
         # 获取积分余额（异步调用奖励服务）
@@ -122,30 +124,98 @@ async def get_user_profile(
 
 @router.put("/profile", summary="更新用户信息")
 async def update_user_profile(
-    request: EnhancedUpdateProfileRequest,
+    request: UpdateProfileRequest,
     business_session: Annotated[Session, Depends(get_db_session)],
     user_id: UUID = Depends(get_current_user_id)
-) -> UnifiedResponse[Dict[str, Any]]:
-    """
-    更新用户信息
-
-    支持更新基础用户信息、个人信息和偏好设置。
-    包含事务性更新，确保数据一致性。
-    """
+) -> UnifiedResponse[UpdateProfileResponse]:
+    """更新用户基本信息"""
     try:
-        # 转换UUID格式（去掉连字符）以匹配数据库中的格式
-        user_id_str = str(user_id).replace('-', '')
+        # 使用UserRepository进行用户数据更新
+        user_repo = UserRepository(business_session)
 
-        # 查询用户是否存在
-        user_stmt = select(User).where(User.user_id == user_id_str)
-        user = business_session.exec(user_stmt).first()
-
-        if not user:
+        # 验证用户存在
+        user_data = user_repo.get_by_id_with_auth(user_id)
+        if not user_data or not user_data["auth"]:
             return UnifiedResponse(
                 code=404,
                 data=None,
                 message="用户不存在"
             )
+
+        # 准备更新数据
+        updates = {}
+        updated_fields = []
+
+        if request.nickname:
+            updates["nickname"] = request.nickname
+            updated_fields.append("nickname")
+
+        if request.avatar_url:
+            updates["avatar_url"] = request.avatar_url
+            updated_fields.append("avatar_url")
+
+        if request.bio:
+            updates["bio"] = request.bio
+            updated_fields.append("bio")
+
+        # 执行更新（如果有需要更新的字段）
+        updated_user = None
+        if updates:
+            updated_user = user_repo.update_user(user_id, updates)
+
+        # 获取更新后的用户信息
+        business_user = updated_user or user_data["user"]
+        nickname = business_user.nickname if business_user else f"用户_{str(user_id)[:8]}"
+
+        # 构造更新响应数据
+        update_response = {
+            "id": str(user_id),
+            "nickname": nickname,
+            "avatar_url": business_user.avatar_url if business_user else None,
+            "bio": business_user.bio if business_user else None,
+            "updated_fields": updated_fields
+        }
+
+        return UnifiedResponse(
+            code=200,
+            data=update_response,
+            message="更新成功"
+        )
+    except Exception as e:
+        logger.error(f"更新用户信息失败: {e}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message="更新用户信息失败"
+        )
+
+
+@router.put("/profile/enhanced", summary="增强更新用户信息")
+async def update_enhanced_user_profile(
+    request: EnhancedUpdateProfileRequest,
+    business_session: Annotated[Session, Depends(get_db_session)],
+    user_id: UUID = Depends(get_current_user_id)
+) -> UnifiedResponse[dict]:
+    """
+    更新用户增强信息
+
+    支持更新基础用户信息、个人信息和偏好设置。
+    包含事务性更新，确保数据一致性。
+    """
+    try:
+        # 使用UserRepository进行用户数据更新
+        user_repo = UserRepository(business_session)
+
+        # 验证用户存在
+        user_data = user_repo.get_by_id_with_auth(user_id)
+        if not user_data or not user_data["auth"]:
+            return UnifiedResponse(
+                code=404,
+                data=None,
+                message="用户不存在"
+            )
+
+        business_user = user_data["user"]
 
         # 准备更新数据
         user_updates = {}
@@ -219,14 +289,17 @@ async def update_user_profile(
         # 开始事务性更新
         try:
             # 更新用户基础信息
+            updated_user = None
             if user_updates:
-                for field, value in user_updates.items():
-                    setattr(user, field, value)
-                user.updated_at = datetime.utcnow()
+                updated_user = user_repo.update_user(user_id, user_updates)
 
             # 更新或创建用户设置
             if settings_updates:
-                settings_stmt = select(UserSettings).where(UserSettings.user_id == user_id_str)
+                from sqlmodel import select
+                from src.domains.user.models import UserSettings
+
+                # 查询现有设置
+                settings_stmt = select(UserSettings).where(UserSettings.user_id == user_id)
                 user_settings = business_session.exec(settings_stmt).first()
 
                 if user_settings:
@@ -237,7 +310,7 @@ async def update_user_profile(
                 else:
                     # 创建新设置
                     user_settings = UserSettings(
-                        user_id=user_id_str,
+                        user_id=user_id,
                         **settings_updates
                     )
                     business_session.add(user_settings)
@@ -245,21 +318,24 @@ async def update_user_profile(
             # 提交事务
             business_session.commit()
 
+            # 获取更新后的用户信息
+            final_user = updated_user or business_user
+
             # 构造更新响应数据
             update_response = {
                 "id": str(user_id),
-                "nickname": user.nickname if user else f"用户_{str(user_id)[:8]}",
-                "avatar_url": user.avatar_url if user else None,
-                "bio": user.bio if user else None,
-                "gender": user.gender if user else None,
-                "birthday": user.birthday.isoformat() if user and user.birthday else None,
+                "nickname": final_user.nickname if final_user else f"用户_{str(user_id)[:8]}",
+                "avatar_url": final_user.avatar_url if final_user else None,
+                "bio": final_user.bio if final_user else None,
+                "gender": final_user.gender if final_user else None,
+                "birthday": final_user.birthday.isoformat() if final_user and final_user.birthday else None,
                 "theme": settings_updates.get("theme"),
                 "language": settings_updates.get("language"),
                 "updated_fields": updated_fields,
                 "updated_at": datetime.utcnow().isoformat()
             }
 
-            logger.info(f"用户信息更新成功: user_id={user_id}, fields={updated_fields}")
+            logger.info(f"用户增强信息更新成功: user_id={user_id}, fields={updated_fields}")
 
             return UnifiedResponse(
                 code=200,
@@ -273,7 +349,7 @@ async def update_user_profile(
             raise e
 
     except Exception as e:
-        logger.error(f"更新用户信息失败: user_id={user_id}, error={str(e)}")
+        logger.error(f"更新用户增强信息失败: user_id={user_id}, error={str(e)}")
         return UnifiedResponse(
             code=500,
             data=None,
@@ -281,57 +357,121 @@ async def update_user_profile(
         )
 
 
-async def _ensure_user_profile_exists(session: Session, user_id_str: str, user: User) -> None:
+@router.post("/welcome-gift/claim", summary="领取欢迎礼包")
+async def claim_welcome_gift(
+    session: Annotated[Session, Depends(get_db_session)],
+    user_id: UUID = Depends(get_current_user_id)
+) -> UnifiedResponse[WelcomeGiftResponse]:
     """
-    确保用户profile相关记录存在，如果不存在则创建默认占位内容
+    领取用户欢迎礼包
 
-    Args:
-        session: 数据库会话
-        user_id_str: 用户ID（32位字符格式）
-        user: 用户对象
+    发放内容：
+    - 1000积分
+    - 积分加成卡x3（+50%积分，有效期1小时）
+    - 专注道具x10（立即完成专注会话）
+    - 时间管理券x5（延长任务截止时间1天）
+
+    特性：
+    - 可重复领取，无防刷限制
+    - 完整流水记录
+    - 事务性发放
+
+    说明：
+    JWT token已经验证了用户身份和有效性，无需数据库二次验证
     """
     try:
-        # 检查并创建用户设置
-        settings_stmt = select(UserSettings).where(UserSettings.user_id == user_id_str)
-        user_settings = session.exec(settings_stmt).first()
 
-        if not user_settings:
-            # 创建默认用户设置
-            user_settings = UserSettings(
-                user_id=user_id_str,
-                theme="light",        # 默认主题
-                language="zh-CN",     # 默认语言
-                notifications_enabled=True,  # 默认开启通知
-                privacy_level="public"       # 默认隐私级别
-            )
-            session.add(user_settings)
-            logger.info(f"为用户创建默认设置: user_id={user_id_str}")
+        # 初始化服务
+        points_service = PointsService(session)
+        welcome_gift_service = WelcomeGiftService(session, points_service)
 
-        # 检查并创建用户统计
-        stats_stmt = select(UserStats).where(UserStats.user_id == user_id_str)
-        user_stats = session.exec(stats_stmt).first()
+        # 领取欢迎礼包（Repository层会处理UUID转换）
+        result = welcome_gift_service.claim_welcome_gift(str(user_id))
 
-        if not user_stats:
-            # 创建默认用户统计
-            user_stats = UserStats(
-                user_id=user_id_str,
-                tasks_completed=0,
-                total_points=0,
-                login_count=0
-            )
-            session.add(user_stats)
-            logger.info(f"为用户创建默认统计: user_id={user_id_str}")
+        # 构建响应数据
+        rewards_granted = [
+            {
+                "name": reward["name"],
+                "quantity": reward["quantity"],
+                "description": reward["description"]
+            }
+            for reward in result["rewards_granted"]
+        ]
 
-        # 检查用户基础信息是否需要占位内容
-        if not user.nickname:
-            # 设置默认昵称
-            user.nickname = f"用户_{user_id_str[:8]}"
-            logger.info(f"为用户设置默认昵称: user_id={user_id_str}, nickname={user.nickname}")
+        welcome_gift_response = WelcomeGiftResponse(
+            points_granted=result["points_granted"],
+            rewards_granted=rewards_granted,
+            transaction_group=result["transaction_group"],
+            granted_at=result["granted_at"]
+        )
 
-        # 提交所有创建操作
-        session.commit()
+        return UnifiedResponse(
+            code=200,
+            data=welcome_gift_response,
+            message="success"
+        )
 
     except Exception as e:
-        session.rollback()
-        logger.error(f"创建用户profile失败: user_id={user_id_str}, error={str(e)}")
-        # 不抛出异常，允许查询继续进行
+        logger.error(f"领取欢迎礼包失败: user_id={user_id}, error={str(e)}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"领取欢迎礼包失败: {str(e)}"
+        )
+
+
+@router.get("/welcome-gift/history", response_model=UnifiedResponse[WelcomeGiftHistoryResponse], summary="获取欢迎礼包历史")
+async def get_welcome_gift_history(
+    session: Annotated[Session, Depends(get_db_session)],
+    user_id: UUID = Depends(get_current_user_id),
+    limit: int = 10
+) -> UnifiedResponse[WelcomeGiftHistoryResponse]:
+    """
+    获取用户欢迎礼包领取历史
+
+    Args:
+        user_id: 用户ID
+        limit: 返回记录数量限制，默认10条
+
+    说明：
+    JWT token已经验证了用户身份和有效性，无需数据库二次验证
+    """
+    try:
+
+        # 初始化服务
+        points_service = PointsService(session)
+        welcome_gift_service = WelcomeGiftService(session, points_service)
+
+        # 获取历史记录（Repository层会处理UUID转换）
+        history = welcome_gift_service.get_user_gift_history(str(user_id), limit)
+
+        # 构建响应数据
+        history_items = [
+            WelcomeGiftHistoryItem(
+                transaction_group=item["transaction_group"],
+                granted_at=item["granted_at"],
+                points_granted=item["points_granted"],
+                rewards_count=item["rewards_count"],
+                reward_items=item["reward_items"]
+            )
+            for item in history
+        ]
+
+        history_response = WelcomeGiftHistoryResponse(
+            history=history_items,
+            total_count=len(history_items)
+        )
+
+        return UnifiedResponse(
+            code=200,
+            data=history_response,
+            message="success"
+        )
+
+    except Exception as e:
+        logger.error(f"获取欢迎礼包历史失败: user_id={user_id}, error={str(e)}")
+        return UnifiedResponse(
+            code=500,
+            data=None,
+            message=f"获取欢迎礼包历史失败: {str(e)}"
+        )

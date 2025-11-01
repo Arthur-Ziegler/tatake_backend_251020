@@ -14,7 +14,7 @@
 版本：1.0.0 - 域分离架构
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 from sqlmodel import SQLModel, Field
 from uuid import UUID
@@ -23,10 +23,12 @@ from pydantic import ConfigDict
 
 class UserBase(SQLModel):
     """用户基础模型"""
-    user_id: UUID = Field(..., description="用户ID（关联认证表）")
+    user_id: str = Field(..., description="用户ID（关联认证表，32位字符）")
     nickname: Optional[str] = Field(None, description="用户昵称")
     avatar_url: Optional[str] = Field(None, description="头像URL")
     bio: Optional[str] = Field(None, description="用户简介")
+    gender: Optional[str] = Field(None, description="性别 (male/female/other)")
+    birthday: Optional[date] = Field(None, description="生日")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
 
@@ -42,7 +44,7 @@ class User(UserBase, table=True):
 class UserSettings(SQLModel, table=True):
     """用户设置表"""
     id: Optional[int] = Field(default=None, primary_key=True, description="主键ID")
-    user_id: UUID = Field(..., description="用户ID")
+    user_id: str = Field(..., description="用户ID（32位字符）")
     theme: str = Field(default="light", description="主题设置")
     language: str = Field(default="zh-CN", description="语言设置")
     notifications_enabled: bool = Field(default=True, description="通知开关")
@@ -50,7 +52,7 @@ class UserSettings(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
 
-    model_config = ConfigDict(table_name = "user_settings")
+    model_config = ConfigDict(table_name = "usersettings")
 
 
 class UserPreferences(SQLModel, table=True):
@@ -70,7 +72,7 @@ class UserPreferences(SQLModel, table=True):
 class UserStats(SQLModel, table=True):
     """用户统计表"""
     id: Optional[int] = Field(default=None, primary_key=True, description="主键ID")
-    user_id: UUID = Field(..., description="用户ID")
+    user_id: str = Field(..., description="用户ID（32位字符）")
     tasks_completed: int = Field(default=0, description="完成任务数")
     total_points: int = Field(default=0, description="总积分")
     login_count: int = Field(default=0, description="登录次数")
@@ -78,8 +80,7 @@ class UserStats(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
 
-    class Config:
-        table_name = "user_stats"
+    model_config = ConfigDict(table_name = "user_stats")
 
 
 # 响应模型

@@ -221,9 +221,13 @@ from src.domains.task.router import router as task_router
 from src.api.rewards import router as reward_router  # 使用新的奖励微服务路由器
 from src.domains.top3.router import router as top3_router
 from src.domains.chat.router import router as chat_router
+from src.domains.user.router import router as user_router
 
 # 使用微服务认证路由（不再需要前缀，因为路径已经包含/auth）
 app.include_router(auth_router)
+
+# 使用用户领域路由
+app.include_router(user_router, prefix=config.api_prefix)
 
 # 使用任务领域路由
 app.include_router(task_router, prefix=config.api_prefix)
