@@ -78,15 +78,15 @@ from src.api.openapi import setup_openapi
 setup_openapi(app)
 
 
-# 添加CORS中间件 - 使用FastAPI原生方法，最宽松配置
+# 添加CORS中间件 - 完全开放配置，允许所有IP访问所有端口
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有源
-    allow_credentials=True,  # 允许认证凭据
-    allow_methods=["*"],  # 允许所有HTTP方法
-    allow_headers=["*"],  # 允许所有请求头
+    allow_origins=config.allowed_origins,  # 允许所有源（IP、域名、端口）
+    allow_credentials=config.allow_credentials,  # 允许认证凭据
+    allow_methods=config.allowed_methods,  # 允许所有HTTP方法
+    allow_headers=config.allowed_headers,  # 允许所有请求头
     expose_headers=["*"],  # 暴露所有响应头
     max_age=86400,  # 预检请求缓存24小时（最长时间）
 )

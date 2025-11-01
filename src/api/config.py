@@ -7,10 +7,10 @@ API层配置文件
 
 import os
 import secrets
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic_settings import BaseSettings
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 
 class APIConfig(BaseSettings):
@@ -76,16 +76,66 @@ class APIConfig(BaseSettings):
             'audience': 'tatake-client'
         }
 
-    # CORS配置 - 允许所有访问，解决部署问题
-    allowed_origins: list = Field(
+    # CORS配置 - 完全开放，允许所有IP访问所有端口
+    allowed_origins: Union[list, str] = Field(
         default=["*"],
-        description="允许的源地址（部署环境允许所有访问）"
+        description="允许的源地址（完全开放，允许所有IP访问所有端口）",
+        env="CORS_ORIGINS"
     )
-    allowed_methods: list = Field(
-        default=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        description="允许的HTTP方法"
+    allowed_methods: Union[list, str] = Field(
+        default=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"],
+        description="允许的HTTP方法（完全开放）",
+        env="CORS_ALLOW_METHODS"
     )
-    allowed_headers: list = Field(default=["*"], description="允许的请求头")
+    allowed_headers: Union[list, str] = Field(
+        default=["*"],
+        description="允许的请求头（完全开放）",
+        env="CORS_ALLOW_HEADERS"
+    )
+    allow_credentials: bool = Field(
+        default=True,
+        description="是否允许认证凭据",
+        env="CORS_ALLOW_CREDENTIALS"
+    )
+
+    @field_validator('allowed_origins', mode='before')
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        """解析允许的源地址"""
+        if isinstance(v, str):
+            if v == "*":
+                return ["*"]
+            elif v.strip() == "":
+                return ["*"]
+            else:
+                return [origin.strip() for origin in v.split(",")]
+        return v
+
+    @field_validator('allowed_methods', mode='before')
+    @classmethod
+    def parse_allowed_methods(cls, v):
+        """解析允许的HTTP方法"""
+        if isinstance(v, str):
+            if v == "*":
+                return ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"]
+            elif v.strip() == "":
+                return ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"]
+            else:
+                return [method.strip() for method in v.split(",")]
+        return v
+
+    @field_validator('allowed_headers', mode='before')
+    @classmethod
+    def parse_allowed_headers(cls, v):
+        """解析允许的请求头"""
+        if isinstance(v, str):
+            if v == "*":
+                return ["*"]
+            elif v.strip() == "":
+                return ["*"]
+            else:
+                return [header.strip() for header in v.split(",")]
+        return v
 
     # 限流配置
     rate_limit_enabled: bool = Field(default=True, description="是否启用限流")
