@@ -1,21 +1,21 @@
 """
-Task领域API路由 - 微服务代理模式（简化版）
+Task领域API路由 - 混合模式（微服务+本地实现）
 
-实现9个核心接口的微服务代理，删除所有不需要的功能。
+实现9个核心接口，微服务支持的接口使用代理，不支持的接口使用本地实现。
 
 9个核心接口：
-1. POST /tasks - 创建任务
-2. GET /tasks - 查询所有任务（前端过滤）
-3. PUT /tasks/{task_id} - 修改任务
-4. DELETE /tasks/{task_id} - 删除任务
-5. POST /tasks/special/top3 - 设置Top3（无积分消耗）
-6. GET /tasks/special/top3/{date} - 查看Top3
-7. POST /tasks/{task_id}/complete - 任务完成按钮（含奖励）
-8. POST /tasks/focus-status - 发送专注状态
-9. GET /tasks/pomodoro-count - 查看番茄钟计数
+1. POST /tasks - 创建任务（微服务）
+2. GET /tasks - 查询所有任务（微服务，前端过滤）
+3. PUT /tasks/{task_id} - 修改任务（微服务）
+4. DELETE /tasks/{task_id} - 删除任务（本地实现）
+5. POST /tasks/special/top3 - 设置Top3（本地实现）
+6. GET /tasks/special/top3/{date} - 查看Top3（本地实现）
+7. POST /tasks/{task_id}/complete - 任务完成按钮（本地实现）
+8. POST /tasks/focus-status - 发送专注状态（本地实现）
+9. GET /tasks/pomodoro-count - 查看番茄钟计数（本地实现）
 
 作者：TaKeKe团队
-版本：3.0.0（简化微服务代理）
+版本：4.0.0（混合模式）
 """
 
 import logging
@@ -30,9 +30,12 @@ from sqlmodel import Session
 # 导入微服务客户端
 from src.services.task_microservice_client import (
     TaskMicroserviceError,
-    get_all_tasks, create_task, delete_task, update_task, complete_task,
-    set_top3, get_top3, send_focus_status, get_pomodoro_count
+    get_all_tasks, create_task, update_task, delete_task,
+    set_top3, get_top3, complete_task
 )
+
+# 导入本地服务
+from .service_local import TaskLocalService
 from .schemas import (
     CreateTaskRequest,
     UpdateTaskRequest,
@@ -556,43 +559,43 @@ async def complete_task_endpoint(
 @router.post("/focus-status", response_model=UnifiedResponse[Dict[str, Any]], summary="发送专注状态")
 async def send_focus_status_endpoint(
     request: Dict[str, Any],
+    session: SessionDep,
     user_id: UUID = Depends(get_current_user_id)
 ) -> UnifiedResponse[Dict[str, Any]]:
     """
-    8. 发送专注状态 - 微服务代理
+    8. 发送专注状态 - 本地实现
     """
     try:
         logger.info(f"发送专注状态API调用: user_id={user_id}")
 
-        # 调用微服务便捷方法
-        microservice_response = await send_focus_status(
-            user_id=str(user_id),
+        # 创建本地服务实例
+        local_service = TaskLocalService(session)
+
+        # 记录专注状态
+        focus_record = local_service.record_focus_status(
+            user_id=user_id,
             focus_status=request.get("focus_status"),
             task_id=request.get("task_id"),
-            duration_minutes=request.get("duration_minutes")
+            duration_minutes=request.get("duration_minutes"),
+            status_data=request.get("status_data", {})
         )
 
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
+        # 构造响应数据
+        response_data = {
+            "id": focus_record.id,
+            "user_id": str(focus_record.user_id),
+            "focus_status": focus_record.focus_status,
+            "task_id": focus_record.task_id,
+            "duration_minutes": focus_record.duration_minutes,
+            "created_at": focus_record.created_at.isoformat() if focus_record.created_at else None
+        }
 
         return UnifiedResponse(
             code=200,
-            data=microservice_response["data"],
+            data=response_data,
             message="专注状态记录成功"
         )
 
-    except TaskMicroserviceError as e:
-        logger.error(f"微服务调用失败: {e}")
-        return UnifiedResponse(
-            code=e.status_code,
-            data=None,
-            message=e.message
-        )
     except Exception as e:
         logger.error(f"发送专注状态异常: {e}")
         return UnifiedResponse(
@@ -604,42 +607,38 @@ async def send_focus_status_endpoint(
 
 @router.get("/pomodoro-count", response_model=UnifiedResponse[Dict[str, Any]], summary="查看番茄钟计数")
 async def get_pomodoro_count_endpoint(
+    session: SessionDep,
     user_id: UUID = Depends(get_current_user_id),
     date_filter: Optional[str] = Query("today", description="时间过滤: today, week, month")
 ) -> UnifiedResponse[Dict[str, Any]]:
     """
-    9. 查看番茄钟计数 - 微服务代理
+    9. 查看番茄钟计数 - 本地实现
     """
     try:
         logger.info(f"获取番茄钟计数API调用: user_id={user_id}, filter={date_filter}")
 
-        # 调用微服务便捷方法
-        microservice_response = await get_pomodoro_count(
-            user_id=str(user_id),
+        # 创建本地服务实例
+        local_service = TaskLocalService(session)
+
+        # 获取番茄钟计数
+        pomodoro_record = local_service.get_pomodoro_count(
+            user_id=user_id,
             date_filter=date_filter
         )
 
-        # 检查微服务调用结果
-        if microservice_response["code"] != 200:
-            return UnifiedResponse(
-                code=microservice_response["code"],
-                data=None,
-                message=microservice_response["message"]
-            )
+        # 构造响应数据
+        response_data = {
+            "date_filter": date_filter,
+            "count": pomodoro_record.count,
+            "last_updated": pomodoro_record.last_updated.isoformat() if pomodoro_record.last_updated else None
+        }
 
         return UnifiedResponse(
             code=200,
-            data=microservice_response["data"],
+            data=response_data,
             message="获取番茄钟统计成功"
         )
 
-    except TaskMicroserviceError as e:
-        logger.error(f"微服务调用失败: {e}")
-        return UnifiedResponse(
-            code=e.status_code,
-            data=None,
-            message=e.message
-        )
     except Exception as e:
         logger.error(f"获取番茄钟计数异常: {e}")
         return UnifiedResponse(

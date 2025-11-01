@@ -110,7 +110,7 @@ class APIConfig(BaseSettings):
 
     # Task微服务配置
     task_service_url: str = Field(
-        default="http://127.0.0.1:20252/api/v1",
+        default="http://45.152.65.130:20253",
         description="Task微服务URL",
         env="TASK_SERVICE_URL"
     )

@@ -508,7 +508,7 @@ async def set_top3(
         "date": date,
         "task_ids": task_ids
     }
-    return await call_task_service("POST", "tasks/special/top3", user_id, data=data)
+    return await call_task_service("POST", "tasks/top3", user_id, data=data)
 
 async def get_top3(
     user_id: str,
@@ -524,7 +524,10 @@ async def get_top3(
     Returns:
         Dict[str, Any]: Top3查询结果
     """
-    return await call_task_service("GET", f"tasks/special/top3/{date}", user_id)
+    data = {
+        "date": date
+    }
+    return await call_task_service("POST", "tasks/top3/query", user_id, data=data)
 
 async def complete_task(
     user_id: str,

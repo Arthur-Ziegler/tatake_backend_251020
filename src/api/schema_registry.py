@@ -28,20 +28,9 @@ from src.domains.chat.schemas import (
     DeleteSessionResponse, SessionListItem, ChatHistoryMessage
 )
 
-from src.domains.focus.schemas import (
-    StartFocusRequest, FocusSessionResponse, FocusSessionListResponse,
-    FocusOperationResponse
-)
-from src.domains.focus.models import SessionType
 
-from src.domains.reward.schemas import (
-    RewardResponse, RewardCatalogResponse, RewardRedeemRequest,
-    RewardRedeemResponse, PointsBalanceResponse, PointsTransactionResponse,
-    PointsTransactionsResponse, AvailableRecipesResponse,
-    RedeemRecipeRequest, RedeemRecipeResponse, MyRewardsResponse,
-    LotteryResult, TaskCompleteResponse, RecipeMaterial,
-    RecipeReward, AvailableRecipe
-)
+# 奖励系统已迁移到微服务，使用新的schemas
+from src.api.rewards import RedeemPrizeRequest
 
 from src.domains.top3.schemas import (
     SetTop3Request, GetTop3Response, Top3Response
@@ -81,30 +70,8 @@ ALL_SCHEMAS: Dict[str, Type[BaseModel]] = {
     "SessionListItem": SessionListItem,
     "ChatHistoryMessage": ChatHistoryMessage,
 
-    # 番茄钟系统
-    "StartFocusRequest": StartFocusRequest,
-    "FocusSessionResponse": FocusSessionResponse,
-    "FocusSessionListResponse": FocusSessionListResponse,
-    "FocusOperationResponse": FocusOperationResponse,
-    "SessionType": SessionType,
-
-    # 奖励系统
-    "RewardResponse": RewardResponse,
-    "RewardCatalogResponse": RewardCatalogResponse,
-    "RewardRedeemRequest": RewardRedeemRequest,
-    "RewardRedeemResponse": RewardRedeemResponse,
-    "PointsBalanceResponse": PointsBalanceResponse,
-    "PointsTransactionResponse": PointsTransactionResponse,
-    "PointsTransactionsResponse": PointsTransactionsResponse,
-    "AvailableRecipesResponse": AvailableRecipesResponse,
-    "RedeemRecipeRequest": RedeemRecipeRequest,
-    "RedeemRecipeResponse": RedeemRecipeResponse,
-    "MyRewardsResponse": MyRewardsResponse,
-    "LotteryResult": LotteryResult,
-    "TaskCompleteResponse": TaskCompleteResponse,
-    "RecipeMaterial": RecipeMaterial,
-    "RecipeReward": RecipeReward,
-    "AvailableRecipe": AvailableRecipe,
+    # 奖励系统（微服务模式）
+    "RedeemPrizeRequest": RedeemPrizeRequest,
 
     # Top3管理
     "SetTop3Request": SetTop3Request,
