@@ -25,8 +25,6 @@ from sqlmodel import Session, select, update
 from sqlalchemy import and_
 
 from .models import User, UserSettings, UserPreferences, UserStats
-from src.domains.auth.repository import AuthRepository
-from src.domains.auth.models import Auth
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +67,7 @@ class UserRepository:
 
     def get_by_id_with_auth(self, user_id: UUID) -> Optional[Dict[str, Any]]:
         """
-        根据用户ID获取用户信息（包含认证数据）
+        根据用户ID获取用户信息（简化版本，不包含认证域数据）
 
         Args:
             user_id (UUID): 用户ID
@@ -81,26 +79,25 @@ class UserRepository:
             # 查询用户域数据
             user = self.get_by_id(user_id)
 
-            # 查询认证域数据
-            from src.domains.auth.database import get_auth_db
-            with get_auth_db() as auth_session:
-                auth_repo = AuthRepository(auth_session)
-                auth_user = auth_repo.get_by_id(user_id)
+            # 如果用户不存在，创建新用户
+            if not user:
+                user = self.create_user(user_id)
 
-                # 如果认证用户不存在，返回None
-                if not auth_user:
-                    return None
+            # 查询用户统计和设置
+            stats = self.get_user_stats(user_id)
+            settings = self.get_user_settings(user_id)
 
-                # 查询用户统计和设置
-                stats = self.get_user_stats(user_id)
-                settings = self.get_user_settings(user_id)
-
-                return {
-                    "user": user,
-                    "auth": auth_user,
-                    "stats": stats,
-                    "settings": settings
-                }
+            # 返回简化的用户信息（认证数据由JWT token提供）
+            return {
+                "user": user,
+                "auth": {
+                    "id": user_id,
+                    # 注意：其他认证相关字段（如wechat_openid, is_guest等）
+                    # 现在由JWT token在中间件层提供，不需要本地数据库
+                },
+                "stats": stats,
+                "settings": settings
+            }
 
         except Exception as e:
             logger.error(f"查询用户完整信息失败: {e}")

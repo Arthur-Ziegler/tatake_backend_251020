@@ -27,7 +27,7 @@ from sqlmodel import Session
 from src.core.uuid_converter import UUIDConverter
 
 # 导入微服务客户端
-from src.services.task_microservice_client import call_task_service, TaskMicroserviceError
+from src.services.task_microservice_client import call_task_service, TaskMicroserviceError, set_top3, get_top3
 from .schemas import SetTop3Request, Top3Response, GetTop3Response
 from .exceptions import Top3Exception
 from .database import get_top3_session
@@ -145,16 +145,12 @@ async def set_top3(
     try:
         logger.info(f"设置Top3 API调用(微服务代理): user_id={user_id}, date={request.date}")
 
-        # 直接调用微服务设置Top3
+        # 调用新的微服务便捷方法设置Top3
         try:
-            # 适配请求数据给微服务
-            request_dict = request.model_dump()
-
-            microservice_response = await call_task_service(
-                method="POST",
-                path="tasks/special/top3",
+            microservice_response = await set_top3(
                 user_id=str(user_id),
-                data=request_dict
+                date=request.date,
+                task_ids=request.task_ids
             )
 
             # 检查微服务调用结果
@@ -261,11 +257,10 @@ async def get_top3(
     try:
         logger.info(f"获取Top3 API调用(微服务代理): user_id={user_id}, date={date}")
 
-        # 调用微服务
-        microservice_response = await call_task_service(
-            method="GET",
-            path=f"tasks/special/top3/{date}",
-            user_id=str(user_id)
+        # 调用新的微服务便捷方法
+        microservice_response = await get_top3(
+            user_id=str(user_id),
+            date=date
         )
 
         # 检查微服务调用结果

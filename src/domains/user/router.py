@@ -43,7 +43,7 @@ async def get_user_profile(
 ) -> UnifiedResponse[UserProfileResponse]:
     """获取当前用户基本信息"""
     try:
-        # 使用UserRepository获取完整的用户信息（跨域查询）
+        # 使用UserRepository获取用户信息
         user_repo = UserRepository(business_session)
         user_data = user_repo.get_by_id_with_auth(user_id)
 
@@ -54,24 +54,19 @@ async def get_user_profile(
                 message="用户不存在"
             )
 
-        auth_user = user_data["auth"]
         business_user = user_data["user"]
-        stats = user_data["stats"]
 
-        # 如果业务用户不存在，创建一个
-        if not business_user:
-            business_user = user_repo.create_user(user_id)
-
-        # 构造用户信息数据（结合认证域和用户域的数据）
+        # 构造用户信息数据（简化版本，认证信息来自JWT token）
         user_profile = UserProfileResponse(
-            id=str(auth_user.id),
-            nickname=business_user.nickname if business_user else f"用户_{str(auth_user.id)[:8]}",
+            id=str(user_id),
+            nickname=business_user.nickname if business_user else f"用户_{str(user_id)[:8]}",
             avatar=business_user.avatar_url if business_user else None,
             bio=business_user.bio if business_user else None,
-            wechat_openid=auth_user.wechat_openid,
-            is_guest=auth_user.is_guest,
-            created_at=auth_user.created_at.isoformat(),
-            last_login_at=auth_user.last_login_at.isoformat() if auth_user.last_login_at else None
+            # 注意：认证相关字段现在由JWT token提供，这里使用默认值
+            wechat_openid=None,  # 从JWT token获取
+            is_guest=False,      # 从JWT token获取
+            created_at=business_user.created_at.isoformat() if business_user and business_user.created_at else "2025-01-01T00:00:00Z",
+            last_login_at=None   # 从JWT token获取
         )
 
         return UnifiedResponse(

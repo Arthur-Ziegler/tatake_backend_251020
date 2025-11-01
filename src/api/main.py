@@ -199,6 +199,25 @@ async def health_check():
     )
 
 
+# 调试端点 - 查看当前配置
+@app.get("/debug", tags=["系统"])
+async def debug_config():
+    """调试端点 - 查看当前配置"""
+    from src.services.task_microservice_client import get_task_microservice_client
+
+    task_client = get_task_microservice_client()
+
+    return create_success_response(
+        data={
+            "task_service_url": task_client.base_url,
+            "task_service_timeout": str(task_client.timeout.read),
+            "config_task_service_url": config.task_service_url,
+            "environment_task_service_url": os.getenv("TASK_SERVICE_URL", "NOT_SET")
+        },
+        message="调试信息"
+    )
+
+
 # API信息
 @app.get(f"{config.api_prefix}/info", tags=["系统"])
 async def api_info():

@@ -111,7 +111,8 @@ class APIConfig(BaseSettings):
     # Task微服务配置
     task_service_url: str = Field(
         default="http://127.0.0.1:20252/api/v1",
-        description="Task微服务URL"
+        description="Task微服务URL",
+        env="TASK_SERVICE_URL"
     )
     task_service_timeout: int = Field(
         default=30,
