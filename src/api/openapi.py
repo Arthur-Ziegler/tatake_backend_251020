@@ -82,13 +82,28 @@ class OpenAPIConfig:
 
     @staticmethod
     def get_server_info() -> List[Dict[str, Any]]:
-        """获取服务器信息"""
-        return [
-            {
-                "url": f"http://{config.api_host}:{config.api_port}{config.api_prefix}",
-                "description": "开发环境服务器"
-            }
-        ]
+        """获取服务器信息 - 支持多服务器配置"""
+        servers = []
+
+        # 优先使用配置的外部访问URL
+        if config.swagger_server_url:
+            servers.append({
+                "url": f"{config.swagger_server_url}{config.api_prefix}",
+                "description": "生产环境服务器（外部访问）"
+            })
+
+        # 添加本地开发服务器选项
+        servers.append({
+            "url": f"http://localhost:{config.api_port}{config.api_prefix}",
+            "description": "本地开发服务器（localhost）"
+        })
+
+        servers.append({
+            "url": f"http://127.0.0.1:{config.api_port}{config.api_prefix}",
+            "description": "本地开发服务器（127.0.0.1）"
+        })
+
+        return servers
 
     @staticmethod
     def get_examples() -> Dict[str, Any]:

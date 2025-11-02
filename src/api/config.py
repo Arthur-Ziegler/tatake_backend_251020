@@ -29,8 +29,15 @@ class APIConfig(BaseSettings):
 
     # API配置
     api_prefix: str = Field(default="", description="API路径前缀")
-    api_host: str = Field(default="0.0.0.0", description="API主机地址", env="API_HOST")
+    api_host: str = Field(default="0.0.0.0", description="API主机地址（用于服务器监听）", env="API_HOST")
     api_port: int = Field(default=8001, description="API端口", env="API_PORT")
+
+    # Swagger UI外部访问配置
+    swagger_server_url: Optional[str] = Field(
+        default=None,
+        description="Swagger UI服务器URL（外部访问地址，如 http://45.152.65.130:2025）",
+        env="SWAGGER_SERVER_URL"
+    )
 
     # 数据库配置
     database_url: str = Field(
