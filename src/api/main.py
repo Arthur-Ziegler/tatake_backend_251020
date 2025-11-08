@@ -6,6 +6,7 @@ TaKeKe API 主应用
 """
 
 import os
+from datetime import datetime
 from contextlib import asynccontextmanager
 from typing import Dict, Any
 
@@ -240,6 +241,22 @@ app.include_router(top3_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
 app.include_router(chat_router, prefix=config.api_prefix)
+
+
+# 健康检查端点
+@app.get(f"{config.api_prefix}/health", tags=["系统"])
+async def health_check():
+    """健康检查端点"""
+    return create_success_response(
+        data={
+            "status": "healthy",
+            "app_name": config.app_name,
+            "version": config.app_version,
+            "timestamp": str(datetime.now()),
+            "environment": "production" if not config.debug else "development"
+        },
+        message="服务运行正常"
+    )
 
 
 # 手动注册所有Schema到OpenAPI - 解决泛型模型不自动注册的问题

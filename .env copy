@@ -1,0 +1,39 @@
+# =============================================================================
+# 数据库配置 (必填)
+# =============================================================================
+DB_HOST=45.152.65.130
+DB_PORT=5432
+DB_USER=remote
+DB_PASSWORD=remote_pw
+DB_NAME=postgres
+
+# 数据库连接池配置
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=10
+
+# =============================================================================
+# 嵌入模型配置
+# =============================================================================
+# 嵌入服务配置 (统一使用EMBEDDING_*命名)
+# EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B
+# EMBEDDING_API_BASE=https://api.302.ai/v1
+# EMBEDDING_API_KEY=sk-rhthhKIGCvuU3npwGvJ2E8k94Wx33nHuYXxQA2DEVFJuW01j
+EMBEDDING_DIMENSIONS=4096
+EMBEDDING_BATCH_SIZE=32
+EMBEDDING_MAX_LENGTH=512
+EMBEDDING_MODEL=wx_emb
+EMBEDDING_API_BASE=http://192.168.40.41:8002/v1
+EMBEDDING_API_KEY=sk-wx
+
+# =============================================================================
+# 向量配置
+# =============================================================================
+VECTOR_DIMENSION=4096
+VECTOR_DISTANCE_METRIC=cosine
+KNOWLEDGE_BASE_NAME=default_kb
+
+# =============================================================================
+# 功能配置
+# =============================================================================
+USE_REAL_EMBEDDING_API=true
+DEBUG=false
