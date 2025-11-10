@@ -54,15 +54,16 @@ class ChatMicroserviceClient:
     """
 
     def __init__(self):
-        """初始化客户端"""
+        """初始化客户端（增强版：连接池）"""
         self.base_url = get_chat_service_url()
         self.timeout = int(get_chat_service_timeout())
         self.logger = logging.getLogger(__name__)
 
-        # 创建HTTP客户端
+        # 创建HTTP客户端（增强：连接池）
         self.client = httpx.AsyncClient(
             timeout=self.timeout,
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20)
         )
 
     async def close(self):

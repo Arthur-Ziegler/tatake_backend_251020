@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 
-from ..services.auth.client import AuthMicroserviceClient
+from ..services.auth_microservice_client import get_auth_client
 
 
 # ==================== Pydantic模型定义 ====================
@@ -60,16 +60,7 @@ router = APIRouter(prefix="/auth", tags=["认证系统"])
 # HTTP Bearer认证方案
 security = HTTPBearer(auto_error=False)
 
-# 全局认证客户端实例（懒加载）
-_auth_client = None
-
-
-def get_auth_client() -> AuthMicroserviceClient:
-    """获取认证客户端实例（懒加载）"""
-    global _auth_client
-    if _auth_client is None:
-        _auth_client = AuthMicroserviceClient()
-    return _auth_client
+# 全局认证客户端已移至auth_microservice_client.py
 
 
 

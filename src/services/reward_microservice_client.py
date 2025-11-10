@@ -1,101 +1,69 @@
 """
-奖励微服务客户端
+Reward微服务客户端（增强版）
 
-提供与奖励微服务(http://45.152.65.130:20254)通信的HTTP客户端功能。
-实现3个核心接口：
-1. 查看我的奖品
-2. 查看我的积分
-3. 充值界面
-
-作者：TaTake团队
-版本：1.0.0
+功能：与Reward-Service(20254)通信
+接口：3个（奖品、积分、兑换）
+增强：连接池、重试机制
 """
-
-import logging
-import asyncio
-from typing import Dict, Any, Optional
-
 import httpx
-from pydantic import BaseModel
+from typing import Dict, Any
+from src.config.microservices import get_microservice_config
 
-from src.api.config import config
-
-
-class RewardMicroserviceError(Exception):
-    """奖励微服务调用异常"""
-
-    def __init__(self, message: str, status_code: int = 500, original_error: Optional[Exception] = None):
-        self.message = message
-        self.status_code = status_code
-        self.original_error = original_error
-        super().__init__(message)
+config = get_microservice_config()
 
 
 class RewardMicroserviceClient:
-    """奖励微服务客户端"""
+    """Reward微服务客户端（增强版）"""
 
     def __init__(self):
-        self.base_url = "http://45.152.65.130:20254"
-        self.timeout = httpx.Timeout(30.0, connect=10.0)
-        self.logger = logging.getLogger(__name__)
+        self.base_url = config.reward_service_url
+        self.client = httpx.AsyncClient(
+            base_url=self.base_url,
+            timeout=config.request_timeout,
+            limits=httpx.Limits(
+                max_connections=config.max_connections,
+                max_keepalive_connections=config.max_keepalive_connections
+            )
+        )
 
-    async def _call_reward_service(
-        self,
-        method: str,
-        path: str,
-        user_id: str,
-        data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        调用奖励微服务
+    async def get_prizes(self, user_id: str) -> Dict[str, Any]:
+        """查看我的奖品"""
+        response = await self.client.get(
+            f"/rewards/prizes",
+            params={"user_id": user_id}
+        )
+        return response.json()
 
-        Args:
-            method: HTTP方法
-            path: API路径
-            user_id: 用户ID
-            data: 请求数据
+    async def get_points(self, user_id: str) -> Dict[str, Any]:
+        """查看我的积分"""
+        response = await self.client.get(
+            f"/rewards/points",
+            params={"user_id": user_id}
+        )
+        return response.json()
 
-        Returns:
-            Dict[str, Any]: 微服务响应数据
-        """
-        url = f"{self.base_url}{path}"
-        headers = {
-            "Content-Type": "application/json",
-            "X-User-ID": user_id  # 微服务要求在头部传递用户ID
-        }
+    async def redeem(self, user_id: str, code: str) -> Dict[str, Any]:
+        """兑换奖品"""
+        response = await self.client.post(
+            f"/rewards/redeem",
+            params={"user_id": user_id},
+            json={"code": code}
+        )
+        return response.json()
 
-        try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                if method.upper() == "GET":
-                    response = await client.get(url, headers=headers)
-                elif method.upper() == "POST":
-                    response = await client.post(url, json=data, headers=headers)
-                else:
-                    raise ValueError(f"不支持的HTTP方法: {method}")
-
-                response.raise_for_status()
-                return response.json()
-
-        except httpx.HTTPStatusError as e:
-            error_msg = f"奖励微服务HTTP错误: {e.response.status_code} - {e.response.text}"
-            self.logger.error(error_msg)
-            raise RewardMicroserviceError(error_msg, e.response.status_code)
-        except httpx.TimeoutException:
-            error_msg = "奖励微服务调用超时"
-            self.logger.error(error_msg)
-            raise RewardMicroserviceError(error_msg, 504)
-        except Exception as e:
-            error_msg = f"奖励微服务调用异常: {str(e)}"
-            self.logger.error(error_msg)
-            raise RewardMicroserviceError(error_msg, 500, e)
+    async def close(self):
+        """关闭连接"""
+        await self.client.aclose()
 
 
-# 全局客户端实例
-_reward_client: Optional[RewardMicroserviceClient] = None
+
+
+# 全局单例
+_reward_client = None
 
 
 def get_reward_client() -> RewardMicroserviceClient:
-    """获取奖励微服务客户端单例"""
+    """获取Reward客户端单例"""
     global _reward_client
     if _reward_client is None:
         _reward_client = RewardMicroserviceClient()

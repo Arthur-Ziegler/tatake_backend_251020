@@ -163,10 +163,10 @@ class APIConfig(BaseSettings):
     request_timeout: int = Field(default=30, description="请求超时时间(秒)")
     max_concurrent_requests: int = Field(default=1000, description="最大并发请求数")
 
-    # Task微服务配置
+    # Task微服务配置 (已迁移到新服务器)
     task_service_url: str = Field(
-        default="http://45.152.65.130:20253",
-        description="Task微服务URL",
+        default="http://api.aitodo.it:20253",
+        description="Task微服务URL (已迁移至新服务器)",
         env="TASK_SERVICE_URL"
     )
     task_service_timeout: int = Field(
@@ -210,10 +210,50 @@ class APIConfig(BaseSettings):
         description="Task微服务健康检查间隔(秒)"
     )
 
-    # 聊天微服务配置
+    # 聊天微服务配置 (已迁移到新服务器)
     chat_service_url: str = Field(
-        default="http://45.152.65.130:20252",
-        description="聊天微服务URL"
+        default="http://api.aitodo.it:20252",
+        description="聊天微服务URL (已迁移至新服务器)",
+        env="CHAT_SERVICE_URL"
+    )
+    chat_service_timeout: int = Field(
+        default=30,
+        description="聊天微服务调用超时时间(秒)"
+    )
+
+    # 认证微服务配置 (已迁移到新服务器)
+    auth_service_url: str = Field(
+        default="http://api.aitodo.it:20251",
+        description="认证微服务URL (已迁移至新服务器)",
+        env="AUTH_SERVICE_URL"
+    )
+    auth_service_timeout: int = Field(
+        default=30,
+        description="认证微服务调用超时时间(秒)"
+    )
+
+    # 奖励微服务配置 (Mock实现 - 服务未完成)
+    reward_service_url: str = Field(
+        default="http://mock.reward.service",
+        description="奖励微服务URL (Mock实现，等待服务完成)",
+        env="REWARD_SERVICE_URL"
+    )
+    reward_service_enabled: bool = Field(
+        default=False,
+        description="是否启用奖励微服务（Mock模式）",
+        env="REWARD_SERVICE_ENABLED"
+    )
+
+    # Top3微服务配置 (Mock实现 - 服务未完成)
+    top3_service_url: str = Field(
+        default="http://mock.top3.service",
+        description="Top3微服务URL (Mock实现，等待服务完成)",
+        env="TOP3_SERVICE_URL"
+    )
+    top3_service_enabled: bool = Field(
+        default=False,
+        description="是否启用Top3微服务（Mock模式）",
+        env="TOP3_SERVICE_ENABLED"
     )
     chat_service_timeout: int = Field(
         default=30,
