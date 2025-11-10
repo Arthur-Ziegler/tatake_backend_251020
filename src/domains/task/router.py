@@ -46,8 +46,6 @@ from src.services.enhanced_task_microservice_client import (
 
 # 导入认证依赖
 from src.api.dependencies import get_current_user_id
-# 导入Top3 Mock服务
-from src.services.top3_mock_service import get_top3_mock_service
 from src.api.config import config
 
 # 导入响应模型
@@ -577,52 +575,8 @@ async def complete_task_endpoint(
         final_data = adapted_response.get("data", {})
 
         # 检查是否需要触发Top3抽奖（仅在Mock模式下）
-        if not config.top3_service_enabled:
-            try:
-                # 检查任务是否在今天的Top3中
-                from datetime import datetime
-                today = datetime.now().strftime("%Y-%m-%d")
-                top3_service = get_top3_mock_service()
-
-                is_in_top3 = await top3_service.check_task_in_top3(
-                    user_id=str(user_id),
-                    task_id=task_id,
-                    target_date=today
-                )
-
-                if is_in_top3:
-                    logger.info(f"任务在Top3中，触发抽奖: task_id={task_id}")
-                    lottery_result = await top3_service.simulate_lottery(
-                        user_id=str(user_id),
-                        task_id=task_id
-                    )
-
-                    # 添加抽奖结果到响应数据
-                    final_data["lottery_result"] = lottery_result
-                    final_data["is_top3_task"] = True
-                    final_data["message"] = final_data.get("message", "") + " 🎉 Top3任务完成，触发抽奖！"
-                else:
-                    final_data["is_top3_task"] = False
-
-                # 普通任务完成奖励2积分
-                if not final_data.get("is_top3_task", False):
-                    reward_service = get_top3_mock_service()  # 复用Top3服务的积分管理
-                    await reward_service.add_points(
-                        user_id=str(user_id),
-                        points=2,
-                        source_type="task_complete",
-                        source_id=task_id
-                    )
-                    final_data["completion_result"] = {
-                        "success": True,
-                        "points_awarded": 2,
-                        "reward_type": "task_complete"
-                    }
-
-            except Exception as e:
-                logger.error(f"Top3抽奖检查异常: {e}")
-                # 抽奖失败不影响任务完成
-                final_data["lottery_error"] = str(e)
+        # Top3任务完成逻辑已移除（免费使用，无积分奖励）
+        # 任务完成本身的奖励由Task微服务内部处理
 
         return UnifiedResponse(
             code=adapted_response.get("code", 200),
@@ -672,34 +626,7 @@ async def set_top3_endpoint(
     try:
         logger.info(f"设置Top3 API调用: user_id={user_id}, date={request.date}")
 
-        # 检查是否启用Mock模式
-        if not config.top3_service_enabled:
-            logger.info("使用Mock Top3服务")
-            mock_service = get_top3_mock_service()
-            mock_response = await mock_service.set_top3(
-                user_id=str(user_id),
-                target_date=request.date,
-                task_ids=request.task_ids[:3]
-            )
-
-            if mock_response.get("success", False):
-                return UnifiedResponse(
-                    code=200,
-                    data=mock_response,
-                    message=f"Top3设置成功 (Mock数据)"
-                )
-            else:
-                error_code = 400
-                if mock_response.get("error") == "InsufficientPoints":
-                    error_code = 4101
-                elif mock_response.get("error") == "Top3AlreadyExists":
-                    error_code = 4102
-
-                return UnifiedResponse(
-                    code=error_code,
-                    data=mock_response,
-                    message=mock_response.get("message", "Top3设置失败")
-                )
+        # Top3功能现在免费使用，直接调用Task微服务
 
         # 准备Top3数据
         top3_data = {
@@ -762,21 +689,6 @@ async def get_top3_endpoint(
     """
     try:
         logger.info(f"获取Top3 API调用: user_id={user_id}, date={query_date}")
-
-        # 检查是否启用Mock模式
-        if not config.top3_service_enabled:
-            logger.info("使用Mock Top3服务")
-            mock_service = get_top3_mock_service()
-            mock_response = await mock_service.get_top3(
-                user_id=str(user_id),
-                target_date=query_date
-            )
-
-            return UnifiedResponse(
-                code=200,
-                data=mock_response,
-                message=f"获取Top3成功 (Mock数据)"
-            )
 
         # 调用微服务（路径会被重写为 GET /api/v1/tasks/top3/{user_id}/{date}）
         response = await client.call_microservice(

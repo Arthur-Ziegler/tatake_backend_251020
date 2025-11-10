@@ -31,19 +31,38 @@ class AuthMicroserviceClient:
         )
         return response.json()
 
-    async def phone_send_code(self, phone: str) -> Dict[str, Any]:
-        """发送手机验证码"""
+    async def wechat_register(self, wechat_openid: str) -> Dict[str, Any]:
+        """微信注册"""
         response = await self.client.post(
-            "/auth/phone/send-code",
-            json={"project": config.project, "phone": phone}
+            "/auth/wechat/register",
+            json={"project": config.project, "wechat_openid": wechat_openid}
         )
         return response.json()
 
-    async def phone_verify(self, phone: str, code: str) -> Dict[str, Any]:
-        """验证手机验证码"""
+    async def phone_send_code(self, phone: str, scene: str = "login") -> Dict[str, Any]:
+        """发送手机验证码
+
+        Args:
+            phone: 手机号
+            scene: 场景，register/login/bind，默认login
+        """
+        response = await self.client.post(
+            "/auth/phone/send-code",
+            json={"project": config.project, "phone": phone, "scene": scene}
+        )
+        return response.json()
+
+    async def phone_verify(self, phone: str, code: str, scene: str = "login") -> Dict[str, Any]:
+        """验证手机验证码
+
+        Args:
+            phone: 手机号
+            code: 验证码
+            scene: 场景，register/login/bind，默认login
+        """
         response = await self.client.post(
             "/auth/phone/verify",
-            json={"project": config.project, "phone": phone, "code": code}
+            json={"project": config.project, "phone": phone, "code": code, "scene": scene}
         )
         return response.json()
 

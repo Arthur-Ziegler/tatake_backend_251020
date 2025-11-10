@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 
-from ..services.auth_microservice_client import get_auth_client
+from ..services.auth_microservice_client import get_auth_client, AuthMicroserviceClient
 
 
 # ==================== Pydantic模型定义 ====================
@@ -157,7 +157,7 @@ async def phone_send_code(
     try:
         # 第一步：尝试发送登录验证码
         try:
-            response = await auth_client.phone_send_code(request.phone, "login", None)
+            response = await auth_client.phone_send_code(request.phone, scene="login")
             return UnifiedResponse(**{
                 "code": 200,
                 "message": "登录验证码发送成功",
@@ -182,7 +182,7 @@ async def phone_send_code(
             # 如果登录验证码发送失败（用户不存在），尝试注册验证码
             if login_error.status_code in [400, 404, 500]:  # 扩展错误码范围以包含更多可能的错误情况
                 try:
-                    response = await auth_client.phone_send_code(request.phone, "register", None)
+                    response = await auth_client.phone_send_code(request.phone, scene="register")
                     return UnifiedResponse(**{
                         "code": 200,
                         "message": "注册验证码发送成功（新用户）",
@@ -230,9 +230,7 @@ async def phone_verify(
     try:
         # 第一步：尝试登录验证
         try:
-            response = await auth_client.phone_verify(
-                request.phone, request.code, "login", None
-            )
+            response = await auth_client.phone_verify(request.phone, request.code, scene="login")
 
             # 登录成功，返回响应并添加场景信息
             if response.get('code') == 200:
@@ -246,9 +244,7 @@ async def phone_verify(
             # 如果登录验证失败（用户不存在），尝试注册验证
             if login_error.status_code in [400, 404]:
                 try:
-                    response = await auth_client.phone_verify(
-                        request.phone, request.code, "register", None
-                    )
+                    response = await auth_client.phone_verify(request.phone, request.code, scene="register")
 
                     # 注册成功，返回响应并添加场景信息
                     if response.get('code') == 200:
