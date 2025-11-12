@@ -30,7 +30,7 @@ from sqlmodel import Session
 from src.domains.task.service import TaskService
 from src.domains.points.service import PointsService
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tasks/", tags=["tasks"])
 
 # 全局变量，模拟用户数据（实际项目中需要从JWT中获取）
 TASK_COMPLETION_REWARDS = {

@@ -1,7 +1,7 @@
 """
 增强版Task微服务客户端
 
-提供与Task微服务(http://45.152.65.130:20253)通信的完整HTTP客户端功能。
+提供与Task微服务(http://api.aitodo.it:20253)通信的完整HTTP客户端功能。
 实现智能路径映射、UUID验证、连接池管理、重试机制等高级功能。
 
 核心功能：
@@ -12,17 +12,21 @@
 5. 增强错误处理：详细的网络错误处理和降级策略
 6. 重试机制：智能重试可恢复的错误
 
-路径映射策略：
-- POST /tasks/query → GET /api/v1/tasks/{user_id}
-- PUT /tasks/{task_id} → PUT /api/v1/tasks/{user_id}/{task_id}
-- DELETE /tasks/{task_id} → DELETE /api/v1/tasks/{user_id}/{task_id}
-- POST /tasks/{task_id}/complete → POST /api/v1/tasks/{user_id}/{task_id}/complete
-- POST /tasks/top3/query → GET /api/v1/tasks/top3/{user_id}/{date}
-- POST /tasks/focus-status → POST /api/v1/focus/sessions
-- GET /tasks/pomodoro-count → GET /api/v1/pomodoros/count
+路径映射策略（重要：路径末尾必须有斜杠 + user_id通过query参数传递）：
+- POST /tasks/query → GET /tasks/?user_id={user_id}
+- PUT /tasks/{task_id} → PUT /tasks/{task_id}/?user_id={user_id}
+- DELETE /tasks/{task_id} → DELETE /tasks/{task_id}/?user_id={user_id}
+- POST /tasks/{task_id}/complete → PUT /tasks/{task_id}/?user_id={user_id}
+- POST /tasks/top3/query → GET /tasks/top3/?user_id={user_id}
+- POST /tasks/focus-status → POST /focus/sessions/?user_id={user_id}
+- GET /tasks/pomodoro-count → GET /pomodoros/count/?user_id={user_id}
+
+重要：
+1. Task微服务API路径末尾必须有斜杠（如 /tasks/ 而不是 /tasks），否则返回307重定向
+2. 所有微服务API都使用query参数传递user_id，而不是路径参数
 
 作者：TaTakeKe团队
-版本：3.0.0（增强版）
+版本：3.1.0（修复版 - 正确使用query参数）
 """
 
 import logging
@@ -238,18 +242,18 @@ class EnhancedTaskMicroserviceClient:
             base_url (str): 微服务基础URL，默认从环境变量读取
         """
         self.logger = logging.getLogger(__name__)
-        self.base_url = base_url or getattr(config, 'task_service_url', 'http://45.152.65.130:20253/api/v1')
+        self.base_url = base_url or getattr(config, 'task_service_url', 'http://45.152.65.130:20253')
 
         # 强制使用正确的Task微服务URL，忽略环境变量
         if '127.0.0.1:20252' in self.base_url:
-            self.base_url = 'http://45.152.65.130:20253/api/v1'
+            self.base_url = 'http://45.152.65.130:20253'
             self.logger.warning(f"检测到错误的本地微服务URL，强制使用正确URL: {self.base_url}")
 
-        # 确保base_url包含/api/v1后缀
-        if not self.base_url.endswith('/api/v1'):
-            # 移除末尾的斜杠，然后添加/api/v1
-            self.base_url = self.base_url.rstrip('/') + '/api/v1'
-            self.logger.warning(f"base_url缺少/api/v1后缀，已自动补全: {self.base_url}")
+        # Task微服务不使用/api/v1前缀，直接使用根路径
+        # 移除可能存在的/api/v1后缀
+        if self.base_url.endswith('/api/v1'):
+            self.base_url = self.base_url[:-7]  # 移除'/api/v1'
+            self.logger.warning(f"移除了错误的/api/v1后缀: {self.base_url}")
 
         self.logger.info(f"增强版Task微服务客户端初始化，base_url: {self.base_url}")
         self.logger.info(f"调试信息：强制URL覆盖已启用，将忽略错误的本地环境变量")
@@ -286,36 +290,47 @@ class EnhancedTaskMicroserviceClient:
         """
         构建路径映射表
 
+        重要：
+        1. Task微服务使用query参数传递user_id，而不是路径参数
+        2. Task微服务的API路径需要末尾斜杠（如 /tasks/ 而不是 /tasks）
+
+        正确的API格式：GET /tasks/?user_id={user_id}
+        错误的格式：GET /tasks/{user_id} 或 GET /tasks?user_id={user_id} (缺少斜杠)
+
         Returns:
             Dict[Tuple[str, str], Tuple[str, str]]: 路径映射表
         """
         return {
-            # 查询任务：POST query → GET with user_id
-            ("POST", "tasks/query"): ("GET", "tasks/{user_id}"),
+            # 查询任务：POST query → GET /tasks/ (注意末尾斜杠)
+            ("POST", "tasks/query"): ("GET", "tasks/"),
 
-            # 单个任务CRUD：需要user_id路径参数
-            ("PUT", "tasks/{task_id}"): ("PUT", "tasks/{user_id}/{task_id}"),
-            ("DELETE", "tasks/{task_id}"): ("DELETE", "tasks/{user_id}/{task_id}"),
-            ("POST", "tasks/{task_id}/complete"): ("POST", "tasks/{user_id}/{task_id}/complete"),
+            # 单个任务CRUD：task_id作为路径参数，末尾需要斜杠
+            ("PUT", "tasks/{task_id}"): ("PUT", "tasks/{task_id}/"),
+            ("DELETE", "tasks/{task_id}"): ("DELETE", "tasks/{task_id}/"),
+            # 注意：Task微服务没有complete端点，需要用PUT更新状态
+            ("POST", "tasks/{task_id}/complete"): ("PUT", "tasks/{task_id}/"),
 
-            # Top3管理
-            ("POST", "tasks/top3/query"): ("GET", "tasks/top3/{user_id}/{date}"),
-            ("POST", "tasks/special/top3"): ("POST", "tasks/top3"),
+            # Top3管理 (需要末尾斜杠)
+            ("POST", "tasks/top3/query"): ("GET", "tasks/top3/"),
+            ("POST", "tasks/special/top3"): ("POST", "tasks/top3/"),
 
-            # 专注和番茄钟
-            ("POST", "tasks/focus-status"): ("POST", "focus/sessions"),
-            ("GET", "tasks/pomodoro-count"): ("GET", "pomodoros/count")
+            # 专注和番茄钟 (需要末尾斜杠)
+            ("POST", "tasks/focus-status"): ("POST", "focus/sessions/"),
+            ("GET", "tasks/pomodoro-count"): ("GET", "pomodoros/count/")
         }
 
     def rewrite_path_and_method(self, method: str, original_path: str, user_id: str, **kwargs) -> tuple[str, str]:
         """
         根据映射规则重写API路径和方法
 
+        注意：Task微服务使用query参数传递user_id，不使用路径参数！
+        user_id将在调用微服务时作为query参数添加，这里只处理路径映射。
+
         Args:
             method (str): HTTP方法
             original_path (str): 原始路径
-            user_id (str): 用户ID
-            **kwargs: 其他路径参数
+            user_id (str): 用户ID（仅用于日志，不在路径中使用）
+            **kwargs: 其他路径参数（如task_id）
 
         Returns:
             tuple[str, str]: (新方法, 重写后的路径)
@@ -330,26 +345,23 @@ class EnhancedTaskMicroserviceClient:
 
         new_method, new_path_template = self.path_mappings[key]
 
-        # 构建新路径
+        # 构建新路径（只处理task_id等路径参数，user_id通过query参数传递）
         if "{task_id}" in new_path_template:
             task_id = kwargs.get("task_id")
             if not task_id:
                 raise ValueError("task_id is required for this operation")
-            new_path = new_path_template.format(user_id=user_id, task_id=task_id)
+            new_path = new_path_template.format(task_id=task_id)
             return new_method, new_path
 
         elif "{date}" in new_path_template:
             date = kwargs.get("date")
             if not date:
                 raise ValueError("date is required for this operation")
-            new_path = new_path_template.format(user_id=user_id, date=date)
-            return new_method, new_path
-
-        elif "{user_id}" in new_path_template:
-            new_path = new_path_template.format(user_id=user_id)
+            new_path = new_path_template.format(date=date)
             return new_method, new_path
 
         else:
+            # 不包含任何参数的路径，直接返回
             return new_method, new_path_template
 
     def _get_headers(self) -> Dict[str, str]:
@@ -434,13 +446,17 @@ class EnhancedTaskMicroserviceClient:
         for attempt in range(self.max_retries + 1):
             try:
                 client = self.connection_pool.get_client()
-                response = await client.request(
-                    method=method.upper(),
-                    url=url,
-                    json=request_data,
-                    params=params,
-                    headers=headers or self._get_headers()
-                )
+                # 只有在有数据且不是GET/DELETE时才发送json body
+                request_kwargs = {
+                    "method": method.upper(),
+                    "url": url,
+                    "params": params,
+                    "headers": headers or self._get_headers()
+                }
+                if request_data and method.upper() not in ["GET", "DELETE"]:
+                    request_kwargs["json"] = request_data
+
+                response = await client.request(**request_kwargs)
 
                 # 检查是否是可重试的错误
                 if response.status_code >= 500:
@@ -519,15 +535,32 @@ class EnhancedTaskMicroserviceClient:
             print(f"❌ 路径重写失败: {e}")
             raise
 
-        # 3. 准备请求参数
+        # 3. 准备请求参数和查询参数
         request_data = data.copy() if data else {}
-        if new_method in ["POST", "PUT", "PATCH"]:
-            request_data["user_id"] = validated_user_id
-
-        # 4. 查询参数处理
         query_params = params.copy() if params else {}
-        if new_method == "GET" and "user_id" not in query_params:
-            query_params["user_id"] = validated_user_id
+
+        # 4. 处理方法转换（POST→GET）时的参数迁移
+        # 如果原始方法是POST但新方法是GET，需要把body参数移到query参数
+        if method.upper() == "POST" and new_method == "GET":
+            # 将POST body参数合并到query参数中
+            for key, value in request_data.items():
+                if key not in query_params:
+                    query_params[key] = value
+            # 清空request_data，因为GET请求不应该有body
+            request_data = {}
+            print(f"🔄 方法转换 POST→GET，已将body参数移至query参数: {query_params}")
+
+        # 5. user_id的位置取决于HTTP方法：
+        #    - GET/DELETE：user_id作为query参数
+        #    - POST/PUT：user_id作为请求体参数
+        if new_method in ["GET", "DELETE"]:
+            # GET和DELETE使用query参数
+            if "user_id" not in query_params:
+                query_params["user_id"] = validated_user_id
+        else:  # POST, PUT, PATCH
+            # POST和PUT使用请求体参数
+            if "user_id" not in request_data:
+                request_data["user_id"] = validated_user_id
 
         self.logger.info(f"调用微服务: {new_method} {full_url}")
         self.logger.info(f"调试信息：原始方法={method} -> 新方法={new_method}")

@@ -86,6 +86,18 @@ class JWTValidator:
         self.local_secret = os.getenv("JWT_SECRET_KEY", "your-super-secret-jwt-key-for-tatake-backend-2024")
         self.local_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
 
+        # 本地公钥（从环境变量获取，Base64编码的PEM格式）
+        self.local_public_key = os.getenv("JWT_PUBLIC_KEY", "")
+        if self.local_public_key:
+            try:
+                # Base64解码公钥
+                import base64
+                self.local_public_key = base64.b64decode(self.local_public_key).decode('utf-8')
+                print(f"[JWTValidator] 成功加载本地公钥配置，算法={self.local_algorithm}")
+            except Exception as e:
+                print(f"[JWTValidator] 解码本地公钥失败: {str(e)}")
+                self.local_public_key = ""
+
         # 公钥缓存
         self._public_key_cache: Optional[str] = None
         self._public_key_algorithm: Optional[str] = None
@@ -104,7 +116,13 @@ class JWTValidator:
 
     async def _get_public_key_info(self) -> tuple[str, str, bool]:
         """
-        从微服务获取公钥信息
+        从微服务获取公钥信息（微服务优先，本地配置作为降级方案）
+
+        设计原则：
+        - 认证微服务是公钥的唯一权威来源（Single Source of Truth）
+        - 优先从微服务动态获取最新公钥
+        - 微服务不可用时才降级到本地配置
+        - 使用缓存减少网络请求，但不影响动态更新能力
 
         Returns:
             (key_data, algorithm, is_symmetric)
@@ -116,7 +134,7 @@ class JWTValidator:
             JWTValidationError: 获取公钥失败时
         """
         try:
-            # 检查缓存是否有效
+            # 检查缓存是否有效（缓存提升性能，但不阻止动态更新）
             current_time = time.time()
             if (self._public_key_cache and
                 self._public_key_algorithm and
@@ -127,7 +145,8 @@ class JWTValidator:
                 print("[JWTValidator] 使用缓存的公钥信息")
                 return self._public_key_cache, self._public_key_algorithm, self._is_symmetric
 
-            print("[JWTValidator] 从微服务获取公钥信息")
+            # 优先从微服务获取最新公钥（权威来源）
+            print("[JWTValidator] 从认证微服务获取公钥信息")
             response = await self.auth_client.get_public_key()
 
             if response.get("code") != 200:
@@ -138,13 +157,13 @@ class JWTValidator:
 
             if not public_key:
                 # 微服务返回空公钥，表示使用对称加密
-                print("[JWTValidator] 微服务使用对称加密")
+                print("[JWTValidator] 微服务明确使用对称加密")
                 key_data = self.local_secret
                 algorithm = self.local_algorithm
                 is_symmetric = True
             else:
                 # 微服务返回公钥，使用非对称加密
-                print("[JWTValidator] 微服务使用非对称加密")
+                print("[JWTValidator] 微服务返回RS256公钥")
                 key_data = public_key
                 # 这里假设微服务也会返回算法信息，否则使用默认值
                 algorithm = data.get("algorithm", "RS256")
@@ -156,13 +175,18 @@ class JWTValidator:
             self._is_symmetric = is_symmetric
             self._key_cache_time = current_time
 
-            print(f"[JWTValidator] 缓存公钥信息: algorithm={algorithm}, is_symmetric={is_symmetric}")
+            print(f"[JWTValidator] 成功缓存公钥信息: algorithm={algorithm}, is_symmetric={is_symmetric}")
             return key_data, algorithm, is_symmetric
 
         except Exception as e:
-            print(f"[JWTValidator] 获取公钥失败: {str(e)}")
-            # 降级到本地密钥
-            print("[JWTValidator] 降级使用本地对称密钥")
+            # 微服务不可用，降级到本地配置（备份方案）
+            print(f"[JWTValidator] ⚠️  从微服务获取公钥失败: {str(e)}")
+
+            if self.local_public_key and self.local_algorithm in ["RS256", "RS384", "RS512"]:
+                print("[JWTValidator] 🔄 降级使用本地配置的公钥（备份方案）")
+                return self.local_public_key, self.local_algorithm, False
+
+            print("[JWTValidator] 🔄 降级使用本地对称密钥（备份方案）")
             return self.local_secret, self.local_algorithm, True
 
     def _get_token_hash(self, token: str) -> str:

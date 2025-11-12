@@ -13,12 +13,19 @@
 - 最小化接口数量
 """
 
+import logging
 from typing import Dict, Any, Optional
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
+from sqlmodel import Session, select
 
 from ..services.auth_microservice_client import get_auth_client, AuthMicroserviceClient
+from src.database import get_db_session
+from src.domains.user.models import User
+
+logger = logging.getLogger(__name__)
 
 
 # ==================== Pydantic模型定义 ====================
@@ -74,7 +81,8 @@ security = HTTPBearer(auto_error=False)
 @router.post("/wechat/login", response_model=UnifiedResponse, summary="微信登录")
 async def wechat_login(
     request: WeChatLoginRequest,
-    auth_client: AuthMicroserviceClient = Depends(get_auth_client)
+    auth_client: AuthMicroserviceClient = Depends(get_auth_client),
+    business_session: Session = Depends(get_db_session)
 ) -> UnifiedResponse:
     """
     微信登录（自动注册）
@@ -82,7 +90,8 @@ async def wechat_login(
     自动处理注册和登录流程：
     1. 先尝试登录已有用户
     2. 如果用户不存在，自动注册新用户
-    3. 返回Access Token和Refresh Token
+    3. 在User表中创建或更新用户业务数据记录
+    4. 返回Access Token和Refresh Token
 
     输入：微信OpenID
     输出：认证Token信息
@@ -95,13 +104,18 @@ async def wechat_login(
         if response.get('code') == 404:
             try:
                 response = await auth_client.wechat_register(request.wechat_openid)
-                return UnifiedResponse(**response)
             except Exception as register_error:
                 # 注册也失败，返回错误
                 raise HTTPException(
                     status_code=400,
                     detail=f"微信注册失败: {str(register_error)}"
                 )
+
+        # 第二步：确保User表中有用户记录（无论是登录还是注册）
+        if response.get('code') == 200 and response.get('data'):
+            user_id = response['data'].get('user_id')
+            if user_id:
+                await _ensure_user_business_record(business_session, user_id)
 
         # 如果登录成功，返回响应
         return UnifiedResponse(**response)
@@ -214,7 +228,8 @@ async def phone_send_code(
 @router.post("/phone/verify", response_model=UnifiedResponse, summary="手机验证码登录")
 async def phone_verify(
     request: SMSVerifyRequest,
-    auth_client: AuthMicroserviceClient = Depends(get_auth_client)
+    auth_client: AuthMicroserviceClient = Depends(get_auth_client),
+    business_session: Session = Depends(get_db_session)
 ) -> UnifiedResponse:
     """
     手机验证码登录（智能检测）
@@ -222,12 +237,15 @@ async def phone_verify(
     智能检测用户状态，自动选择合适的验证场景：
     1. 先尝试登录验证
     2. 如果用户不存在，自动切换为注册验证
-    3. 返回认证Token信息
+    3. 在User表中创建或更新用户业务数据记录
+    4. 返回认证Token信息
 
     输入：手机号、验证码
     输出：认证Token信息
     """
     try:
+        response = None
+
         # 第一步：尝试登录验证
         try:
             response = await auth_client.phone_verify(request.phone, request.code, scene="login")
@@ -237,8 +255,6 @@ async def phone_verify(
                 response['data'] = response.get('data', {})
                 response['data']['scene'] = 'login'
                 response['data']['is_new_user'] = False
-
-            return UnifiedResponse(**response)
 
         except HTTPException as login_error:
             # 如果登录验证失败（用户不存在），尝试注册验证
@@ -252,8 +268,6 @@ async def phone_verify(
                         response['data']['scene'] = 'register'
                         response['data']['is_new_user'] = True
 
-                    return UnifiedResponse(**response)
-
                 except Exception as register_error:
                     # 注册也失败，返回错误
                     raise HTTPException(
@@ -264,6 +278,14 @@ async def phone_verify(
                 # 其他错误，直接抛出
                 raise login_error
 
+        # 第二步：确保User表中有用户记录
+        if response and response.get('code') == 200 and response.get('data'):
+            user_id = response['data'].get('user_id')
+            if user_id:
+                await _ensure_user_business_record(business_session, user_id)
+
+        return UnifiedResponse(**response)
+
     except HTTPException:
         raise
     except Exception as e:
@@ -273,6 +295,48 @@ async def phone_verify(
         )
 
 
+
+
+# ==================== 辅助函数 ====================
+
+async def _ensure_user_business_record(session: Session, user_id: str) -> None:
+    """
+    确保User表中存在用户业务数据记录
+
+    Args:
+        session: 数据库会话
+        user_id: 用户ID（UUID格式，带连字符）
+    """
+    try:
+        # 转换UUID格式（去掉连字符）以匹配User表的格式
+        user_id_str = user_id.replace('-', '')
+
+        # 检查用户记录是否存在
+        user_stmt = select(User).where(User.user_id == user_id_str)
+        existing_user = session.exec(user_stmt).first()
+
+        if not existing_user:
+            # 创建新用户记录
+            new_user = User(
+                user_id=user_id_str,
+                nickname=f"用户_{user_id_str[:8]}",  # 默认昵称
+                is_active=True,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            session.add(new_user)
+            session.commit()
+            logger.info(f"为用户创建业务数据记录: user_id={user_id_str}")
+        else:
+            # 更新最后活跃时间
+            existing_user.updated_at = datetime.utcnow()
+            session.commit()
+            logger.debug(f"用户业务数据记录已存在: user_id={user_id_str}")
+
+    except Exception as e:
+        session.rollback()
+        logger.error(f"创建/更新用户业务数据记录失败: user_id={user_id}, error={str(e)}")
+        # 不抛出异常，避免影响登录流程
 
 
 # ==================== 导出路由器 ====================
