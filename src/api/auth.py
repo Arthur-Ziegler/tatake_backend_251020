@@ -172,6 +172,12 @@ async def phone_send_code(
         # 第一步：尝试发送登录验证码
         try:
             response = await auth_client.phone_send_code(request.phone, scene="login")
+
+            # 添加详细日志用于调试验证码null问题
+            logger.info(f"Auth微服务原始响应: {response}")
+            logger.info(f"响应中的data字段: {response.get('data')}")
+            logger.info(f"提取的verification_code: {response.get('data', {}).get('verification_code')}")
+
             return UnifiedResponse(**{
                 "code": 200,
                 "message": "登录验证码发送成功",
@@ -197,6 +203,12 @@ async def phone_send_code(
             if login_error.status_code in [400, 404, 500]:  # 扩展错误码范围以包含更多可能的错误情况
                 try:
                     response = await auth_client.phone_send_code(request.phone, scene="register")
+
+                    # 添加详细日志用于调试验证码null问题
+                    logger.info(f"注册场景Auth微服务原始响应: {response}")
+                    logger.info(f"注册场景响应中的data字段: {response.get('data')}")
+                    logger.info(f"注册场景提取的verification_code: {response.get('data', {}).get('verification_code')}")
+
                     return UnifiedResponse(**{
                         "code": 200,
                         "message": "注册验证码发送成功（新用户）",

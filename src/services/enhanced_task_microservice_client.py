@@ -301,20 +301,34 @@ class EnhancedTaskMicroserviceClient:
             Dict[Tuple[str, str], Tuple[str, str]]: 路径映射表
         """
         return {
-            # 查询任务：POST query → GET /tasks/ (注意末尾斜杠)
+            # ===== 核心任务管理 =====
+            # 创建任务：POST /tasks/ (最关键的修复)
+            ("POST", "tasks"): ("POST", "tasks/"),
+            ("POST", "tasks/"): ("POST", "tasks/"),
+
+            # 查询任务列表：POST query → GET /tasks/
             ("POST", "tasks/query"): ("GET", "tasks/"),
 
-            # 单个任务CRUD：task_id作为路径参数，末尾需要斜杠
+            # 搜索任务：POST /tasks/search → POST /tasks/search/
+            ("POST", "tasks/search"): ("POST", "tasks/search/"),
+
+            # 单个任务操作
+            ("GET", "tasks/{task_id}"): ("GET", "tasks/{task_id}/"),
             ("PUT", "tasks/{task_id}"): ("PUT", "tasks/{task_id}/"),
             ("DELETE", "tasks/{task_id}"): ("DELETE", "tasks/{task_id}/"),
-            # 注意：Task微服务没有complete端点，需要用PUT更新状态
+
+            # 完成任务：映射到PUT更新状态（微服务没有单独的complete端点）
             ("POST", "tasks/{task_id}/complete"): ("PUT", "tasks/{task_id}/"),
 
-            # Top3管理 (需要末尾斜杠)
+            # 任务树：GET /tasks/{task_id}/tree
+            ("GET", "tasks/{task_id}/tree"): ("GET", "tasks/{task_id}/tree/"),
+
+            # ===== Top3管理 =====
             ("POST", "tasks/top3/query"): ("GET", "tasks/top3/"),
             ("POST", "tasks/special/top3"): ("POST", "tasks/top3/"),
+            ("GET", "tasks/special/top3/{date}"): ("GET", "tasks/top3/{date}/"),
 
-            # 专注和番茄钟 (需要末尾斜杠)
+            # ===== 专注和番茄钟 =====
             ("POST", "tasks/focus-status"): ("POST", "focus/sessions/"),
             ("GET", "tasks/pomodoro-count"): ("GET", "pomodoros/count/")
         }

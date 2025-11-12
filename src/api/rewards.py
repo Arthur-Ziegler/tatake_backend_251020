@@ -87,11 +87,26 @@ async def redeem_prize_endpoint(
         logger.info(f"兑换奖品API调用: user_id={user_id}, code={request.code}")
         response = await client.redeem(str(user_id), request.code)
 
+        # 检查微服务响应格式
+        if not isinstance(response, dict):
+            logger.error(f"Reward微服务响应格式异常: {response}")
+            raise HTTPException(status_code=500, detail="Reward微服务响应格式异常")
+
+        # 直接透传微服务的响应，包括真实的业务状态码和消息
+        # 不再硬编码code=200和message="兑换成功"
+        business_code = response.get("code", 500)
+        business_message = response.get("message", "兑换处理完成")
+        business_data = response.get("data")
+
+        logger.info(f"兑换奖品结果: code={business_code}, message={business_message}")
+
         return UnifiedResponse(
-            code=200,
-            data=response,
-            message="兑换成功"
+            code=business_code,
+            message=business_message,
+            data=business_data
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"兑换奖品异常: {e}")
         raise HTTPException(status_code=500, detail=str(e))
