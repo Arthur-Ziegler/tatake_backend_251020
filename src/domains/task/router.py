@@ -137,8 +137,37 @@ def adapt_microservice_response_to_client(microservice_data: Dict[str, Any]) -> 
             }
         }
     elif "data" in adapted_data and isinstance(adapted_data["data"], dict):
-        # 单个任务对象，适配数据格式
-        adapted_data["data"] = adapt_single_task_data(adapted_data["data"])
+        # 检查是否是任务列表格式: {"tasks": [...], "total": N, ...}
+        if "tasks" in adapted_data["data"] and isinstance(adapted_data["data"]["tasks"], list):
+            # 任务列表格式，适配每个任务
+            tasks_array = adapted_data["data"]["tasks"]
+            adapted_tasks = []
+            for task in tasks_array:
+                adapted_task = adapt_single_task_data(task)
+                adapted_tasks.append(adapted_task)
+
+            # 构建分页信息
+            total = adapted_data["data"].get("total", len(adapted_tasks))
+            limit = adapted_data["data"].get("limit", 20)
+            offset = adapted_data["data"].get("offset", 0)
+
+            current_page = (offset // limit) + 1 if limit > 0 else 1
+            total_pages = (total + limit - 1) // limit if limit > 0 else 1
+
+            adapted_data["data"] = {
+                "tasks": adapted_tasks,
+                "pagination": {
+                    "current_page": current_page,
+                    "page_size": limit,
+                    "total_count": total,
+                    "total_pages": total_pages,
+                    "has_next": current_page < total_pages,
+                    "has_prev": current_page > 1
+                }
+            }
+        else:
+            # 单个任务对象，适配数据格式
+            adapted_data["data"] = adapt_single_task_data(adapted_data["data"])
 
     return adapted_data
 
