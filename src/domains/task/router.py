@@ -155,27 +155,61 @@ def adapt_single_task_data(task_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     adapted_task = task_data.copy()
 
-    # 优先级映射：微服务(首字母大写) -> 本地(小写)
+    # 优先级映射：微服务 -> 本地(小写)
+    # 支持多种格式: 首字母大写, 全小写, 全大写
     priority_mapping = {
         'Low': 'low',
+        'low': 'low',
         'Medium': 'medium',
-        'High': 'high'
+        'medium': 'medium',
+        'High': 'high',
+        'high': 'high',
+        'HIGH': 'high',      # Task微服务返回的全大写格式
+        'MEDIUM': 'medium',
+        'LOW': 'low'
     }
 
     # 状态映射：微服务 -> 本地
+    # 支持多种格式: 小写, 全大写, 下划线分隔
     status_mapping = {
         'todo': 'pending',
+        'TODO': 'pending',
+        'pending': 'pending',
+        'NOT_STARTED': 'pending',    # Task微服务返回的NOT_STARTED状态
         'inprogress': 'in_progress',
-        'completed': 'completed'
+        'IN_PROGRESS': 'in_progress',
+        'in_progress': 'in_progress',
+        'completed': 'completed',
+        'COMPLETED': 'completed'
     }
 
-    # 映射优先级字段
-    if 'priority' in adapted_task and adapted_task['priority'] in priority_mapping:
-        adapted_task['priority'] = priority_mapping[adapted_task['priority']]
+    # 映射优先级字段 - 支持不区分大小写
+    if 'priority' in adapted_task and adapted_task['priority']:
+        original_priority = str(adapted_task['priority'])
+        mapped_priority = priority_mapping.get(original_priority)
+        if mapped_priority:
+            adapted_task['priority'] = mapped_priority
+        else:
+            # 降级处理: 尝试转换为小写后映射
+            logger.warning(f"未知的优先级格式: {original_priority}, 尝试转换为小写")
+            adapted_task['priority'] = original_priority.lower()
 
-    # 映射状态字段
-    if 'status' in adapted_task and adapted_task['status'] in status_mapping:
-        adapted_task['status'] = status_mapping[adapted_task['status']]
+    # 映射状态字段 - 支持不区分大小写和特殊格式
+    if 'status' in adapted_task and adapted_task['status']:
+        original_status = str(adapted_task['status'])
+        mapped_status = status_mapping.get(original_status)
+        if mapped_status:
+            adapted_task['status'] = mapped_status
+        else:
+            # 降级处理: 特殊状态转换
+            logger.warning(f"未知的状态格式: {original_status}, 尝试智能转换")
+            if original_status.upper() == 'NOT_STARTED':
+                adapted_task['status'] = 'pending'
+            elif '_' in original_status:
+                # 处理下划线格式: IN_PROGRESS -> in_progress
+                adapted_task['status'] = original_status.lower()
+            else:
+                adapted_task['status'] = original_status.lower()
 
     # 添加缺失的必需字段（如果不存在）
     required_fields = {

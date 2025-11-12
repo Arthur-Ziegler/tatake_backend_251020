@@ -24,19 +24,45 @@ class AuthMicroserviceClient:
         )
 
     async def wechat_login(self, wechat_openid: str) -> Dict[str, Any]:
-        """微信登录"""
+        """微信登录
+
+        Raises:
+            HTTPException: 当Auth微服务返回错误时
+        """
         response = await self.client.post(
             "/auth/wechat/login",
             json={"project": config.project, "wechat_openid": wechat_openid}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def wechat_register(self, wechat_openid: str) -> Dict[str, Any]:
-        """微信注册"""
+        """微信注册
+
+        Raises:
+            HTTPException: 当Auth微服务返回错误时
+        """
         response = await self.client.post(
             "/auth/wechat/register",
             json={"project": config.project, "wechat_openid": wechat_openid}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def phone_send_code(self, phone: str, scene: str = "login") -> Dict[str, Any]:
@@ -45,11 +71,24 @@ class AuthMicroserviceClient:
         Args:
             phone: 手机号
             scene: 场景，register/login/bind，默认login
+
+        Raises:
+            HTTPException: 当Auth微服务返回错误时
         """
         response = await self.client.post(
             "/auth/phone/send-code",
             json={"project": config.project, "phone": phone, "scene": scene}
         )
+
+        # 检查HTTP状态码，非2xx时抛出HTTPException
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def phone_verify(self, phone: str, code: str, scene: str = "login") -> Dict[str, Any]:
@@ -59,19 +98,44 @@ class AuthMicroserviceClient:
             phone: 手机号
             code: 验证码
             scene: 场景，register/login/bind，默认login
+
+        Raises:
+            HTTPException: 当Auth微服务返回错误时
         """
         response = await self.client.post(
             "/auth/phone/verify",
             json={"project": config.project, "phone": phone, "code": code, "scene": scene}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def refresh_token(self, refresh_token: str) -> Dict[str, Any]:
-        """刷新token"""
+        """刷新token
+
+        Raises:
+            HTTPException: 当Auth微服务返回错误时
+        """
         response = await self.client.post(
             "/auth/token/refresh",
             json={"project": config.project, "refresh_token": refresh_token}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def close(self):

@@ -26,44 +26,109 @@ class FocusMicroserviceClient:
         )
 
     async def create_session(self, user_id: str, task_id: str, session_type: str = "focus") -> Dict[str, Any]:
-        """创建专注会话"""
+        """创建专注会话
+
+        Raises:
+            HTTPException: 当Focus微服务返回错误时
+        """
         response = await self.client.post(
             "/focus/sessions",
             params={"user_id": user_id},
             json={"task_id": task_id, "session_type": session_type}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def get_sessions(self, user_id: str, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
-        """查询专注会话列表"""
+        """查询专注会话列表
+
+        Raises:
+            HTTPException: 当Focus微服务返回错误时
+        """
         response = await self.client.get(
             "/focus/sessions",
             params={"user_id": user_id, "page": page, "page_size": page_size}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def pause_session(self, session_id: str, user_id: str) -> Dict[str, Any]:
-        """暂停专注会话"""
+        """暂停专注会话
+
+        Raises:
+            HTTPException: 当Focus微服务返回错误时
+        """
         response = await self.client.post(
             f"/focus/sessions/{session_id}/pause",
             params={"user_id": user_id}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def resume_session(self, session_id: str, user_id: str) -> Dict[str, Any]:
-        """恢复专注会话"""
+        """恢复专注会话
+
+        Raises:
+            HTTPException: 当Focus微服务返回错误时
+        """
         response = await self.client.post(
             f"/focus/sessions/{session_id}/resume",
             params={"user_id": user_id}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def complete_session(self, session_id: str, user_id: str) -> Dict[str, Any]:
-        """完成专注会话"""
+        """完成专注会话
+
+        Raises:
+            HTTPException: 当Focus微服务返回错误时
+        """
         response = await self.client.post(
             f"/focus/sessions/{session_id}/complete",
             params={"user_id": user_id}
         )
+
+        if response.status_code >= 400:
+            from fastapi import HTTPException
+            error_detail = response.json() if response.text else {"detail": "Unknown error"}
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=error_detail
+            )
+
         return response.json()
 
     async def close(self):
