@@ -226,8 +226,10 @@ async def create_task_endpoint(
         task_data = {
             "title": request.title,
             "description": request.description or "",
-            "priority": request.priority.capitalize() if request.priority else "Medium",  # 确保首字母大写
-            "due_date": request.due_date.isoformat() if request.due_date else None,
+            "priority": request.priority.upper() if request.priority else "MEDIUM",  # Task微服务要求全大写: LOW/MEDIUM/HIGH/URGENT
+            "due_date": request.due_date.strftime("%Y-%m-%d") if request.due_date else None,  # Task微服务要求date格式(YYYY-MM-DD),不是datetime
+            "tags": request.tags or [],
+            "services": request.service_ids or [],
             "user_id": str(user_id)
         }
 
@@ -404,14 +406,23 @@ async def update_task_endpoint(
     try:
         logger.info(f"更新任务API调用: user_id={user_id}, task_id={task_id}")
 
-        # 准备更新数据
-        update_data = {
-            "title": request.title,
-            "description": request.description,
-            "priority": request.priority.capitalize() if request.priority else "Medium",
-            "due_date": request.due_date.isoformat() if request.due_date else None,
-            "user_id": str(user_id)
-        }
+        # 准备更新数据（仅包含非None字段，支持部分更新）
+        update_data = {"user_id": str(user_id)}
+
+        if request.title is not None:
+            update_data["title"] = request.title
+        if request.description is not None:
+            update_data["description"] = request.description
+        if request.priority is not None:
+            update_data["priority"] = request.priority.upper()  # Task微服务要求全大写
+        if request.due_date is not None:
+            update_data["due_date"] = request.due_date.strftime("%Y-%m-%d")  # Task微服务要求date格式
+        if request.tags is not None:
+            update_data["tags"] = request.tags
+        if request.service_ids is not None:
+            update_data["services"] = request.service_ids
+        if request.status is not None:
+            update_data["status"] = request.status.upper()  # Task微服务status也是全大写
 
         # 调用微服务（路径会被重写为 PUT /api/v1/tasks/{user_id}/{task_id}）
         response = await client.call_microservice(
