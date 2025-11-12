@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # 请求模型
 class RedeemPrizeRequest(BaseModel):
     """兑换奖品请求"""
-    code: str = Field(..., min_length=1, max_length=100, description="兑换码")
+    code: str = Field(..., min_length=1, max_length=100, description="兑换码", example="points")
 
 
 # ==================== API端点实现 ====================

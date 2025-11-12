@@ -69,23 +69,23 @@ router = APIRouter(prefix="/tasks", tags=["任务管理"])
 
 class TaskQueryRequest(BaseModel):
     """任务查询请求模型"""
-    page: int = Field(1, ge=1, description="页码，从1开始")
-    page_size: int = Field(20, ge=1, le=100, description="每页大小，1-100")
-    status: Optional[str] = Field(None, description="任务状态筛选")
-    priority: Optional[str] = Field(None, description="优先级筛选")
+    page: int = Field(1, ge=1, description="页码，从1开始", example=1)
+    page_size: int = Field(20, ge=1, le=100, description="每页大小，1-100", example=20)
+    status: Optional[str] = Field(None, description="任务状态筛选", example="pending")
+    priority: Optional[str] = Field(None, description="优先级筛选", example="high")
 
 
 class Top3SetRequest(BaseModel):
     """Top3设置请求模型"""
-    date: str = Field(..., description="日期，格式：YYYY-MM-DD")
-    task_ids: List[str] = Field(..., description="任务ID列表，最多3个")
+    date: str = Field(..., description="日期，格式：YYYY-MM-DD", example="2024-12-25")
+    task_ids: List[str] = Field(..., description="任务ID列表，最多3个", example=["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "6ba7b811-9dad-11d1-80b4-00c04fd430c8"])
 
 
 class FocusStatusRequest(BaseModel):
     """专注状态请求模型"""
-    focus_status: str = Field(..., description="专注状态")
-    duration_minutes: int = Field(..., gt=0, description="专注时长（分钟）")
-    task_id: Optional[str] = Field(None, description="关联的任务ID")
+    focus_status: str = Field(..., description="专注状态", example="focused")
+    duration_minutes: int = Field(..., gt=0, description="专注时长（分钟）", example=25)
+    task_id: Optional[str] = Field(None, description="关联的任务ID", example="550e8400-e29b-41d4-a716-446655440000")
 
 
 def create_error_response(status_code: int, message: str) -> UnifiedResponse:

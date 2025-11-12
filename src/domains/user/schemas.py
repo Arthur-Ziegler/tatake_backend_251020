@@ -65,17 +65,17 @@ class EnhancedUpdateProfileRequest(BaseModel):
     """增强的更新用户信息请求模型"""
 
     # 基础信息字段
-    nickname: Optional[str] = Field(None, description="用户昵称", min_length=1, max_length=50)
-    avatar_url: Optional[str] = Field(None, description="头像URL")
-    bio: Optional[str] = Field(None, description="用户简介", max_length=500)
+    nickname: Optional[str] = Field(None, description="用户昵称", min_length=1, max_length=50, example="张小明")
+    avatar_url: Optional[str] = Field(None, description="头像URL", example="https://example.com/avatar.jpg")
+    bio: Optional[str] = Field(None, description="用户简介", max_length=500, example="这是我的个人简介")
 
     # 个人信息字段
-    gender: Optional[str] = Field(None, description="性别: male, female, other")
-    birthday: Optional[str] = Field(None, description="生日 (ISO格式: YYYY-MM-DD)")
+    gender: Optional[str] = Field(None, description="性别: male, female, other", example="male")
+    birthday: Optional[str] = Field(None, description="生日 (ISO格式: YYYY-MM-DD)", example="1990-05-15")
 
     # 偏好设置字段
-    theme: Optional[str] = Field(None, description="主题: light, dark, auto, system")
-    language: Optional[str] = Field(None, description="语言: zh-CN, en-US等")
+    theme: Optional[str] = Field(None, description="主题: light, dark, auto, system", example="dark")
+    language: Optional[str] = Field(None, description="语言: zh-CN, en-US等", example="zh-CN")
 
     model_config = ConfigDict(
         json_schema_extra = {

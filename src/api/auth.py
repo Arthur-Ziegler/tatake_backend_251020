@@ -40,23 +40,23 @@ class UnifiedResponse(BaseModel):
 # 请求模型
 class WeChatLoginRequest(BaseModel):
     """微信登录请求"""
-    wechat_openid: str = Field(..., min_length=1, max_length=100, description="微信OpenID")
+    wechat_openid: str = Field(..., min_length=1, max_length=100, description="微信OpenID", example="oJx4K5Qx1234567890abcdefg")
 
 
 class TokenRefreshRequest(BaseModel):
     """令牌刷新请求"""
-    refresh_token: str = Field(..., min_length=1, description="刷新令牌")
+    refresh_token: str = Field(..., min_length=1, description="刷新令牌", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
 
 
 class SMSSendRequest(BaseModel):
     """短信验证码发送请求"""
-    phone: str = Field(..., pattern=r'^1[3-9]\d{9}$', description="手机号")
+    phone: str = Field(..., pattern=r'^1[3-9]\d{9}$', description="手机号", example="13812345678")
 
 
 class SMSVerifyRequest(BaseModel):
     """短信验证码验证请求"""
-    phone: str = Field(..., pattern=r'^1[3-9]\d{9}$', description="手机号")
-    code: str = Field(..., pattern=r'^\d{6}$', description="验证码")
+    phone: str = Field(..., pattern=r'^1[3-9]\d{9}$', description="手机号", example="13812345678")
+    code: str = Field(..., pattern=r'^\d{6}$', description="验证码", example="123456")
 
 
 # ==================== 路由配置 ====================

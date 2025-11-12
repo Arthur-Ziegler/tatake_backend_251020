@@ -122,7 +122,8 @@ class CreateTaskRequest(BaseModel):
     )
     parent_id: Optional[str] = Field(
         default=None,
-        description="父任务ID，支持任务树结构"
+        description="父任务ID，支持任务树结构",
+        example="550e8400-e29b-41d4-a716-446655440000"
     )
     tags: Optional[List[str]] = Field(
         default=[],
@@ -133,19 +134,23 @@ class CreateTaskRequest(BaseModel):
     service_ids: Optional[List[str]] = Field(
         default=[],
         max_length=10,
-        description="关联服务ID列表，占位字段用于后续AI服务匹配"
+        description="关联服务ID列表，占位字段用于后续AI服务匹配",
+        example=["chat", "timer", "points"]
     )
     due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（date格式：YYYY-MM-DD）"
+        description="任务截止日期（date格式：YYYY-MM-DD）",
+        example="2024-12-31"
     )
     planned_start_time: Optional[datetime] = Field(
         default=None,
-        description="计划开始时间（ISO 8601格式）"
+        description="计划开始时间（ISO 8601格式）",
+        example="2024-12-20T09:00:00Z"
     )
     planned_end_time: Optional[datetime] = Field(
         default=None,
-        description="计划结束时间（ISO 8601格式）"
+        description="计划结束时间（ISO 8601格式）",
+        example="2024-12-30T18:00:00Z"
     )
 
     @field_validator('tags')
@@ -235,37 +240,45 @@ class UpdateTaskRequest(BaseModel):
     )
     status: Optional[TaskStatus] = Field(
         default=None,
-        description="任务状态：pending/in_progress/completed"
+        description="任务状态：pending/in_progress/completed",
+        example="in_progress"
     )
     priority: Optional[TaskPriority] = Field(
         default=None,
-        description="任务优先级：low/medium/high"
+        description="任务优先级：low/medium/high",
+        example="high"
     )
     parent_id: Optional[str] = Field(
         default=None,
-        description="父任务ID，支持任务树结构"
+        description="父任务ID，支持任务树结构",
+        example="550e8400-e29b-41d4-a716-446655440000"
     )
     tags: Optional[List[str]] = Field(
         default=None,
         max_length=10,
-        description="任务标签列表，最多10个标签"
+        description="任务标签列表，最多10个标签",
+        example=["更新", "测试"]
     )
     service_ids: Optional[List[str]] = Field(
         default=None,
         max_length=10,
-        description="关联服务ID列表，占位字段用于后续AI服务匹配"
+        description="关联服务ID列表，占位字段用于后续AI服务匹配",
+        example=["chat", "timer"]
     )
     due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（date格式：YYYY-MM-DD）"
+        description="任务截止日期（date格式：YYYY-MM-DD）",
+        example="2024-12-25"
     )
     planned_start_time: Optional[datetime] = Field(
         default=None,
-        description="计划开始时间（ISO 8601格式）"
+        description="计划开始时间（ISO 8601格式）",
+        example="2024-12-15T09:00:00Z"
     )
     planned_end_time: Optional[datetime] = Field(
         default=None,
-        description="计划结束时间（ISO 8601格式）"
+        description="计划结束时间（ISO 8601格式）",
+        example="2024-12-20T18:00:00Z"
     )
 
     @field_validator('tags')
@@ -319,19 +332,31 @@ class TaskListQuery(BaseModel):
     page: int = Field(
         default=1,
         ge=1,
-        description="页码，从1开始"
+        description="页码，从1开始",
+        example=1
     )
     page_size: int = Field(
         default=20,
         ge=1,
         le=100,
-        description="每页大小，1-100"
+        description="每页大小，1-100",
+        example=20
     )
 
     # 筛选参数
     include_deleted: bool = Field(
         default=False,
         description="是否包含已删除的任务"
+    )
+    status: Optional[str] = Field(
+        default=None,
+        description="任务状态筛选",
+        example="pending"
+    )
+    priority: Optional[str] = Field(
+        default=None,
+        description="优先级筛选",
+        example="high"
     )
 
     # 排序参数（固定值，简化API）
@@ -402,7 +427,7 @@ class TaskResponse(BaseModel):
     updated_at: Optional[datetime] = Field(None, description="更新时间（微服务返回）")
 
     # 简化字段
-    completion_percentage: float = Field(..., description="任务完成百分比，0.0-100.0")
+    completion_percentage: float = Field(..., description="任务完成百分比，0.0-100.0", example=65.5)
 
     
 
