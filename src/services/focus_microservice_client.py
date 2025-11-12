@@ -6,9 +6,7 @@ Focus微服务客户端
 """
 import httpx
 from typing import Dict, Any
-from src.config.microservices import get_microservice_config
-
-config = get_microservice_config()
+from src.api.config import config
 
 
 class FocusMicroserviceClient:
@@ -18,10 +16,10 @@ class FocusMicroserviceClient:
         self.base_url = config.focus_service_url
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
-            timeout=config.request_timeout,
+            timeout=config.focus_service_timeout,
             limits=httpx.Limits(
-                max_connections=config.max_connections,
-                max_keepalive_connections=config.max_keepalive_connections
+                max_connections=100,
+                max_keepalive_connections=20
             )
         )
 

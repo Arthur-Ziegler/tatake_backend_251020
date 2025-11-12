@@ -5,10 +5,9 @@ Auth微服务客户端
 接口：4个认证接口
 """
 import httpx
+import os
 from typing import Dict, Any
-from src.config.microservices import get_microservice_config
-
-config = get_microservice_config()
+from src.api.config import config
 
 
 class AuthMicroserviceClient:
@@ -16,7 +15,7 @@ class AuthMicroserviceClient:
 
     def __init__(self):
         self.base_url = config.auth_service_url
-        self.timeout = config.request_timeout
+        self.timeout = config.auth_service_timeout
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=self.timeout,
@@ -31,7 +30,7 @@ class AuthMicroserviceClient:
         """
         response = await self.client.post(
             "/auth/wechat/login",
-            json={"project": config.project, "wechat_openid": wechat_openid}
+            json={"project": os.getenv("AUTH_PROJECT", "tatake_backend_f3111d"), "wechat_openid": wechat_openid}
         )
 
         if response.status_code >= 400:
@@ -52,7 +51,7 @@ class AuthMicroserviceClient:
         """
         response = await self.client.post(
             "/auth/wechat/register",
-            json={"project": config.project, "wechat_openid": wechat_openid}
+            json={"project": os.getenv("AUTH_PROJECT", "tatake_backend_f3111d"), "wechat_openid": wechat_openid}
         )
 
         if response.status_code >= 400:
@@ -77,7 +76,7 @@ class AuthMicroserviceClient:
         """
         response = await self.client.post(
             "/auth/phone/send-code",
-            json={"project": config.project, "phone": phone, "scene": scene}
+            json={"project": os.getenv("AUTH_PROJECT", "tatake_backend_f3111d"), "phone": phone, "scene": scene}
         )
 
         # 检查HTTP状态码，非2xx时抛出HTTPException
@@ -104,7 +103,7 @@ class AuthMicroserviceClient:
         """
         response = await self.client.post(
             "/auth/phone/verify",
-            json={"project": config.project, "phone": phone, "code": code, "scene": scene}
+            json={"project": os.getenv("AUTH_PROJECT", "tatake_backend_f3111d"), "phone": phone, "code": code, "scene": scene}
         )
 
         if response.status_code >= 400:

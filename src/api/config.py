@@ -232,29 +232,57 @@ class APIConfig(BaseSettings):
         description="认证微服务调用超时时间(秒)"
     )
 
-    # 奖励微服务配置 (Mock实现 - 服务未完成)
+    # 奖励微服务配置 (已迁移到新服务器)
     reward_service_url: str = Field(
-        default="http://mock.reward.service",
-        description="奖励微服务URL (Mock实现，等待服务完成)",
+        default="http://45.152.65.130:20254",
+        description="奖励微服务URL (已迁移至新服务器)",
         env="REWARD_SERVICE_URL"
     )
     reward_service_enabled: bool = Field(
-        default=False,
-        description="是否启用奖励微服务（Mock模式）",
+        default=True,
+        description="是否启用奖励微服务",
         env="REWARD_SERVICE_ENABLED"
     )
+    reward_service_timeout: int = Field(
+        default=30,
+        description="奖励微服务调用超时时间(秒)",
+        env="REWARD_SERVICE_TIMEOUT"
+    )
 
-    # Top3微服务配置 (Mock实现 - 服务未完成)
+    # Top3微服务配置 (已集成到Task微服务)
     top3_service_url: str = Field(
-        default="http://mock.top3.service",
-        description="Top3微服务URL (Mock实现，等待服务完成)",
+        default="http://45.152.65.130:20253",
+        description="Top3微服务URL (已集成到Task微服务)",
         env="TOP3_SERVICE_URL"
     )
     top3_service_enabled: bool = Field(
-        default=False,
-        description="是否启用Top3微服务（Mock模式）",
+        default=True,
+        description="是否启用Top3微服务",
         env="TOP3_SERVICE_ENABLED"
     )
+    top3_service_timeout: int = Field(
+        default=30,
+        description="Top3微服务调用超时时间(秒)",
+        env="TOP3_SERVICE_TIMEOUT"
+    )
+
+    # Focus微服务配置 (已迁移到新服务器)
+    focus_service_url: str = Field(
+        default="http://45.152.65.130:20255",
+        description="Focus微服务URL (已迁移至新服务器)",
+        env="FOCUS_SERVICE_URL"
+    )
+    focus_service_enabled: bool = Field(
+        default=True,
+        description="是否启用Focus微服务",
+        env="FOCUS_SERVICE_ENABLED"
+    )
+    focus_service_timeout: int = Field(
+        default=30,
+        description="Focus微服务调用超时时间(秒)",
+        env="FOCUS_SERVICE_TIMEOUT"
+    )
+
     chat_service_timeout: int = Field(
         default=30,
         description="聊天微服务调用超时时间(秒)"

@@ -223,6 +223,7 @@ from src.api.rewards import router as reward_router  # 使用新的奖励微服�
 from src.domains.top3.router import router as top3_router
 from src.domains.chat.router import router as chat_router
 from src.domains.user.router import router as user_router
+from src.domains.focus.router import router as focus_router
 
 # 使用微服务认证路由（不再需要前缀，因为路径已经包含/auth）
 app.include_router(auth_router)
@@ -238,6 +239,9 @@ app.include_router(reward_router, prefix=config.api_prefix)
 
 # 使用Top3系统API路由
 app.include_router(top3_router, prefix=config.api_prefix)
+
+# 使用专注系统API路由
+app.include_router(focus_router, prefix=config.api_prefix)
 
 # 使用聊天领域路由
 app.include_router(chat_router, prefix=config.api_prefix)
