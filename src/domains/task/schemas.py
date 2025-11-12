@@ -67,7 +67,7 @@ class CreateTaskRequest(BaseModel):
     - priority: 任务优先级（默认为medium）
     - parent_id: 父任务ID
     - tags: 任务标签列表
-    - due_date: 截止日期
+    - due_date: 截止日期（date格式：YYYY-MM-DD）
     - planned_start_time: 计划开始时间
     - planned_end_time: 计划结束时间
 
@@ -87,7 +87,7 @@ class CreateTaskRequest(BaseModel):
                 "status": "pending",
                 "priority": "high",
                 "tags": ["文档", "项目"],
-                "due_date": "2024-12-31T23:59:59Z",
+                "due_date": "2024-12-31",
                 "planned_start_time": "2024-12-20T09:00:00Z",
                 "planned_end_time": "2024-12-30T18:00:00Z"
             }
@@ -135,9 +135,9 @@ class CreateTaskRequest(BaseModel):
         max_length=10,
         description="关联服务ID列表，占位字段用于后续AI服务匹配"
     )
-    due_date: Optional[datetime] = Field(
+    due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（ISO 8601格式）"
+        description="任务截止日期（date格式：YYYY-MM-DD）"
     )
     planned_start_time: Optional[datetime] = Field(
         default=None,
@@ -175,7 +175,10 @@ class CreateTaskRequest(BaseModel):
                 raise ValueError("计划结束时间必须晚于计划开始时间")
 
         if self.due_date and self.planned_end_time:
-            if self.due_date < self.planned_end_time:
+            # 将date转为datetime进行比较（使用当天结束时间23:59:59）
+            from datetime import datetime, time
+            due_datetime = datetime.combine(self.due_date, time(23, 59, 59))
+            if due_datetime < self.planned_end_time:
                 raise ValueError("截止日期不能早于计划结束时间")
 
         return self
@@ -209,7 +212,7 @@ class UpdateTaskRequest(BaseModel):
                 "priority": "high",
                 "parent_id": None,
                 "tags": ["更新", "测试"],
-                "due_date": "2024-12-25T23:59:59Z",
+                "due_date": "2024-12-25",
                 "planned_start_time": "2024-12-15T09:00:00Z",
                 "planned_end_time": "2024-12-20T18:00:00Z"
             }
@@ -252,9 +255,9 @@ class UpdateTaskRequest(BaseModel):
         max_length=10,
         description="关联服务ID列表，占位字段用于后续AI服务匹配"
     )
-    due_date: Optional[datetime] = Field(
+    due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（ISO 8601格式）"
+        description="任务截止日期（date格式：YYYY-MM-DD）"
     )
     planned_start_time: Optional[datetime] = Field(
         default=None,
@@ -390,13 +393,13 @@ class TaskResponse(BaseModel):
     parent_id: Optional[str] = Field(None, description="父任务ID", example="550e8400-e29b-41d4-a716-446655440001")
     tags: List[str] = Field(default=[], description="任务标签", example=["工作", "重要", "紧急"])
     service_ids: List[str] = Field(default=[], description="关联服务ID列表，占位字段用于后续AI服务匹配", example=["chat", "timer", "points"])
-    due_date: Optional[datetime] = Field(None, description="截止日期", example="2024-12-31T23:59:59Z")
+    due_date: Optional[date] = Field(None, description="截止日期（date格式：YYYY-MM-DD）", example="2024-12-31")
     planned_start_time: Optional[datetime] = Field(None, description="计划开始时间", example="2024-01-01T09:00:00Z")
     planned_end_time: Optional[datetime] = Field(None, description="计划结束时间", example="2024-01-01T18:00:00Z")
     last_claimed_date: Optional[date] = Field(None, description="最后领奖日期，用于防刷机制", example="2024-01-15")
     is_deleted: bool = Field(..., description="是否已删除")
-    created_at: datetime = Field(..., description="创建时间")
-    updated_at: datetime = Field(..., description="更新时间")
+    created_at: Optional[datetime] = Field(None, description="创建时间（微服务返回）")
+    updated_at: Optional[datetime] = Field(None, description="更新时间（微服务返回）")
 
     # 简化字段
     completion_percentage: float = Field(..., description="任务完成百分比，0.0-100.0")

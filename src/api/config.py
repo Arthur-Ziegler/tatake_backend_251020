@@ -26,6 +26,7 @@ class APIConfig(BaseSettings):
     app_name: str = Field(default="TaKeKe API", description="应用名称")
     app_version: str = Field(default="1.0.0", description="应用版本")
     debug: bool = Field(default=False, description="调试模式")
+    project: str = Field(default="tatake_backend_f3111d", description="项目标识", env="AUTH_PROJECT")
 
     # API配置
     api_prefix: str = Field(default="", description="API路径前缀")
@@ -234,7 +235,7 @@ class APIConfig(BaseSettings):
 
     # 奖励微服务配置 (已迁移到新服务器)
     reward_service_url: str = Field(
-        default="http://45.152.65.130:20254",
+        default="http://api.aitodo.it:20254",
         description="奖励微服务URL (已迁移至新服务器)",
         env="REWARD_SERVICE_URL"
     )

@@ -306,8 +306,12 @@ class EnhancedTaskMicroserviceClient:
             ("POST", "tasks"): ("POST", "tasks/"),
             ("POST", "tasks/"): ("POST", "tasks/"),
 
-            # 查询任务列表：POST query → GET /tasks/
+            # 查询任务列表：GET /tasks 和 POST query → GET /tasks/
+            ("GET", "tasks"): ("GET", "tasks/"),
             ("POST", "tasks/query"): ("GET", "tasks/"),
+
+            # 获取所有标签：GET /tasks/tags → GET /tasks/tags/
+            ("GET", "tasks/tags"): ("GET", "tasks/tags/"),
 
             # 搜索任务：POST /tasks/search → POST /tasks/search/
             ("POST", "tasks/search"): ("POST", "tasks/search/"),
@@ -564,17 +568,23 @@ class EnhancedTaskMicroserviceClient:
             request_data = {}
             print(f"🔄 方法转换 POST→GET，已将body参数移至query参数: {query_params}")
 
-        # 5. user_id的位置取决于HTTP方法：
-        #    - GET/DELETE：user_id作为query参数
-        #    - POST/PUT：user_id作为请求体参数
+        # 5. user_id传递规则（根据微服务API规范）
+        #    - GET/DELETE: user_id作为query参数传递
+        #    - POST/PUT/PATCH: user_id必须在body中传递（Task微服务要求）
         if new_method in ["GET", "DELETE"]:
-            # GET和DELETE使用query参数
+            # GET/DELETE: query参数
             if "user_id" not in query_params:
                 query_params["user_id"] = validated_user_id
-        else:  # POST, PUT, PATCH
-            # POST和PUT使用请求体参数
+            # 从body中移除（如果存在）
+            if "user_id" in request_data:
+                del request_data["user_id"]
+        else:
+            # POST/PUT/PATCH: body参数
             if "user_id" not in request_data:
                 request_data["user_id"] = validated_user_id
+            # 同时也在query中传递（某些微服务可能需要）
+            if "user_id" not in query_params:
+                query_params["user_id"] = validated_user_id
 
         self.logger.info(f"调用微服务: {new_method} {full_url}")
         self.logger.info(f"调试信息：原始方法={method} -> 新方法={new_method}")
