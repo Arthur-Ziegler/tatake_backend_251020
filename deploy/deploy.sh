@@ -69,9 +69,9 @@ build_image() {
     log_success "镜像构建完成"
 }
 
-# SSH管道传输镜像
+# SSH管道传输镜像（压缩传输）
 push_image() {
-    log_info "推送镜像到服务器..."
+    log_info "推送镜像到服务器（压缩传输）..."
 
     # 优先使用SSH别名，否则使用用户名@主机
     local ssh_target="${SSH_ALIAS}"
@@ -79,10 +79,19 @@ push_image() {
         ssh_target="${DEPLOY_USER}@${SERVER_HOST}"
     fi
 
-    docker save "${IMAGE_NAME}:${VERSION}" | \
-        ssh "${ssh_target}" "docker load"
+    # SSH连接参数：超时控制 + 心跳保活
+    local ssh_opts="-o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3"
 
-    log_success "镜像推送完成"
+    # 压缩传输（gzip -1 快速压缩，降低CPU占用）
+    # docker load 会自动识别gzip格式并解压
+    if docker save "${IMAGE_NAME}:${VERSION}" | \
+        gzip -1 | \
+        ssh ${ssh_opts} "${ssh_target}" "docker load"; then
+        log_success "镜像推送完成"
+    else
+        log_error "镜像推送失败，请检查网络连接或磁盘空间"
+        exit 1
+    fi
 }
 
 # 健康检查

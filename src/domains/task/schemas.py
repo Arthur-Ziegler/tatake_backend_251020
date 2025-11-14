@@ -139,7 +139,7 @@ class CreateTaskRequest(BaseModel):
     )
     due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（date格式：YYYY-MM-DD）",
+        description="任务截止日期（date格式：YYYY-MM-DD，不含时间和时区信息。验证时将转换为UTC时区的23:59:59与计划时间比较）",
         example="2024-12-31"
     )
     planned_start_time: Optional[datetime] = Field(
@@ -180,10 +180,23 @@ class CreateTaskRequest(BaseModel):
                 raise ValueError("计划结束时间必须晚于计划开始时间")
 
         if self.due_date and self.planned_end_time:
-            # 将date转为datetime进行比较（使用当天结束时间23:59:59）
-            from datetime import datetime, time
-            due_datetime = datetime.combine(self.due_date, time(23, 59, 59))
-            if due_datetime < self.planned_end_time:
+            # 将date转为datetime进行比较（使用当天结束时间23:59:59 UTC）
+            from datetime import datetime, time, timezone
+
+            # 将due_date转为UTC时区的datetime（当天结束时间23:59:59）
+            due_datetime = datetime.combine(
+                self.due_date,
+                time(23, 59, 59),
+                tzinfo=timezone.utc
+            )
+
+            # 确保planned_end_time有时区信息（如果是naive datetime，假定为UTC）
+            planned_end = self.planned_end_time
+            if planned_end.tzinfo is None:
+                planned_end = planned_end.replace(tzinfo=timezone.utc)
+
+            # 比较两个aware datetime
+            if due_datetime < planned_end:
                 raise ValueError("截止日期不能早于计划结束时间")
 
         return self
@@ -267,7 +280,7 @@ class UpdateTaskRequest(BaseModel):
     )
     due_date: Optional[date] = Field(
         default=None,
-        description="任务截止日期（date格式：YYYY-MM-DD）",
+        description="任务截止日期（date格式：YYYY-MM-DD，不含时间和时区信息。验证时将转换为UTC时区的23:59:59与计划时间比较）",
         example="2024-12-25"
     )
     planned_start_time: Optional[datetime] = Field(
@@ -306,6 +319,26 @@ class UpdateTaskRequest(BaseModel):
         if self.planned_start_time and self.planned_end_time:
             if self.planned_end_time <= self.planned_start_time:
                 raise ValueError("计划结束时间必须晚于计划开始时间")
+
+        if self.due_date and self.planned_end_time:
+            # 将date转为datetime进行比较（使用当天结束时间23:59:59 UTC）
+            from datetime import datetime, time, timezone
+
+            # 将due_date转为UTC时区的datetime（当天结束时间23:59:59）
+            due_datetime = datetime.combine(
+                self.due_date,
+                time(23, 59, 59),
+                tzinfo=timezone.utc
+            )
+
+            # 确保planned_end_time有时区信息（如果是naive datetime，假定为UTC）
+            planned_end = self.planned_end_time
+            if planned_end.tzinfo is None:
+                planned_end = planned_end.replace(tzinfo=timezone.utc)
+
+            # 比较两个aware datetime
+            if due_datetime < planned_end:
+                raise ValueError("截止日期不能早于计划结束时间")
 
         return self
 
@@ -396,7 +429,7 @@ class TaskResponse(BaseModel):
                 "priority": "high",
                 "parent_id": "550e8400-e29b-41d4-a716-446655440002",
                 "tags": ["文档", "项目"],
-                "due_date": "2024-12-31T23:59:59Z",
+                "due_date": "2024-12-31",
                 "planned_start_time": "2024-12-20T09:00:00Z",
                 "planned_end_time": "2024-12-30T18:00:00Z",
                 "is_deleted": False,
