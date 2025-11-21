@@ -46,10 +46,11 @@ async def get_my_prizes_endpoint(
         logger.info(f"查看我的奖品API调用: user_id={user_id}")
         response = await client.get_prizes(str(user_id))
 
+        # 提取内层data，避免嵌套响应结构
         return UnifiedResponse(
-            code=200,
-            data=response,
-            message="获取奖品列表成功"
+            code=response.get("code", 200),
+            data=response.get("data"),
+            message=response.get("message", "获取奖品列表成功")
         )
     except Exception as e:
         logger.error(f"查看我的奖品异常: {e}")
@@ -66,10 +67,11 @@ async def get_my_points_endpoint(
         logger.info(f"查看我的积分API调用: user_id={user_id}")
         response = await client.get_points(str(user_id))
 
+        # 提取内层data，避免嵌套响应结构
         return UnifiedResponse(
-            code=200,
-            data=response,
-            message="获取积分信息成功"
+            code=response.get("code", 200),
+            data=response.get("data"),
+            message=response.get("message", "获取积分信息成功")
         )
     except Exception as e:
         logger.error(f"查看我的积分异常: {e}")

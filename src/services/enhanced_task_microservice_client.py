@@ -316,10 +316,10 @@ class EnhancedTaskMicroserviceClient:
             # 搜索任务：POST /tasks/search → POST /tasks/search/
             ("POST", "tasks/search"): ("POST", "tasks/search/"),
 
-            # 单个任务操作
-            ("GET", "tasks/{task_id}"): ("GET", "tasks/{task_id}/"),
-            ("PUT", "tasks/{task_id}"): ("PUT", "tasks/{task_id}/"),
-            ("DELETE", "tasks/{task_id}"): ("DELETE", "tasks/{task_id}/"),
+            # 单个任务操作（移除尾部斜杠以匹配微服务实际行为）
+            ("GET", "tasks/{task_id}"): ("GET", "tasks/{task_id}"),
+            ("PUT", "tasks/{task_id}"): ("PUT", "tasks/{task_id}"),
+            ("DELETE", "tasks/{task_id}"): ("DELETE", "tasks/{task_id}"),
 
             # 完成任务：映射到PUT更新状态（微服务没有单独的complete端点）
             ("POST", "tasks/{task_id}/complete"): ("PUT", "tasks/{task_id}/"),
@@ -330,11 +330,11 @@ class EnhancedTaskMicroserviceClient:
             # ===== Top3管理 =====
             ("POST", "tasks/top3/query"): ("GET", "tasks/top3/"),
             ("POST", "tasks/special/top3"): ("POST", "tasks/top3/"),
-            ("GET", "tasks/special/top3/{date}"): ("GET", "tasks/top3/{date}/"),
+            ("GET", "tasks/special/top3/{date}"): ("GET", "tasks/top3/{date}/")
 
-            # ===== 专注和番茄钟 =====
-            ("POST", "tasks/focus-status"): ("POST", "focus/sessions/"),
-            ("GET", "tasks/pomodoro-count"): ("GET", "pomodoros/count/")
+            # 注意：专注和番茄钟相关端点已移至Focus微服务（20255端口）
+            # POST /tasks/focus-status 和 GET /tasks/pomodoro-count
+            # 由FocusMicroserviceClient处理，不再通过Task微服务
         }
 
     def rewrite_path_and_method(self, method: str, original_path: str, user_id: str, **kwargs) -> tuple[str, str]:
@@ -609,6 +609,16 @@ class EnhancedTaskMicroserviceClient:
             except Exception as e:
                 self.logger.error(f"解析响应JSON失败: {e}")
                 self.logger.error(f"原始响应内容: {response.text}")
+
+                # 处理204 No Content或空响应（DELETE等操作正常返回）
+                if response.status_code == 204 or not response.text.strip():
+                    self.logger.info(f"收到空响应，状态码: {response.status_code}，视为操作成功")
+                    return {
+                        "code": 200,
+                        "success": True,
+                        "message": "操作成功",
+                        "data": None
+                    }
 
                 # 无法解析JSON时的错误处理
                 if response.status_code >= 400:

@@ -17,4 +17,3 @@ wheels/
 prompts
 .DS_Store
 docker_images_output/*
-docs/*
